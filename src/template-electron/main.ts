@@ -46,7 +46,7 @@ function setup(): void {
       y:              windowState.y,
       minWidth:       cfg.minWidth,
       minHeight:      cfg.minHeight,
-      fullscreen:     cfg.fullscreen      ?? cfg.FullScreen ?? false,
+      fullscreen:     cfg.fullscreen      ?? false,
       fullscreenable: cfg.fullscreenable  !== false,
       resizable:      cfg.resizable       !== false,
       center:         windowState.x == null && cfg.center !== false,

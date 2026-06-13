@@ -156,7 +156,7 @@ await updater.checkForUpdate();
 
 ## Notes
 
-- The updater silently does nothing if `enabled` is `false` or missing — no code runs, IPC handlers are not registered.
+- When `enabled` is `false` or missing, no-op IPC handlers are registered (so renderer calls to `checkForUpdate`, etc. succeed silently instead of throwing "no handler" errors). The actual `electron-updater` library is never initialised.
 - Updater errors are caught and logged to console; they never crash the main process.
 - `checkForUpdate()` must be called explicitly — there is no automatic check on startup. Call it after your app is ready (e.g. in `App.vue` or `App.tsx` `mounted`/`useEffect`).
 - When `autoDownload: false`, call `downloadUpdate()` manually after receiving `update-available`.

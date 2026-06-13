@@ -24,7 +24,7 @@ Supported formats: `png`, `jpg`/`jpeg`, `svg`, `gif`, `webp`.
 plugins: {
   Electron: {
     splashScreen: {
-      image: 'electron/assets/splash.png',
+      image: 'assets/splash.png',
       width: 600,
       height: 400,
       backgroundColor: '#1a1a2e',
@@ -44,7 +44,7 @@ All options live under `plugins.Electron.splashScreen` in `capacitor.config.ts`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `image` | `string` | — | **Required.** Path to the splash image relative to the project root. Omitting this disables the splash screen entirely. |
+| `image` | `string` | — | **Required.** Path to the splash image relative to the `electron/` directory (e.g. `assets/splash.png`). Omitting this disables the splash screen entirely. |
 | `width` | `number` | `400` | Width of the splash window in px |
 | `height` | `number` | `300` | Height of the splash window in px |
 | `backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |

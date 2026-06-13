@@ -435,7 +435,7 @@ A frameless window shown while the app is loading. Closes automatically when the
 plugins: {
   Electron: {
     splashScreen: {
-      image: 'electron/assets/splash.png',
+      image: 'assets/splash.png',
       width: 600,
       height: 400,
       backgroundColor: '#1a1a2e',

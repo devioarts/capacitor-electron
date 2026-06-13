@@ -77,8 +77,15 @@ try {
   });
 
   console.log('→ packing template-electron.tar.gz');
+  // Exclude generated/installed artifacts — users get these via npm install + npm run build.
+  const EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'dist-electron', 'app']);
   await create(
-    { gzip: true, file: join(root, 'template-electron.tar.gz'), cwd: join(root, 'src') },
+    {
+      gzip: true,
+      file: join(root, 'template-electron.tar.gz'),
+      cwd: join(root, 'src'),
+      filter: (p: string) => !p.split(/[/\\]/).some((part) => EXCLUDE_DIRS.has(part)),
+    },
     ['template-electron'],
   );
 
