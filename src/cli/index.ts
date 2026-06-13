@@ -24,4 +24,4 @@ if (!script) {
   process.exit(1);
 }
 
-execFileSync(process.execPath, [script], { stdio: 'inherit' });
+execFileSync(process.execPath, [script, ...process.argv.slice(3)], { stdio: 'inherit' });
