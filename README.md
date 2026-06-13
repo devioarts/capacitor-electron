@@ -22,6 +22,22 @@ npm install --save-dev github:devioarts/capacitor-electron#v0.0.1
 
 > The package is built automatically during install via the `prepare` script — no separate build step needed.
 
+### Updating
+
+GitHub-hosted packages do not support `npm update`. Re-run the install command to pull the latest version from the `main` branch:
+
+```bash
+npm install --save-dev github:devioarts/capacitor-electron
+```
+
+Or pin to a specific tag:
+
+```bash
+npm install --save-dev github:devioarts/capacitor-electron#v0.0.2
+```
+
+After updating, run `cap-electron sync` to regenerate any changed templates.
+
 ## Quick start
 
 ### 1. Add Electron to your Capacitor project
