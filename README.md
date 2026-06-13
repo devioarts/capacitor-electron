@@ -135,9 +135,11 @@ export default config;
 
 ---
 
-## Local notifications
+## Built-in Capacitor plugin support
 
-Built-in Electron support for `@capacitor/local-notifications` — install the plugin and it works without any extra configuration.
+The following `@capacitor/*` plugins are implemented natively for Electron — install the plugin and it works without any extra configuration or IPC wiring.
+
+### Local notifications
 
 ```typescript
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -148,6 +150,97 @@ await LocalNotifications.schedule({
 ```
 
 See [docs/local-notifications.md](docs/local-notifications.md) for scheduling, events, and platform limitations.
+
+### Dialog
+
+```typescript
+import { Dialog } from '@capacitor/dialog';
+
+await Dialog.alert({ title: 'Notice', message: 'Operation complete.' });
+
+const { value } = await Dialog.confirm({ title: 'Delete', message: 'Are you sure?' });
+```
+
+`alert` and `confirm` are native OS dialogs. `prompt` is not supported and always returns `{ value: '', cancelled: true }`. See [docs/dialog.md](docs/dialog.md).
+
+### Action Sheet
+
+```typescript
+import { ActionSheet, ActionSheetButtonStyle } from '@capacitor/action-sheet';
+
+const { index } = await ActionSheet.showActions({
+  title: 'Choose an action',
+  options: [
+    { title: 'Edit' },
+    { title: 'Delete', style: ActionSheetButtonStyle.Destructive },
+    { title: 'Cancel', style: ActionSheetButtonStyle.Cancel },
+  ],
+});
+```
+
+Uses `dialog.showMessageBox` — a native OS dialog, not an HTML overlay. See [docs/action-sheet.md](docs/action-sheet.md).
+
+### App
+
+```typescript
+import { App } from '@capacitor/app';
+
+const { version } = await App.getInfo();
+
+App.addListener('appStateChange', ({ isActive }) => {
+  console.log('Window', isActive ? 'focused' : 'blurred');
+});
+```
+
+Covers `getInfo`, `getState`, `exitApp`, `minimizeApp`, `getLaunchUrl`, and events `appStateChange`, `appUrlOpen`, `resume`, `pause`. See [docs/app.md](docs/app.md).
+
+### Browser & App Launcher
+
+```typescript
+import { Browser } from '@capacitor/browser';
+import { AppLauncher } from '@capacitor/app-launcher';
+
+await Browser.open({ url: 'https://example.com' });
+await AppLauncher.openUrl({ url: 'myotherapp://action/open' });
+```
+
+Both use `shell.openExternal`. See [docs/browser.md](docs/browser.md).
+
+### Filesystem
+
+```typescript
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+
+await Filesystem.writeFile({
+  path: 'notes.txt',
+  directory: Directory.Documents,
+  data: 'Hello, Electron!',
+  encoding: Encoding.UTF8,
+});
+```
+
+Full read/write/copy/rename/download support via Node.js `fs/promises`. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
+
+### Preferences
+
+```typescript
+import { Preferences } from '@capacitor/preferences';
+
+await Preferences.set({ key: 'theme', value: 'dark' });
+const { value } = await Preferences.get({ key: 'theme' });
+```
+
+Stored in `{userData}/preferences.json` — survives "Clear browsing data". See [docs/preferences.md](docs/preferences.md).
+
+### Toast
+
+```typescript
+import { Toast } from '@capacitor/toast';
+
+await Toast.show({ text: 'Saved.', duration: 'short' });
+```
+
+Uses the OS notification system (silent, auto-dismissed). See [docs/toast.md](docs/toast.md).
 
 ---
 

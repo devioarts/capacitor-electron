@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron';
+import { emitPluginEvent } from './functions';
 
 let _pending: string | null = null;
 
@@ -17,6 +18,7 @@ function forward(url: string, getWin: () => BrowserWindow | null): void {
   if (!win.isVisible()) win.show();
   win.focus();
   win.webContents.send('deepLink', { url });
+  emitPluginEvent('App', 'appUrlOpen', { url });
 }
 
 /** Register the protocol and event listeners. Call before app.whenReady(). */

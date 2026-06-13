@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
-import type { PluginSettings } from '../shared/types.js';
+import type { PluginSettings } from '../shared/plugin-settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

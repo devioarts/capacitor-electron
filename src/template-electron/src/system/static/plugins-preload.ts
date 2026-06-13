@@ -13,6 +13,7 @@ type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 // Built-in system plugins — always available regardless of installed npm packages.
 // pluginsAuto (cap-electron sync) and pluginsUser can override these.
 const pluginsSystem: Record<string, PluginEntry> = {
+  // @capacitor/local-notifications
   LocalNotifications: {
     methods: [
       'schedule', 'cancel', 'getPending',
@@ -24,6 +25,44 @@ const pluginsSystem: Record<string, PluginEntry> = {
       'createChannel', 'deleteChannel', 'listChannels',
     ],
     events: ['localNotificationReceived', 'localNotificationActionPerformed'],
+  },
+  // @capacitor/action-sheet
+  ActionSheet: {
+    methods: ['showActions'],
+  },
+  // @capacitor/dialog
+  Dialog: {
+    methods: ['alert', 'confirm', 'prompt'],
+  },
+  // @capacitor/app
+  App: {
+    methods: ['getInfo', 'getState', 'exitApp', 'minimizeApp', 'getLaunchUrl'],
+    events: ['appStateChange', 'appUrlOpen', 'resume', 'pause', 'backButton'],
+  },
+  // @capacitor/browser
+  Browser: {
+    methods: ['open', 'close', 'getSnapshot'],
+    events: ['browserFinished', 'browserPageLoaded'],
+  },
+  // @capacitor/app-launcher
+  AppLauncher: {
+    methods: ['canOpenUrl', 'openUrl'],
+  },
+  // @capacitor/filesystem
+  Filesystem: {
+    methods: [
+      'readFile', 'writeFile', 'appendFile', 'deleteFile',
+      'mkdir', 'rmdir', 'readdir', 'getUri', 'stat',
+      'rename', 'copy', 'downloadFile',
+    ],
+  },
+  // @capacitor/preferences
+  Preferences: {
+    methods: ['get', 'set', 'remove', 'clear', 'keys', 'migrate', 'removeOld'],
+  },
+  // @capacitor/toast
+  Toast: {
+    methods: ['show'],
   },
 };
 

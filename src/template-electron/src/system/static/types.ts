@@ -15,8 +15,6 @@ export interface ElectronConfig {
   fullscreen?: boolean;
   /** Allow the window to enter fullscreen (green button on macOS). Default: true */
   fullscreenable?: boolean;
-  /** @deprecated Use fullscreen */
-  FullScreen?: boolean;
   /** Center the window on screen on startup. Default: true */
   center?: boolean;
   /** Allow the user to resize the window. Default: true */
@@ -114,6 +112,7 @@ export interface ElectronConfig {
 }
 
 export interface AppConfig {
+  appId?: string;
   appName?: string;
   backgroundColor?: string;
   plugins?: { Electron?: ElectronConfig };
