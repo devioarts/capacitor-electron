@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { fileURLToPath } from 'url';
+import { execFileSync } from 'child_process';
 import { extract } from 'tar';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -105,7 +106,9 @@ async function main(): Promise<void> {
     if (!includeAll) {
       console.log('  Tip: run with --all to also update electron-builder.js, tsconfig.json, and package.json');
     }
-    console.log('  Run cap-electron sync to regenerate plugin bridges.');
+
+    console.log('\nRunning sync...');
+    execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
