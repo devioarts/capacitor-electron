@@ -13,12 +13,14 @@ const scripts: Record<string, string> = {
   copy:    join(__dirname, 'copy.js'),
   open:    join(__dirname, 'open.js'),
   kill:    join(__dirname, 'kill.js'),
+  upgrade: join(__dirname, 'upgrade.js'),
+  restore: join(__dirname, 'upgrade.js'),
 };
 
 const script = scripts[command ?? ''];
 if (!script) {
   console.error(`cap-electron: unknown command "${command ?? ''}"`);
-  console.log('Usage: cap-electron <scripts|sync|copy|open|kill>');
+  console.log('Usage: cap-electron <scripts|sync|copy|open|kill|upgrade|restore>');
   process.exit(1);
 }
 

@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { trayMenu } from './src/user/tray';
+import { onReady } from './src/user/main-user';
 
 const isDev = !app.isPackaged;
 
@@ -91,6 +92,7 @@ function setup(): void {
     const hookTrayWindow = setupTray(cfg, getWin, trayMenu);
     const hideSplash = setupSplash(cfg);
     createWindow(hideSplash, hookTrayWindow);
+    onReady(getWin);
     if (cfg.deepLinkingScheme) flushDeepLink(cfg.deepLinkingScheme, getWin);
     setupUpdater(cfg);
 

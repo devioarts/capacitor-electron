@@ -19,4 +19,10 @@ export const pluginSettings: PluginSettings = {
 
   // Statements run before registerPlugin() — deduplicated across all plugins
   beforeRegister: ['await app.whenReady()'],
+
+  // If your plugin reads its own section from capacitor.config (e.g. plugins.__PLUGIN_CLASS__)
+  // list the section name(s) here so cap-electron sync copies them automatically.
+  // Users do not need to configure anything — the sync script picks this up from every
+  // installed plugin and merges all declared sections into electron/capacitor.config.json.
+  // configSections: ['__PLUGIN_CLASS__'],
 };

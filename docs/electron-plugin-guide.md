@@ -143,6 +143,75 @@ Both hooks are optional — omit either if you don't need lifecycle control.
 
 ---
 
+## Reading capacitor.config in your plugin
+
+Some plugins need their own configuration block from `capacitor.config` — for example a SQLite
+plugin that needs to know whether encryption is enabled, or a push-notification plugin that reads
+a server URL.
+
+`cap-electron sync` copies only a fixed set of top-level keys plus `plugins.Electron` into
+`electron/capacitor.config.json`. All other sections are stripped. Without `configSections`,
+your plugin's configuration block would be absent from the file your main-process code reads.
+
+### Declaring required config sections
+
+In the plugin's `plugin-settings.ts` (the descriptor read by `cap-electron sync`), add a
+`configSections` array with the names of the `plugins.*` keys your plugin reads:
+
+```typescript
+import type { PluginSettings } from '@devioarts/capacitor-electron';
+
+export const pluginSettings: PluginSettings = {
+  pluginClass: 'CapacitorSQLite',
+  pluginMethods: ['open', 'query', 'close'],
+  imports: ["import { CapacitorSQLite } from 'capacitor-community-sqlite/electron'"],
+  beforeRegister: ['await app.whenReady()'],
+
+  // cap-electron sync will copy plugins.CapacitorSQLite from capacitor.config
+  // into electron/capacitor.config.json automatically.
+  configSections: ['CapacitorSQLite'],
+};
+```
+
+The app developer configures the plugin in their `capacitor.config.ts` as usual:
+
+```typescript
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.example.app',
+  appName: 'My App',
+  plugins: {
+    CapacitorSQLite: {
+      electronIsEncryption: false,
+      electronSaveDatabasesFrom: 'userData',
+    },
+  },
+};
+```
+
+After `cap-electron sync`, `electron/capacitor.config.json` will include the section:
+
+```json
+{
+  "appId": "com.example.app",
+  "appName": "My App",
+  "plugins": {
+    "Electron": { "..." : "..." },
+    "CapacitorSQLite": {
+      "electronIsEncryption": false,
+      "electronSaveDatabasesFrom": "userData"
+    }
+  }
+}
+```
+
+No extra setup is needed on the app developer's side — sections from all installed plugins are
+merged automatically. If a declared section is missing from the project's `capacitor.config`,
+`cap-electron sync` prints a warning so the developer can catch the misconfiguration early.
+
+---
+
 ## IPC channel reference
 
 The following naming convention is used internally. You do not need to use these directly — `registerPlugin` and `emitPluginEvent` handle them for you.

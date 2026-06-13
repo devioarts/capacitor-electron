@@ -210,12 +210,33 @@ function main(): void {
     if (cfg['appName'])          filtered['appName']          = cfg['appName'];
     if (cfg['webDir'])           filtered['webDir']           = cfg['webDir'];
     if (cfg['backgroundColor'])  filtered['backgroundColor']  = cfg['backgroundColor'];
-    const electronPlugin = (cfg['plugins'] as Record<string, unknown> | undefined)?.['Electron'];
-    if (electronPlugin) filtered['plugins'] = { Electron: electronPlugin };
+
+    const allPluginsCfg = cfg['plugins'] as Record<string, unknown> | undefined;
+    const electronPlugin = allPluginsCfg?.['Electron'];
+
+    // Collect config section names declared by installed plugins via configSections.
+    const extraSections = new Set<string>();
+    for (const p of plugins) {
+      for (const s of p.configSections ?? []) extraSections.add(s);
+    }
+
+    const pluginsOut: Record<string, unknown> = {};
+    if (electronPlugin) pluginsOut['Electron'] = electronPlugin;
+    for (const section of extraSections) {
+      if (allPluginsCfg?.[section] !== undefined) pluginsOut[section] = allPluginsCfg[section];
+    }
+    if (Object.keys(pluginsOut).length > 0) filtered['plugins'] = pluginsOut;
 
     const dest = path.join(electronDir, 'capacitor.config.json');
     fs.writeFileSync(dest, JSON.stringify(filtered, null, 2) + '\n');
     console.log('Written: electron/capacitor.config.json');
+
+    if (extraSections.size > 0) {
+      const present = [...extraSections].filter((s) => allPluginsCfg?.[s] !== undefined);
+      const missing = [...extraSections].filter((s) => allPluginsCfg?.[s] === undefined);
+      if (present.length > 0) console.log(`  Plugin config sections included: ${present.join(', ')}`);
+      if (missing.length > 0) console.warn(`  ⚠  Config sections declared but not found in capacitor.config: ${missing.join(', ')}`);
+    }
   } else {
     console.warn('[cap-electron] Could not read capacitor config — skipping.');
   }

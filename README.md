@@ -2,6 +2,8 @@
 
 Capacitor platform plugin that adds Electron support to any Capacitor app. Provides a CLI (`cap-electron`) for scaffolding, syncing plugins, copying assets, and launching the app in development.
 
+> **Early-stage project.** The API and behavior may change between releases. Use with caution in production environments. Bug reports, feature requests, and any other feedback are very welcome — please [open an issue](https://github.com/devioarts/capacitor-electron/issues).
+
 ## Requirements
 
 - Node.js ≥ 24
@@ -11,32 +13,39 @@ Capacitor platform plugin that adds Electron support to any Capacitor app. Provi
 ## Installation
 
 ```bash
+npm install --save-dev @devioarts/capacitor-electron
+```
+
+Pin to a specific version:
+
+```bash
+npm install --save-dev @devioarts/capacitor-electron@0.0.1
+```
+
+### Installing the latest unreleased version
+
+To get changes that haven't been published to npm yet, install directly from GitHub:
+
+```bash
 npm install --save-dev github:devioarts/capacitor-electron
 ```
 
-Install a specific version:
+Or pin to a specific commit or branch:
 
 ```bash
-npm install --save-dev github:devioarts/capacitor-electron#v0.0.1
+npm install --save-dev github:devioarts/capacitor-electron#main
 ```
 
-> The package is built automatically during install via the `prepare` script — no separate build step needed.
+> The package is built automatically on install via the `prepare` script — no separate build step needed.
+> Note: GitHub-hosted packages do not support `npm update`. Re-run the install command to get the latest.
 
 ### Updating
 
-GitHub-hosted packages do not support `npm update`. Re-run the install command to pull the latest version from the `main` branch:
-
 ```bash
-npm install --save-dev github:devioarts/capacitor-electron
+npm update @devioarts/capacitor-electron
 ```
 
-Or pin to a specific tag:
-
-```bash
-npm install --save-dev github:devioarts/capacitor-electron#v0.0.2
-```
-
-After updating, run `cap-electron sync` to regenerate any changed templates.
+After updating, run `cap-electron upgrade` (or `cap-electron restore`) to apply any changes to system files, then `cap-electron sync` to regenerate plugin bridges.
 
 ## Quick start
 
@@ -76,6 +85,7 @@ Starts your Vite dev server (if not already running), builds the Electron app, a
 | `cap-electron open` | Launch dev mode — starts dev server + Electron in watch mode |
 | `cap-electron kill` | Kill all Electron/Node processes tied to this project |
 | `cap-electron scripts` | Add `electron:*` helper scripts to root `package.json` |
+| `cap-electron upgrade` / `restore` | Update system files from the installed package version — user files are never touched. Pass `--all` to also update `electron-builder.js` |
 
 ---
 

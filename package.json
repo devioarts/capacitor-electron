@@ -21,7 +21,9 @@
   "scripts": {
     "build": "tsx scripts/build.ts",
     "prepare": "npm run build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build",
+    "release": "npm publish --access public"
   },
   "repository": {
     "type": "git",
@@ -39,6 +41,7 @@
       "platforms": ["electron"]
     }
   },
+  "publishConfig": { "access": "public" },
   "keywords": ["capacitor", "electron", "platform"],
   "peerDependencies": {
     "@capacitor/cli": ">=8.0.0"

@@ -69,6 +69,11 @@ export const pluginSettings: PluginSettings = {
 
   // Runs before registerPlugin() — usually just app.whenReady()
   beforeRegister: ['await app.whenReady()'],
+
+  // If your plugin reads its own section from capacitor.config (e.g. plugins.MyPlugin),
+  // list the section name(s) here. cap-electron sync will copy them automatically into
+  // electron/capacitor.config.json — the app developer needs no extra configuration.
+  // configSections: ['MyPlugin'],
 };
 ```
 
@@ -226,16 +231,91 @@ App developer:
 
 ---
 
+## Reading capacitor.config in your plugin
+
+Some plugins need their own configuration block from `capacitor.config`. A good example is a
+SQLite plugin that allows the developer to configure encryption, the database location, or other
+driver-level options that must be known at startup.
+
+`cap-electron sync` copies only a fixed set of top-level keys (`appId`, `appName`, `webDir`,
+`backgroundColor`) and the `plugins.Electron` section into `electron/capacitor.config.json`.
+All other sections are stripped. Without `configSections`, your plugin's configuration block
+would be absent from the file your Electron code reads.
+
+### Declaring required config sections
+
+Add `configSections` to your `plugin-settings.ts`:
+
+```typescript
+export const pluginSettings: PluginSettings = {
+  pluginClass: 'CapacitorSQLite',
+  pluginMethods: ['open', 'query', 'close'],
+  imports: ["import { CapacitorSQLite } from 'capacitor-community-sqlite/electron'"],
+  beforeRegister: ['await app.whenReady()'],
+
+  // Tell cap-electron sync to copy plugins.CapacitorSQLite from capacitor.config
+  // into electron/capacitor.config.json.
+  configSections: ['CapacitorSQLite'],
+};
+```
+
+The app developer configures the plugin in their `capacitor.config.ts` as they normally would:
+
+```typescript
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.example.app',
+  appName: 'My App',
+  plugins: {
+    CapacitorSQLite: {
+      electronIsEncryption: false,
+      electronSaveDatabasesFrom: 'userData',
+    },
+  },
+};
+```
+
+After `cap-electron sync`, `electron/capacitor.config.json` will contain:
+
+```json
+{
+  "appId": "com.example.app",
+  "appName": "My App",
+  "plugins": {
+    "Electron": { ... },
+    "CapacitorSQLite": {
+      "electronIsEncryption": false,
+      "electronSaveDatabasesFrom": "userData"
+    }
+  }
+}
+```
+
+Your plugin reads it at runtime via the standard `loadConfig()` helper or directly from the file —
+no extra setup is needed from the app developer's side.
+
+> **Multiple sections:** you can declare more than one name in `configSections` if your plugin
+> uses multiple keys. Sections from all installed plugins are merged — there is no conflict as
+> long as section names are unique (which they should be, matching the plugin class name).
+
+> **Warning on missing sections:** if a section is listed in `configSections` but not present in
+> the project's `capacitor.config`, `cap-electron sync` prints a warning so developers can catch
+> typos or forgotten configuration early.
+
+---
+
 ## Reference: full `plugin-settings.ts` fields
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `pluginClass` | `string` | ✓ | Class name in `electron/src/index.ts` |
 | `pluginMethods` | `string[]` | ✓ | Methods to expose via IPC |
-| `pluginEvents` | `string[]` | | Events emitted to renderer (reserved) |
+| `pluginEvents` | `string[]` | | Events emitted to renderer |
 | `autoRegister` | `boolean` | | Default: `true`. Set `false` to skip auto-wiring. |
 | `imports` | `string[]` | | Import lines added to `plugins-main-auto.ts` |
 | `beforeRegister` | `string[]` | | Statements run before `registerPlugin()` |
+| `configSections` | `string[]` | | `capacitor.config` plugin section names to copy into `electron/capacitor.config.json` |
 
 ---
 

@@ -30,4 +30,20 @@ export interface PluginSettings {
    * Example: ["await MyPlugin.initialize()"]
    */
   beforeRegister?: readonly string[];
+  /**
+   * Names of `capacitor.config` plugin sections that this plugin reads at runtime.
+   *
+   * `cap-electron sync` copies only a small fixed set of top-level keys (appId, appName,
+   * webDir, backgroundColor) plus `plugins.Electron` into `electron/capacitor.config.json`.
+   * If your plugin reads its own section from that file (e.g. `plugins.CapacitorSQLite`),
+   * list it here so the sync script includes it automatically.
+   *
+   * Example:
+   * ```ts
+   * configSections: ['CapacitorSQLite']
+   * ```
+   * The app developer does not need to configure anything — the sync script picks up
+   * the declaration from every installed plugin and merges all sections.
+   */
+  configSections?: readonly string[];
 }
