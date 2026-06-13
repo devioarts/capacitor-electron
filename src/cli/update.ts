@@ -15,9 +15,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Normal npm install: find project root via node_modules boundary in __dirname.
 // file:/symlink install: __dirname is outside node_modules, fall back to cwd.
+// Capacitor CLI sets CAPACITOR_ROOT_DIR when calling this as a hook.
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd();
+const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
+  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 const depRequire = createRequire(import.meta.url);
