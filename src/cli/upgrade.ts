@@ -82,6 +82,22 @@ async function main(): Promise<void> {
       console.log('  cleaned  src/system/generated/');
     }
 
+    // Add missing user files (never overwrite existing ones).
+    const templateUserDir = path.join(tmpDir, 'src/user');
+    const electronUserDir = path.join(electronDir, 'src/user');
+    if (fs.existsSync(templateUserDir)) {
+      for (const entry of fs.readdirSync(templateUserDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) continue;
+        const dest = path.join(electronUserDir, entry.name);
+        if (!fs.existsSync(dest)) {
+          fs.mkdirSync(electronUserDir, { recursive: true });
+          fs.copyFileSync(path.join(templateUserDir, entry.name), dest);
+          console.log(`  added    src/user/${entry.name} (new file)`);
+          updated++;
+        }
+      }
+    }
+
     if (includeAll) {
       for (const file of OPTIONAL_FILES) {
         const src = path.join(tmpDir, file);
