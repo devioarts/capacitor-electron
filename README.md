@@ -153,11 +153,15 @@ See [docs/local-notifications.md](docs/local-notifications.md) for scheduling, e
 
 ## `window.Electron` — system IPC
 
-The template exposes a `window.Electron` bridge in the renderer (via the preload). TypeScript types are included automatically — just import from the package.
+The template exposes a `window.Electron` bridge in the renderer (via the preload).
+
+**TypeScript types are wired up automatically by `cap-electron sync`** — it writes a `/// <reference types="@devioarts/capacitor-electron/globals" />` directive into your `src/vite-env.d.ts` (or `src/env.d.ts`). No import needed in your app code.
+
+If you ever need to add it manually:
 
 ```typescript
-import type { ElectronBridge } from '@devioarts/capacitor-electron';
-declare global { interface Window { Electron: ElectronBridge; } }
+// src/vite-env.d.ts (or any ambient .d.ts included by your tsconfig)
+/// <reference types="@devioarts/capacitor-electron/globals" />
 ```
 
 | Method | Returns | Description |

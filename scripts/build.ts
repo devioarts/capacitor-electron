@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 import { execSync } from 'node:child_process';
-import { rm, mkdir } from 'node:fs/promises';
+import { rm, mkdir, copyFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { build } from 'esbuild';
 import { create } from 'tar';
@@ -13,6 +13,12 @@ await mkdir(join(root, 'dist'), { recursive: true });
 
 console.log('→ types (tsc)');
 execSync('tsc --emitDeclarationOnly', { stdio: 'inherit', cwd: root });
+
+console.log('→ globals.d.ts (copy)');
+await copyFile(
+  join(root, 'src', 'shared', 'globals.d.ts'),
+  join(root, 'dist', 'shared', 'globals.d.ts'),
+);
 
 console.log('→ shared types (esbuild ESM + CJS)');
 await build({

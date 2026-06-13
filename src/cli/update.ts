@@ -142,6 +142,36 @@ function generateElectronMainAuto(plugins: PluginEntry[]): string {
   return parts.join('\n') + '\n';
 }
 
+const GLOBALS_REFERENCE = '/// <reference types="@devioarts/capacitor-electron/globals" />';
+
+function injectGlobalsReference(projectRoot: string): void {
+  // Candidate files where a Vite/Capacitor project keeps ambient references.
+  const candidates = [
+    path.join(projectRoot, 'src', 'vite-env.d.ts'),
+    path.join(projectRoot, 'src', 'env.d.ts'),
+  ];
+
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) continue;
+    const content = fs.readFileSync(candidate, 'utf-8');
+    if (content.includes(GLOBALS_REFERENCE)) {
+      console.log(`\nGlobals reference already present in ${path.relative(projectRoot, candidate)}`);
+      return;
+    }
+    fs.writeFileSync(candidate, GLOBALS_REFERENCE + '\n' + content);
+    console.log(`\nInjected globals reference into ${path.relative(projectRoot, candidate)}`);
+    return;
+  }
+
+  // No existing ambient file found — create a minimal one in src/.
+  const target = path.join(projectRoot, 'src', 'capacitor-electron.d.ts');
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(path.join(projectRoot, 'src'), { recursive: true });
+    fs.writeFileSync(target, GLOBALS_REFERENCE + '\n');
+    console.log(`\nCreated src/capacitor-electron.d.ts with globals reference`);
+  }
+}
+
 function main(): void {
   const generatedDir = path.join(electronDir, 'src', 'system', 'generated');
   fs.mkdirSync(generatedDir, { recursive: true });
@@ -164,7 +194,11 @@ function main(): void {
   fs.writeFileSync(path.join(generatedDir, 'plugins-main-auto.ts'), generateElectronMainAuto(plugins));
   console.log(`Written: src/system/generated/plugins-main-auto.ts`);
 
-  // ── 2. Capacitor config → electron/capacitor.config.json ─────────────────
+  // ── 2. Inject /// <reference types="@devioarts/capacitor-electron/globals" /> ──
+
+  injectGlobalsReference(capacitorRoot);
+
+  // ── 3. Capacitor config → electron/capacitor.config.json ─────────────────
 
   console.log('\nProcessing capacitor config...');
   const cfg = readCapacitorConfig();

@@ -8,6 +8,9 @@
       "types": "./dist/shared/types.d.ts",
       "import": "./dist/shared/types.js",
       "require": "./dist/shared/types.cjs"
+    },
+    "./globals": {
+      "types": "./dist/shared/globals.d.ts"
     }
   },
   "types": "./dist/shared/types.d.ts",

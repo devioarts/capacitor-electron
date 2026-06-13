@@ -13,6 +13,7 @@ The package is a **Capacitor community platform** — it plugs into Capacitor's 
 | **CLI** (`cap-electron`) | `dist/cli/` | Scaffolds the `electron/` folder, syncs plugins, copies assets, runs dev mode |
 | **Template** | `template-electron.tar.gz` | The `electron/` folder extracted into the user's project by `cap-electron add` |
 | **Shared types** | `dist/shared/types.js` | TypeScript interfaces for `ElectronConfig`, `ElectronBridge`, `PluginSettings` — imported by user projects and plugin authors |
+| **Ambient globals** | `dist/shared/globals.d.ts` | Script-mode `.d.ts` that augments `window.Electron` globally — referenced via `/// <reference types="@devioarts/capacitor-electron/globals" />`, injected automatically by `cap-electron sync` |
 
 ---
 
@@ -123,9 +124,11 @@ A main-process change (`main.cjs`) requires a full Electron process restart — 
 The package build (`scripts/build.ts`) uses esbuild for speed and tsc for type declarations:
 
 ```
-src/shared/types.ts  ──tsc→   dist/shared/types.d.ts
-                     ──esbuild→ dist/shared/types.js  (ESM)
-                     ──esbuild→ dist/shared/types.cjs (CJS)
+src/shared/types.ts     ──tsc→    dist/shared/types.d.ts
+                        ──esbuild→ dist/shared/types.js  (ESM)
+                        ──esbuild→ dist/shared/types.cjs (CJS)
+
+src/shared/globals.d.ts ──copy→   dist/shared/globals.d.ts  (ambient, no JS counterpart)
 
 src/cli/*.ts  ──esbuild bundled→ dist/cli/*.js  (Node ESM, externals: all node_modules)
 
