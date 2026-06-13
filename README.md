@@ -38,7 +38,7 @@ Installs the `electron/` folder into your project, then automatically runs `sync
 npx cap-electron scripts
 ```
 
-Adds `electron:sync`, `electron:copy`, `electron:open` to your root `package.json`.
+Adds `electron:sync`, `electron:copy` and `electron:open` to your root `package.json`.
 
 ### 3. Start developing
 

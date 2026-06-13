@@ -15,7 +15,6 @@ const SCRIPTS: Record<string, string> = {
   'electron:sync': 'cap-electron sync',
   'electron:copy': 'cap-electron copy',
   'electron:open': 'cap-electron open',
-  'electron:dev':  'cap-electron copy && cap-electron open',
 };
 
 const pkgPath = path.join(capacitorRoot, 'package.json');
