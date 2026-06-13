@@ -1,0 +1,245 @@
+# Adding Electron Support to a Capacitor Plugin
+
+A Capacitor plugin is normally created with:
+
+```bash
+npm init @capacitor/plugin@latest
+```
+
+That gives you iOS, Android and Web implementations. To also support Electron (via
+`@devioarts/capacitor-electron`), you add an `electron/` folder and three small changes
+to `package.json`. Nothing else.
+
+---
+
+## How it works
+
+`cap-electron sync` reads every installed npm package that has a
+`capacitor.electron.src` field in its `package.json`. For each one it loads
+`electron/dist/plugin-settings.js` and auto-generates:
+
+| Generated file | What it does |
+|---|---|
+| `src/generated/electron-plugins-auto.ts` | Preload bridge — tells the renderer which plugins exist |
+| `src/generated/electron-main-auto.ts` | Main-process wiring — calls `ipcMain.handle` for every method |
+
+You write the plugin class with async methods. The IPC wiring is generated for you.
+
+---
+
+## File structure to add
+
+```
+your-plugin/
+├── electron/                        ← add this whole folder
+│   ├── src/
+│   │   ├── index.ts                 ← plugin class (main-process implementation)
+│   │   └── plugin-settings.ts      ← descriptor read by cap-electron sync
+│   ├── types-public/
+│   │   └── index.d.ts              ← published type declarations
+│   ├── rollup.config.mjs           ← bundles to electron/dist/
+│   └── tsconfig.json
+└── package.json                     ← add 3 things (see below)
+```
+
+---
+
+## 1. `electron/src/plugin-settings.ts`
+
+This is the most important file — `cap-electron sync` reads it to generate the IPC bridge.
+
+```typescript
+import type { PluginSettings } from '@devioarts/capacitor-electron';
+
+export const pluginSettings: PluginSettings = {
+  // Class name — must match electron/src/index.ts AND the Capacitor plugin name
+  pluginClass: 'MyPlugin',
+
+  // Methods to bridge via IPC — must match method names in your class
+  pluginMethods: ['echo', 'getDataPath'],
+
+  // Events emitted from main → renderer (leave empty if unused)
+  pluginEvents: [],
+
+  // Omit to use the default (auto-register). Set false only for manual wiring.
+  // autoRegister: false,
+
+  // Import statement added to the generated electron-main-auto.ts
+  imports: ["import { MyPlugin } from 'my-plugin/electron'"],
+
+  // Runs before registerPlugin() — usually just app.whenReady()
+  beforeRegister: ['await app.whenReady()'],
+};
+```
+
+---
+
+## 2. `electron/src/index.ts`
+
+The actual plugin logic. Runs in the **main process** — full access to Node.js and Electron APIs.
+
+```typescript
+import { app } from 'electron';
+import * as path from 'path';
+
+export class MyPlugin {
+  async echo(opts: { value: string }): Promise<{ value: string }> {
+    return { value: opts.value };
+  }
+
+  async getDataPath(): Promise<{ path: string }> {
+    return { path: path.join(app.getPath('userData'), 'MyPlugin') };
+  }
+}
+```
+
+**Rules:**
+- Methods must be `async`.
+- Options come as plain JSON objects — no class instances, no functions, no `undefined`.
+- Errors thrown inside a method are caught by the IPC bridge and forwarded to the renderer.
+
+---
+
+## 3. `electron/tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["es2020"],
+    "outDir": "build",
+    "rootDir": "src",
+    "declaration": true,
+    "strict": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}
+```
+
+> If you need to import types from the plugin's main `src/` folder, change
+> `rootDir` to `".."` (project root) and adjust rollup inputs accordingly.
+> See `@devioarts/capacitor-sqlite` for a real example.
+
+---
+
+## 4. `electron/rollup.config.mjs`
+
+Bundles the tsc output (`electron/build/`) into distributable CJS files (`electron/dist/`).
+Run via the `build:electron` script below.
+
+```js
+export default [
+  {
+    input: 'electron/build/index.js',
+    output: [{ file: 'electron/dist/plugin.cjs.js', format: 'cjs', sourcemap: true }],
+    external: ['electron'],
+  },
+  {
+    input: 'electron/build/plugin-settings.js',
+    output: [{ file: 'electron/dist/plugin-settings.js', format: 'cjs', sourcemap: true }],
+    external: [],
+  },
+];
+```
+
+---
+
+## 5. `electron/types-public/index.d.ts`
+
+Hand-written type declarations. Published to npm so users get autocomplete when
+importing from `'my-plugin/electron'`.
+
+```typescript
+export declare class MyPlugin {
+  static readonly pluginMethods: readonly string[];
+  echo(opts: { value: string }): Promise<{ value: string }>;
+  getDataPath(): Promise<{ path: string }>;
+}
+```
+
+---
+
+## 6. `package.json` — three additions
+
+### a) Exports
+
+```json
+"exports": {
+  ".": { ... },
+  "./electron": {
+    "types": "./electron/types-public/index.d.ts",
+    "require": "./electron/dist/plugin.cjs.js",
+    "default": "./electron/dist/plugin.cjs.js"
+  },
+  "./electron/settings": {
+    "require": "./electron/dist/plugin-settings.js",
+    "default": "./electron/dist/plugin-settings.js"
+  }
+}
+```
+
+### b) Capacitor field
+
+```json
+"capacitor": {
+  "ios": { "src": "ios" },
+  "android": { "src": "android" },
+  "electron": { "src": "electron" }
+}
+```
+
+This is the flag `cap-electron sync` checks. Without it the plugin is ignored.
+
+### c) Build script + files
+
+```json
+"scripts": {
+  "build:electron": "tsc --project electron/tsconfig.json && rollup -c electron/rollup.config.mjs",
+  "verify:electron": "npm run build:electron"
+},
+"files": [
+  "dist/",
+  "electron/dist/",
+  "electron/types-public/"
+]
+```
+
+---
+
+## End-to-end flow
+
+```
+Plugin author:
+  npm run build:electron       → electron/dist/plugin.cjs.js
+                                 electron/dist/plugin-settings.js
+
+App developer:
+  npm install my-plugin
+  cap-electron sync            → reads electron/dist/plugin-settings.js
+                               → writes electron/src/generated/electron-plugins-auto.ts
+                               → writes electron/src/generated/electron-main-auto.ts
+  cap-electron open            → builds & launches Electron with the plugin wired in
+```
+
+---
+
+## Reference: full `plugin-settings.ts` fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `pluginClass` | `string` | ✓ | Class name in `electron/src/index.ts` |
+| `pluginMethods` | `string[]` | ✓ | Methods to expose via IPC |
+| `pluginEvents` | `string[]` | | Events emitted to renderer (reserved) |
+| `autoRegister` | `boolean` | | Default: `true`. Set `false` to skip auto-wiring. |
+| `imports` | `string[]` | | Import lines added to `electron-main-auto.ts` |
+| `beforeRegister` | `string[]` | | Statements run before `registerPlugin()` |
+
+---
+
+## Real example
+
+See [`@devioarts/capacitor-sqlite`](https://github.com/devioarts/capacitor-sqlite) —
+`electron/` folder is the reference implementation.

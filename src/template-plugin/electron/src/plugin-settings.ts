@@ -1,0 +1,22 @@
+import type { PluginSettings } from '@devioarts/capacitor-electron';
+
+export const pluginSettings: PluginSettings = {
+  // Must match the class name in index.ts AND the Capacitor registration name
+  pluginClass: '__PLUGIN_CLASS__',
+
+  // Methods that get an ipcMain.handle() bridge — must match class method names
+  pluginMethods: ['echo', 'getDataPath'],
+
+  // Events emitted from the main process to the renderer (optional)
+  pluginEvents: [],
+
+  // Set to false only if you need manual wiring in electron-main-user.ts.
+  // Default (omit this field): auto-registered by cap-electron sync.
+  // autoRegister: false,
+
+  // Import added to the generated electron-main-auto.ts
+  imports: ["import { __PLUGIN_CLASS__ } from '__PACKAGE_NAME__/electron'"],
+
+  // Statements run before registerPlugin() — deduplicated across all plugins
+  beforeRegister: ['await app.whenReady()'],
+};

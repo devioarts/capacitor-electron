@@ -1,0 +1,54 @@
+{
+  "name": "@devioarts/capacitor-electron",
+  "version": "0.0.1",
+  "description": "Capacitor platform for Electron — CLI tools and templates",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/shared/types.d.ts",
+      "import": "./dist/shared/types.js",
+      "require": "./dist/shared/types.cjs"
+    }
+  },
+  "types": "./dist/shared/types.d.ts",
+  "files": [
+    "dist",
+    "template-electron.tar.gz"
+  ],
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devioarts/capacitor-electron"
+  },
+  "bin": {
+    "cap-electron": "./dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "capacitor": {
+    "electron": {
+      "binary": "cap-electron",
+      "platforms": ["electron"]
+    }
+  },
+  "keywords": ["capacitor", "electron", "platform"],
+  "peerDependencies": {
+    "@capacitor/cli": ">=8.0.0"
+  },
+  "dependencies": {
+    "tar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
+    "@types/node": "^24.0.0",
+    "electron": "^42.4.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.8.0"
+  }
+}
