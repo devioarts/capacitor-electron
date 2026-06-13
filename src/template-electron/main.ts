@@ -1,9 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import './src/system/generated/electron-main-auto';
-import './src/user/electron-main-user';
-import { loadConfig } from './src/system/functions';
+import { loadConfig } from './src';
 
 const isDev = !app.isPackaged;
 
@@ -29,8 +27,9 @@ function setup(): void {
       height:         cfg.height         ?? 800,
       minWidth:       cfg.minWidth,
       minHeight:      cfg.minHeight,
-      fullscreen:     cfg.fullscreen     ?? cfg.FullScreen ?? false,
-      resizable:      cfg.resizable      !== false,
+      fullscreen:     cfg.fullscreen      ?? cfg.FullScreen ?? false,
+      fullscreenable: cfg.fullscreenable  !== false,
+      resizable:      cfg.resizable       !== false,
       center:         cfg.center         !== false,
       alwaysOnTop:    cfg.alwaysOnTop    ?? false,
       kiosk:          cfg.kiosk          ?? false,

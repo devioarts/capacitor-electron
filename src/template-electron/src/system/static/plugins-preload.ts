@@ -1,11 +1,11 @@
-// Electron preload — sets up CapacitorCustomPlatform automatically.
-// Import once from preload.ts: import './src/system/electron-plugins-preload';
-// Regenerate electron-plugins-auto.ts with: cap-electron sync
+// Sets up CapacitorCustomPlatform in the renderer via contextBridge.
+// Import once from preload.ts: import './src/system/static/plugins-preload';
+// Regenerate plugins-preload-auto.ts with: cap-electron sync
 
 import { contextBridge, ipcRenderer } from 'electron';
 
-import { pluginsAuto } from './generated/electron-plugins-auto';
-import { pluginsUser } from '../user/electron-plugins-user';
+import { pluginsAuto } from '../generated/plugins-preload-auto';
+import { pluginsUser } from '../../user/plugins-preload-user';
 
 type AnyFn = (...args: unknown[]) => unknown;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };

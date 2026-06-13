@@ -97,6 +97,7 @@ export default config;
 | `minWidth` | `number` | — | Minimum window width |
 | `minHeight` | `number` | — | Minimum window height |
 | `fullscreen` | `boolean` | `false` | Start in fullscreen |
+| `fullscreenable` | `boolean` | `true` | Allow fullscreen — enables the green button on macOS |
 | `center` | `boolean` | `true` | Center window on startup |
 | `resizable` | `boolean` | `true` | Allow window resizing |
 | `alwaysOnTop` | `boolean` | `false` | Keep window above all others |
@@ -108,6 +109,40 @@ export default config;
 | `icon` | `string` | — | Path to window icon relative to `electron/` (e.g. `assets/icon.png`) |
 | `openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
 | `sandbox` | `boolean` | Electron default | Renderer process sandbox — leave unset unless a plugin requires Node.js access in the preload |
+
+---
+
+## `window.Electron` — system IPC
+
+The template exposes a `window.Electron` bridge in the renderer (via the preload). TypeScript types are included automatically — just import from the package.
+
+```typescript
+import type { ElectronBridge } from '@devioarts/capacitor-electron';
+declare global { interface Window { Electron: ElectronBridge; } }
+```
+
+| Method | Returns | Description |
+|---|---|---|
+| `quit()` | `Promise<void>` | Quit the app |
+| `minimize()` | `Promise<void>` | Minimize the window |
+| `maximize()` | `Promise<void>` | Maximize the window |
+| `unmaximize()` | `Promise<void>` | Restore from maximized |
+| `toggleMaximize()` | `Promise<void>` | Toggle maximize/restore |
+| `isMaximized()` | `Promise<boolean>` | Returns true if window is maximized |
+| `setFullscreen(flag)` | `Promise<void>` | Enter or exit fullscreen |
+| `isFullscreen()` | `Promise<boolean>` | Returns true if in fullscreen |
+| `focus()` | `Promise<void>` | Bring window to focus |
+| `reload()` | `Promise<void>` | Reload the renderer |
+| `openDevTools()` | `Promise<void>` | Open DevTools |
+| `closeDevTools()` | `Promise<void>` | Close DevTools |
+| `getAppVersion()` | `Promise<string>` | Returns `app.getVersion()` |
+
+Usage example:
+
+```typescript
+await window.Electron.minimize();
+const version = await window.Electron.getAppVersion();
+```
 
 ---
 

@@ -13,6 +13,8 @@ export interface ElectronConfig {
   minHeight?: number;
   /** Start in fullscreen mode. Default: false */
   fullscreen?: boolean;
+  /** Allow the window to enter fullscreen (green button on macOS). Default: true */
+  fullscreenable?: boolean;
   /** @deprecated Use fullscreen */
   FullScreen?: boolean;
   /** Center the window on screen on startup. Default: true */
@@ -54,4 +56,26 @@ export interface AppConfig {
   appName?: string;
   backgroundColor?: string;
   plugins?: { Electron?: ElectronConfig };
+}
+
+export interface ElectronBridge {
+  quit():                       Promise<void>;
+  minimize():                   Promise<void>;
+  maximize():                   Promise<void>;
+  unmaximize():                 Promise<void>;
+  toggleMaximize():             Promise<void>;
+  isMaximized():                Promise<boolean>;
+  setFullscreen(flag: boolean): Promise<void>;
+  isFullscreen():               Promise<boolean>;
+  focus():                      Promise<void>;
+  reload():                     Promise<void>;
+  openDevTools():               Promise<void>;
+  closeDevTools():              Promise<void>;
+  getAppVersion():              Promise<string>;
+}
+
+declare global {
+  interface Window {
+    Electron: ElectronBridge;
+  }
 }

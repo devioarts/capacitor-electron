@@ -2,8 +2,8 @@
 // capacitor:sync — mirrors what "cap sync" does for other platforms:
 //   1. Processes capacitor.config → writes electron/capacitor.config.json
 //   2. Scans for Capacitor Electron plugins, generates:
-//        src/generated/electron-plugins-auto.ts  — preload plugin registry
-//        src/generated/electron-main-auto.ts     — main-process plugin registration
+//        src/system/generated/plugins-preload-auto.ts  — preload plugin registry
+//        src/system/generated/plugins-main-auto.ts     — main-process plugin registration
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -106,7 +106,7 @@ function generateElectronMainAuto(plugins: PluginEntry[]): string {
   parts.push(
     '',
     "import { app } from 'electron';",
-    "import { registerPlugin, AnyRecord } from '../../system/functions';",
+    "import { registerPlugin, AnyRecord } from '../static/functions';",
   );
 
   const extraImports = new Set<string>();
@@ -158,11 +158,11 @@ function main(): void {
     }
   }
 
-  fs.writeFileSync(path.join(generatedDir, 'electron-plugins-auto.ts'), generateElectronPluginsAuto(plugins));
-  console.log(`\nWritten: src/generated/electron-plugins-auto.ts`);
+  fs.writeFileSync(path.join(generatedDir, 'plugins-preload-auto.ts'), generateElectronPluginsAuto(plugins));
+  console.log(`\nWritten: src/system/generated/plugins-preload-auto.ts`);
 
-  fs.writeFileSync(path.join(generatedDir, 'electron-main-auto.ts'), generateElectronMainAuto(plugins));
-  console.log(`Written: src/generated/electron-main-auto.ts`);
+  fs.writeFileSync(path.join(generatedDir, 'plugins-main-auto.ts'), generateElectronMainAuto(plugins));
+  console.log(`Written: src/system/generated/plugins-main-auto.ts`);
 
   // ── 2. Capacitor config → electron/capacitor.config.json ─────────────────
 
@@ -216,12 +216,26 @@ function readCapacitorConfig(): Record<string, unknown> | null {
 
 function tsObjectToJson(src: string): Record<string, unknown> | null {
   src = src
-    .replace(/import\s+.*?;/gs, '')
-    .replace(/:\s*CapacitorConfig/g, '')
-    .replace(/const\s+\w+\s*=\s*/, '')
-    .replace(/export\s+default\s+\w+\s*;?/, '')
-    .replace(/(?<!:)\/\/[^\n]*/g, '')
+    // block comments first — may span lines containing import keywords
     .replace(/\/\*[\s\S]*?\*\//g, '')
+    // all import statements (regular + type, single-line + multi-line)
+    .replace(/import\s+.*?;/gs, '')
+    // line comments — negative lookbehind preserves URLs (http://)
+    .replace(/(?<!:)\/\/[^\n]*/g, '')
+    // type annotation on variable before `=`: `: CapacitorConfig`, `: Partial<Foo>`, `: A & B`
+    .replace(/:\s*[\w<>, [\]|&.]+(?=\s*=)/g, '')
+    // `as const` and `as TypeName<...>` — type assertions
+    .replace(/\bas\s+(?:const|[\w<>, [\]|&.]+)/g, '')
+    // `satisfies TypeName<...>`
+    .replace(/\bsatisfies\s+[\w<>, [\]|&.]+/g, '')
+    // `export default identifier;` — re-exported variable
+    .replace(/\bexport\s+default\s+\w+\s*;?/g, '')
+    // `export default` keyword before object literal
+    .replace(/\bexport\s+default\b/g, '')
+    // remaining `export` keyword (export const, export let, export var)
+    .replace(/\bexport\b\s*/g, '')
+    // variable declaration: `const/let/var name =`
+    .replace(/\b(?:const|let|var)\s+\w+\s*=\s*/g, '')
     .trim()
     .replace(/;$/, '');
 
@@ -240,5 +254,9 @@ function tsObjectToJson(src: string): Record<string, unknown> | null {
     .replace(/,(\s*[}\]])/g, '$1')
     .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
 
-  return JSON.parse(obj) as Record<string, unknown>;
+  try {
+    return JSON.parse(obj) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }

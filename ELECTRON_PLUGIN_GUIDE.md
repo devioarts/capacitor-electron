@@ -20,8 +20,8 @@ to `package.json`. Nothing else.
 
 | Generated file | What it does |
 |---|---|
-| `src/generated/electron-plugins-auto.ts` | Preload bridge — tells the renderer which plugins exist |
-| `src/generated/electron-main-auto.ts` | Main-process wiring — calls `ipcMain.handle` for every method |
+| `src/system/generated/plugins-preload-auto.ts` | Preload bridge — tells the renderer which plugins exist |
+| `src/system/generated/plugins-main-auto.ts` | Main-process wiring — calls `ipcMain.handle` for every method |
 
 You write the plugin class with async methods. The IPC wiring is generated for you.
 
@@ -219,8 +219,8 @@ Plugin author:
 App developer:
   npm install my-plugin
   cap-electron sync            → reads electron/dist/plugin-settings.js
-                               → writes electron/src/generated/electron-plugins-auto.ts
-                               → writes electron/src/generated/electron-main-auto.ts
+                               → writes electron/src/system/generated/plugins-preload-auto.ts
+                               → writes electron/src/system/generated/plugins-main-auto.ts
   cap-electron open            → builds & launches Electron with the plugin wired in
 ```
 
@@ -234,7 +234,7 @@ App developer:
 | `pluginMethods` | `string[]` | ✓ | Methods to expose via IPC |
 | `pluginEvents` | `string[]` | | Events emitted to renderer (reserved) |
 | `autoRegister` | `boolean` | | Default: `true`. Set `false` to skip auto-wiring. |
-| `imports` | `string[]` | | Import lines added to `electron-main-auto.ts` |
+| `imports` | `string[]` | | Import lines added to `plugins-main-auto.ts` |
 | `beforeRegister` | `string[]` | | Statements run before `registerPlugin()` |
 
 ---

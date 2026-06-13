@@ -12,6 +12,8 @@ export interface ElectronConfig {
   minHeight?: number;
   /** Start in fullscreen mode. Default: false */
   fullscreen?: boolean;
+  /** Allow the window to enter fullscreen (green button on macOS). Default: true */
+  fullscreenable?: boolean;
   /** Center the window on screen on startup. Default: true */
   center?: boolean;
   /** Allow the user to resize the window. Default: true */
