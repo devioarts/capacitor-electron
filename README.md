@@ -11,13 +11,13 @@ Capacitor platform plugin that adds Electron support to any Capacitor app. Provi
 ## Installation
 
 ```bash
-npm install github:devioarts/capacitor-electron
+npm install --save-dev github:devioarts/capacitor-electron
 ```
 
 Install a specific version:
 
 ```bash
-npm install github:devioarts/capacitor-electron#v0.0.1
+npm install --save-dev github:devioarts/capacitor-electron#v0.0.1
 ```
 
 > The package is built automatically during install via the `prepare` script — no separate build step needed.
