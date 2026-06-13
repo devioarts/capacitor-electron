@@ -1,5 +1,17 @@
 export * from './system/static/types';
 export * from './system/static/functions';
+export { setupUpdater } from './system/static/updater-main';
+export { setupShortcuts } from './system/static/shortcuts-main';
+export type { GlobalShortcutDef, MainAction } from './system/static/shortcuts-main';
+export { setupDeepLinking, flushDeepLink } from './system/static/deep-link-main';
+export { setupCSP } from './system/static/csp-main';
+export { setupMenu } from './system/static/menu-main';
+export { setupSplash } from './system/static/splash-main';
+export { loadWindowState, trackWindowState } from './system/static/window-state';
+export type { WindowBounds } from './system/static/window-state';
+export { setupTray } from './system/static/tray-main';
+export type { TrayMenuItemDef, TrayMenuAction } from './system/static/tray-main';
 import './system/static/system-main';
+import './system/static/local-notifications-main';
 import './system/generated/plugins-main-auto';
 import './user/plugins-main-user';

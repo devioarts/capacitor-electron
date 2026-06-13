@@ -125,6 +125,29 @@ export default config;
 | `icon` | `string` | — | Path to window icon relative to `electron/` (e.g. `assets/icon.png`) |
 | `openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
 | `sandbox` | `boolean` | Electron default | Renderer process sandbox — leave unset unless a plugin requires Node.js access in the preload |
+| `csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
+| `persistWindowState` | `boolean` | `false` | Remember window size and position between launches — see [docs/window-state-persistence.md](docs/window-state-persistence.md) |
+| `deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking (e.g. `'myapp'` enables `myapp://`) — see [docs/deep-linking.md](docs/deep-linking.md) |
+| `menu` | `false \| object` | Electron default | Native app menu — see [docs/app-menu.md](docs/app-menu.md) |
+| `tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
+| `splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
+| `autoUpdater` | `object` | — | Auto-updater settings — see [docs/auto-updater.md](docs/auto-updater.md) |
+
+---
+
+## Local notifications
+
+Built-in Electron support for `@capacitor/local-notifications` — install the plugin and it works without any extra configuration.
+
+```typescript
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+await LocalNotifications.schedule({
+  notifications: [{ id: 1, title: 'Hello', body: 'Native desktop notification.' }],
+});
+```
+
+See [docs/local-notifications.md](docs/local-notifications.md) for scheduling, events, and platform limitations.
 
 ---
 
@@ -162,6 +185,173 @@ const version = await window.Electron.getAppVersion();
 
 ---
 
+## Window state persistence
+
+Remember window size, position, and maximized state between launches:
+
+```typescript
+plugins: {
+  Electron: {
+    persistWindowState: true,
+  },
+},
+```
+
+State is written to `{userData}/window-state.json`. If a previously saved position falls outside all connected monitors (unplugged display), it is discarded and the window opens on the primary monitor instead.
+
+See [docs/window-state-persistence.md](docs/window-state-persistence.md) for details.
+
+---
+
+## Deep linking
+
+Register a custom URL protocol (`myapp://`) so the OS opens your app when the user clicks a matching link:
+
+```typescript
+plugins: {
+  Electron: {
+    deepLinkingScheme: 'myapp',
+  },
+},
+```
+
+```typescript
+// Renderer
+const unsub = window.Electron.onDeepLink?.(({ url }) => {
+  console.log('Opened via deep link:', url);
+});
+```
+
+See [docs/deep-linking.md](docs/deep-linking.md) for per-platform behaviour and macOS `electron-builder.js` setup.
+
+---
+
+## Global shortcuts
+
+Register system-wide keyboard shortcuts that fire even when the app has no focus. Define them in `electron/src/user/shortcuts.ts`:
+
+```typescript
+export const shortcuts: GlobalShortcutDef[] = [
+  { accelerator: 'CmdOrCtrl+Shift+K', event: 'open-search' },   // → renderer
+  { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggleWindow' },  // built-in action
+];
+```
+
+Shortcuts can also be registered at runtime from the renderer via `window.Electron.registerShortcut()`.
+
+See [docs/global-shortcuts.md](docs/global-shortcuts.md) for all variants, built-in actions, and the full renderer API.
+
+---
+
+## Tray menu
+
+Show a system-tray icon. Enable in `capacitor.config.ts` and customise the context menu in `electron/src/user/tray.ts`:
+
+```typescript
+plugins: {
+  Electron: {
+    tray: {
+      enabled: true,
+      icon: 'assets/tray.png',
+      tooltip: 'My App',
+      minimizeToTray: true,  // hide to tray on close instead of quitting
+    },
+  },
+},
+```
+
+See [docs/tray-menu.md](docs/tray-menu.md) for icon formats and context menu options.
+
+---
+
+## App menu
+
+Configure the native menu bar:
+
+```typescript
+plugins: {
+  Electron: {
+    menu: false,           // hide the menu bar
+    // or:
+    menu: { editMenu: true, viewMenu: false },  // custom menu
+  },
+},
+```
+
+See [docs/app-menu.md](docs/app-menu.md) for platform differences and all options.
+
+---
+
+## Content Security Policy
+
+CSP is applied automatically via response headers. In development a permissive policy is used (Vite HMR requires `unsafe-eval`). In production a strict policy is applied. Override when needed:
+
+```typescript
+plugins: {
+  Electron: {
+    csp: {
+      'default-src': "'self'",
+      'connect-src': ["'self'", 'https://api.example.com'],
+    },
+  },
+},
+```
+
+See [docs/content-security-policy.md](docs/content-security-policy.md) for defaults, common scenarios, and how to disable.
+
+---
+
+## Auto-updater
+
+Automatic updates via `electron-updater`. Only runs in production builds.
+
+```typescript
+plugins: {
+  Electron: {
+    autoUpdater: {
+      enabled: true,
+      channel: 'latest',
+      autoDownload: true,
+      autoInstallOnQuit: true,
+    },
+  },
+},
+```
+
+```typescript
+const unsub = window.Electron.updater.on('update-available', (info) => {
+  console.log('New version:', info.version);
+});
+
+await window.Electron.updater.checkForUpdate();
+```
+
+See [docs/auto-updater.md](docs/auto-updater.md) for full API reference and setup instructions.
+
+---
+
+## Splash screen
+
+A frameless window shown while the app is loading. Closes automatically when the renderer is ready.
+
+```typescript
+plugins: {
+  Electron: {
+    splashScreen: {
+      image: 'electron/assets/splash.png',
+      width: 600,
+      height: 400,
+      backgroundColor: '#1a1a2e',
+      minDisplayTime: 1500,
+    },
+  },
+},
+```
+
+`image` is required — the splash screen is disabled when omitted. See [docs/splash-screen.md](docs/splash-screen.md) for all options.
+
+---
+
 ## Distribution
 
 From the `electron/` directory:
@@ -182,6 +372,18 @@ Place app icons in `electron/assets/`:
 ## Adding Electron support to a Capacitor plugin
 
 See [ELECTRON_PLUGIN_GUIDE.md](ELECTRON_PLUGIN_GUIDE.md) for a step-by-step guide on how to add an `electron/` entry point to your plugin so that `cap-electron sync` picks it up automatically.
+
+---
+
+## Architecture
+
+For a technical overview of how the IPC bridge, plugin system, hot-reload, and build pipeline work, see [docs/architecture.md](docs/architecture.md).
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code style, and how to submit changes.
 
 ---
 

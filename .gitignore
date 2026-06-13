@@ -5,3 +5,4 @@ template-electron.tar.gz
 *.d.ts.map
 .DS_Store
 .idea/
+todo/

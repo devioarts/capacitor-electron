@@ -10,7 +10,24 @@ import { pluginsUser } from '../../user/plugins-preload-user';
 type AnyFn = (...args: unknown[]) => unknown;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 
-const plugins: Record<string, PluginEntry> = { ...pluginsAuto, ...pluginsUser };
+// Built-in system plugins — always available regardless of installed npm packages.
+// pluginsAuto (cap-electron sync) and pluginsUser can override these.
+const pluginsSystem: Record<string, PluginEntry> = {
+  LocalNotifications: {
+    methods: [
+      'schedule', 'cancel', 'getPending',
+      'getDeliveredNotifications', 'removeDeliveredNotifications', 'removeAllDeliveredNotifications',
+      'registerActionTypes',
+      'checkPermissions', 'requestPermissions',
+      'checkExactNotificationSetting', 'changeExactNotificationSetting',
+      'areEnabled',
+      'createChannel', 'deleteChannel', 'listChannels',
+    ],
+    events: ['localNotificationReceived', 'localNotificationActionPerformed'],
+  },
+};
+
+const plugins: Record<string, PluginEntry> = { ...pluginsSystem, ...pluginsAuto, ...pluginsUser };
 
 const bridged: Record<string, Record<string, AnyFn>> = {};
 

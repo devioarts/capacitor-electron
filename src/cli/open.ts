@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// capacitor:open — starts the full dev workflow:
+// cap-electron open — full dev workflow with hot-reload:
 //   • reads devUrl from electron/capacitor.config.json → plugins.Electron.devUrl (fallback localhost:5173)
 //   • starts npm run dev in project root if dev server isn't running yet
-//   • builds + watches electron sources
+//   • builds + watches electron sources via esbuild
 //   • waits for dev server, then launches Electron
+//   • auto-restarts Electron when main.cjs changes (main process rebuild)
+//   • signals renderer reload when preload.cjs changes (via dist/.dev-reload)
 
 import * as fs from 'fs';
 import * as net from 'net';
@@ -25,6 +27,7 @@ if (!fs.existsSync(electronDir)) {
 const { url: devUrl, host, port } = readDevUrl();
 
 const children: ChildProcess[] = [];
+const watchers: fs.FSWatcher[] = [];
 
 // Kill entire process group (pid < 0) so grandchildren (esbuild, vite) die too.
 // Falls back to child.kill() on platforms where process groups aren't supported.
@@ -34,6 +37,7 @@ function killGroup(child: ChildProcess): void {
 }
 
 function cleanup(): void {
+  for (const w of watchers) try { w.close(); } catch { /* ignore */ }
   for (const child of children) killGroup(child);
 }
 
@@ -72,14 +76,70 @@ if (!devRunning) {
 
 // ── 4. Launch Electron ────────────────────────────────────────────────────────
 
-console.log('[cap-electron] Launching Electron...');
 const electronCli = path.join(electronDir, 'node_modules', 'electron', 'cli.js');
-const electronProcess = spawnGroup(process.execPath, [electronCli, 'dist/main.cjs'], electronDir);
 
-electronProcess.on('exit', () => {
-  cleanup();
-  process.exit(0);
-});
+// Create the reload-signal file before Electron starts so main.ts can watch it immediately.
+const reloadSignal = path.join(electronDir, 'dist', '.dev-reload');
+fs.writeFileSync(reloadSignal, '0');
+
+let electronProc: ChildProcess | null = null;
+let intentionalRestart = false;
+
+function launchElectron(restart = false): void {
+  console.log(restart
+    ? '[cap-electron] Restarting Electron...'
+    : '[cap-electron] Launching Electron...'
+  );
+  electronProc = spawnGroup(process.execPath, [electronCli, 'dist/main.cjs'], electronDir);
+  electronProc.on('exit', (code) => {
+    if (intentionalRestart) {
+      intentionalRestart = false;
+      launchElectron(true);
+    } else {
+      cleanup();
+      process.exit(code ?? 0);
+    }
+  });
+}
+
+launchElectron();
+
+// ── 5. Hot-reload watchers ────────────────────────────────────────────────────
+
+let restartTimer: ReturnType<typeof setTimeout> | null = null;
+let reloadTimer:  ReturnType<typeof setTimeout> | null = null;
+
+function scheduleRestart(): void {
+  if (intentionalRestart) return;
+  if (restartTimer) clearTimeout(restartTimer);
+  // A restart covers any pending preload reload too.
+  if (reloadTimer) { clearTimeout(reloadTimer); reloadTimer = null; }
+  restartTimer = setTimeout(() => {
+    restartTimer = null;
+    console.log('[cap-electron] main.cjs changed — restarting Electron...');
+    intentionalRestart = true;
+    if (electronProc) killGroup(electronProc);
+  }, 400);
+}
+
+function scheduleReload(): void {
+  // Skip if a restart is already queued — restart picks up preload changes too.
+  if (intentionalRestart || restartTimer) return;
+  if (reloadTimer) clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(() => {
+    reloadTimer = null;
+    if (intentionalRestart || restartTimer) return;
+    console.log('[cap-electron] preload.cjs changed — reloading renderer...');
+    fs.writeFileSync(reloadSignal, Date.now().toString());
+  }, 400);
+}
+
+const mainCjs    = path.join(electronDir, 'dist', 'main.cjs');
+const preloadCjs = path.join(electronDir, 'dist', 'preload.cjs');
+
+// dist/ was just built — both files exist. Watch them for hot-reload.
+watchers.push(fs.watch(mainCjs,    scheduleRestart));
+watchers.push(fs.watch(preloadCjs, scheduleReload));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

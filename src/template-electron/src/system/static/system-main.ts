@@ -5,7 +5,15 @@ function win(e: IpcMainInvokeEvent): BrowserWindow | null {
 }
 
 ipcMain.handle('system:quit',           ()                  => { app.quit(); });
-ipcMain.handle('system:minimize',       (e)                 => { win(e)?.minimize(); });
+ipcMain.handle('system:minimize',       (e)                 => {
+  const w = win(e);
+  if (w?.isFullScreen()) {
+    w.once('leave-full-screen', () => w.minimize());
+    w.setFullScreen(false);
+  } else {
+    w?.minimize();
+  }
+});
 ipcMain.handle('system:maximize',       (e)                 => { win(e)?.maximize(); });
 ipcMain.handle('system:unmaximize',     (e)                 => { win(e)?.unmaximize(); });
 ipcMain.handle('system:toggleMaximize', (e)                 => { const w = win(e); w?.isMaximized() ? w.unmaximize() : w?.maximize(); });
