@@ -2,6 +2,16 @@ export interface ElectronConfig {
   /** URL of the dev server. cap-electron open reads this too. Default: http://localhost:5173 */
   devUrl?: string;
 
+  /**
+   * How the production build is served to the renderer.
+   * - `'file'`   — `win.loadFile()` directly from the filesystem (default). Simple, no server needed.
+   * - `'server'` — embedded HTTP server on 127.0.0.1 (random ephemeral port). Required when you
+   *                use Web APIs that need an HTTP origin: WebUSB, WebBluetooth, Web Serial,
+   *                getDisplayMedia with certain constraints, etc.
+   * Default: 'file'
+   */
+  serveMode?: 'file' | 'server';
+
   // ── Window geometry ────────────────────────────────────────────────────────
   /** Initial window width in px. Default: 1200 */
   width?: number;
@@ -49,7 +59,16 @@ export interface ElectronConfig {
     /** Include View menu (Reload, Toggle DevTools, Zoom). Default: true in dev, false in production */
     viewMenu?: boolean;
   };
-  /** Path to window icon relative to electron/ directory (e.g. 'assets/icon.png') */
+  /**
+   * Path to the **window icon** relative to the `electron/` directory (e.g. `'assets/icon.png'`).
+   * Sets the icon shown in the title bar and taskbar (Windows / Linux) and the macOS Dock at runtime.
+   *
+   * This is separate from the **app bundle icon** (shown in the OS file explorer, installer,
+   * Start Menu, or Finder). The bundle icon is configured in `electron-builder.js`:
+   * place `assets/icon.png` (min 512×512, recommended 1024×1024) in `electron/assets/` and
+   * electron-builder will auto-convert it to `.icns` for macOS and `.ico` for Windows.
+   * Per-platform overrides: `assets/icon.icns` / `assets/icon.ico` take priority if present.
+   */
   icon?: string;
 
   // ── Dev tools ──────────────────────────────────────────────────────────────
@@ -84,9 +103,20 @@ export interface ElectronConfig {
     minimizeToTray?: boolean;
   };
 
-  /** Splash screen shown while the app window is loading. Requires `image` — omitting it disables the splash screen entirely. */
+  /**
+   * Splash screen shown while the main app window loads in the background.
+   * The main window stays hidden until the splash closes, then both switch atomically.
+   * Requires `image` — omitting it disables the splash screen entirely.
+   */
   splashScreen?: {
-    /** Path to splash image relative to electron/ directory (e.g. 'assets/splash.png'). Required — omitting it disables the splash screen entirely. */
+    /**
+     * Path to the splash image relative to the `electron/` directory (e.g. `'assets/splash.png'`).
+     * Supports PNG, JPEG, WebP, GIF, and SVG. Required — omitting disables the splash screen.
+     *
+     * The image is loaded directly from disk (no base64 encoding), so even large files
+     * display instantly. Make sure `'assets/**'` is listed in `files` in `electron-builder.js`
+     * so the image is bundled into the packaged app.
+     */
     image?: string;
     /** Width of splash window in px. Default: 400 */
     width?: number;
@@ -94,7 +124,10 @@ export interface ElectronConfig {
     height?: number;
     /** Background color (any CSS color or 'transparent'). Default: '#ffffff' */
     backgroundColor?: string;
-    /** Minimum display time in ms — prevents a flash when the app loads quickly. Default: 0 */
+    /**
+     * Minimum time the splash stays visible in ms, even if the app loads faster.
+     * Prevents a flash when the page loads immediately. Default: 0
+     */
     minDisplayTime?: number;
   };
 

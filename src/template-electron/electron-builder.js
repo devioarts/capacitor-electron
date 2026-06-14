@@ -12,9 +12,17 @@ try {
   console.warn('[electron-builder] capacitor.config.json not found — using defaults. Run: cap-electron sync');
 }
 
-const icon = (file) => fs.existsSync(path.join(__dirname, 'assets', file))
+const asset = (file) => fs.existsSync(path.join(__dirname, 'assets', file))
   ? path.join('assets', file)
   : undefined;
+
+// App bundle icon (shown in OS file explorer, installer, Start Menu, Dock).
+// electron-builder auto-converts a single PNG (min 512×512, recommended 1024×1024) to
+// .icns (macOS) and .ico (Windows), so assets/icon.png alone is enough for all platforms.
+// Override per-platform with assets/icon.icns or assets/icon.ico if you need a custom file.
+const iconPng  = asset('icon.png');
+const iconIcns = asset('icon.icns') ?? iconPng;
+const iconIco  = asset('icon.ico')  ?? iconPng;
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
@@ -28,21 +36,25 @@ module.exports = {
     'dist/**',
     '!dist/**/*.map',
     'capacitor.config.json',
+    // assets/ is included so splash image and window icon are available at runtime.
+    // See: plugins.Electron.icon and plugins.Electron.splashScreen.image in capacitor.config.json
+    'assets/**',
   ],
   extraResources: [
     { from: '../dist', to: 'app', filter: ['**/*'] },
   ],
   mac: {
     category: 'public.app-category.utilities',
-    icon: icon('icon.icns'),
+    icon: iconIcns,
     target: [{ target: 'dmg', arch: ['arm64', 'x64'] }],
   },
   win: {
-    icon: icon('icon.ico'),
+    icon: iconIco,
     target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
+    signAndEditExecutable: false,
   },
   linux: {
-    icon: icon('icon.png'),
+    icon: iconPng,
     target: [{ target: 'AppImage', arch: ['x64'] }],
     category: 'Utility',
   },

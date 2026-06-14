@@ -1,7 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { trayMenu } from './src/user/tray';
 import { onReady } from './src/user/main-user';
@@ -9,6 +9,14 @@ import { onReady } from './src/user/main-user';
 const isDev = !app.isPackaged;
 
 const { appCfg, cfg } = loadConfig();
+
+const iconImage = (() => {
+  if (!cfg.icon) return undefined;
+  const p = path.join(__dirname, '..', cfg.icon);
+  if (!fs.existsSync(p)) return undefined;
+  const img = nativeImage.createFromPath(p);
+  return img.isEmpty() ? undefined : img;
+})();
 
 // Single instance lock — default on, opt-out with singleInstance: false
 if (cfg.singleInstance !== false && !app.requestSingleInstanceLock()) {
@@ -29,15 +37,11 @@ function setup(): void {
    * Create the main BrowserWindow and load the web app.
    *
    * @param hideSplash     Callback that closes the splash screen once the renderer
-   *                       fires `did-finish-load`. Pass `null` when reopening on macOS.
+   *                       finishes or fails loading. Pass `null` when reopening on macOS.
    * @param hookTrayWindow Callback from `setupTray` that wires up close-to-tray
    *                       behaviour. `null` when `minimizeToTray` is disabled.
    */
-  function createWindow(hideSplash?: (() => void) | null, hookTrayWindow?: ((win: BrowserWindow) => void) | null): void {
-    const iconPath = cfg.icon
-      ? path.join(__dirname, '..', cfg.icon)
-      : undefined;
-
+  function createWindow(hideSplash?: ((onClosed?: () => void) => void) | null, hookTrayWindow?: ((win: BrowserWindow) => void) | null): void {
     const windowState = loadWindowState(cfg);
 
     win = new BrowserWindow({
@@ -58,7 +62,8 @@ function setup(): void {
       autoHideMenuBar:  cfg.autoHideMenuBar ?? false,
       backgroundColor:  appCfg.backgroundColor,
       title:            appCfg.appName,
-      icon:             iconPath && fs.existsSync(iconPath) ? iconPath : undefined,
+      icon:             iconImage,
+      show:             !hideSplash,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration:  false,
@@ -71,6 +76,12 @@ function setup(): void {
       win.loadURL(cfg.devUrl ?? 'http://localhost:5173');
       if (cfg.openDevTools !== false) win.webContents.openDevTools();
       watchPreloadSignal(win);
+    } else if (cfg.serveMode === 'server') {
+      const w = win;
+      startLocalServer(path.join(process.resourcesPath, 'app')).then((port) => {
+        if (!w.isDestroyed()) w.loadURL(`http://127.0.0.1:${port}/index.html`);
+      });
+      if (cfg.openDevTools === true) win.webContents.openDevTools();
     } else {
       win.loadFile(path.join(process.resourcesPath, 'app', 'index.html'));
       if (cfg.openDevTools === true) win.webContents.openDevTools();
@@ -79,7 +90,17 @@ function setup(): void {
     if (windowState.isMaximized) win.maximize();
     if (cfg.persistWindowState) trackWindowState(win);
 
-    if (hideSplash) win.webContents.once('did-finish-load', hideSplash);
+    if (hideSplash) {
+      const hide = hideSplash;
+      const w = win;
+      const onLoad = () => {
+        w.webContents.off('did-finish-load', onLoad);
+        w.webContents.off('did-fail-load', onLoad);
+        hide(() => { if (!w.isDestroyed()) w.show(); });
+      };
+      w.webContents.once('did-finish-load', onLoad);
+      w.webContents.once('did-fail-load', onLoad);
+    }
     if (hookTrayWindow) hookTrayWindow(win);
 
     win.on('closed', () => { win = null; });
@@ -88,6 +109,7 @@ function setup(): void {
   app.whenReady().then(() => {
     setupCSP(cfg, isDev);
     setupMenu(cfg, isDev);
+    if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
     setupShortcuts(shortcuts, getWin);
     const hookTrayWindow = setupTray(cfg, getWin, trayMenu);
     const hideSplash = setupSplash(cfg);

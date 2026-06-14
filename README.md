@@ -132,7 +132,7 @@ export default config;
 | `frame` | `boolean` | `true` | Show native window frame and title bar (`false` = frameless) |
 | `titleBarStyle` | `string` | — | macOS title bar style: `default`, `hidden`, `hiddenInset`, `customButtonsOnHover` |
 | `autoHideMenuBar` | `boolean` | `false` | Auto-hide menu bar on Windows/Linux (press Alt to show) |
-| `icon` | `string` | — | Path to window icon relative to `electron/` (e.g. `assets/icon.png`) |
+| `icon` | `string` | — | Path to the **window icon** (title bar, taskbar, Dock) relative to `electron/` (e.g. `assets/icon.png`) — see [docs/icons.md](docs/icons.md) |
 | `openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
 | `sandbox` | `boolean` | Electron default | Renderer process sandbox — leave unset unless a plugin requires Node.js access in the preload |
 | `csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
@@ -469,10 +469,11 @@ npm run dist:win    # Windows — x64 NSIS installer
 npm run dist:linux  # Linux — x64 AppImage
 ```
 
-Place app icons in `electron/assets/`:
-- `icon.icns` — macOS
-- `icon.ico` — Windows
-- `icon.png` — Linux
+Place `assets/icon.png` (**1024×1024** recommended) in `electron/assets/`.
+electron-builder auto-converts it to `.icns` (macOS) and `.ico` (Windows).
+For pre-built overrides add `assets/icon.icns` or `assets/icon.ico` — they take priority.
+
+See [docs/icons.md](docs/icons.md) for details on window icon vs. bundle icon, platform behavior, and the Windows icon cache.
 
 ---
 

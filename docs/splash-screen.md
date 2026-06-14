@@ -1,6 +1,7 @@
 # Splash screen
 
-A frameless window shown while the main app window is loading. Closes automatically when the renderer fires `did-finish-load`.
+A frameless window shown while the main app loads in the background. The main window starts
+hidden and appears atomically when the splash closes — users never see a partially loaded UI.
 
 ---
 
@@ -8,7 +9,7 @@ A frameless window shown while the main app window is loading. Closes automatica
 
 ### 1. Add an image
 
-Place a splash image anywhere under your project, conventionally in `electron/assets/`:
+Place a splash image in `electron/assets/`:
 
 ```
 electron/
@@ -16,31 +17,50 @@ electron/
     splash.png
 ```
 
-Supported formats: `png`, `jpg`/`jpeg`, `svg`, `gif`, `webp`.
+Supported formats: PNG, JPEG, WebP, GIF, SVG. The image is loaded directly from disk —
+no base64 encoding — so even a multi-megabyte file displays instantly.
 
-### 2. Configure in `capacitor.config.ts`
+### 2. Add `assets/**` to `electron-builder.js`
 
-```typescript
-plugins: {
-  Electron: {
-    splashScreen: {
-      image: 'assets/splash.png',
-      width: 600,
-      height: 400,
-      backgroundColor: '#1a1a2e',
-      minDisplayTime: 1500,
-    },
-  },
-},
+The `assets/` directory must be included in the packaged app so the image is accessible
+at runtime. Open `electron/electron-builder.js` and verify `files` contains:
+
+```js
+files: [
+  'dist/**',
+  '!dist/**/*.map',
+  'capacitor.config.json',
+  'assets/**',   // ← required for splash image and window icon
+],
 ```
 
-That's it — no code changes in `main.ts` or the renderer.
+This is already present in freshly scaffolded projects.
+
+### 3. Configure in `capacitor.config.json`
+
+```json
+{
+  "plugins": {
+    "Electron": {
+      "splashScreen": {
+        "image": "assets/splash.png",
+        "width": 600,
+        "height": 400,
+        "backgroundColor": "#1a1a2e",
+        "minDisplayTime": 1500
+      }
+    }
+  }
+}
+```
+
+That's it — no code changes required in `main.ts` or the renderer.
 
 ---
 
 ## Configuration options
 
-All options live under `plugins.Electron.splashScreen` in `capacitor.config.ts`.
+All options live under `plugins.Electron.splashScreen` in `capacitor.config.json`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -52,10 +72,39 @@ All options live under `plugins.Electron.splashScreen` in `capacitor.config.ts`.
 
 ---
 
+## How it works
+
+1. Splash window appears immediately on startup.
+2. Main app window is created hidden in the background and starts loading.
+3. Once the page finishes loading (or fails), the `minDisplayTime` countdown is checked:
+   - If time is still remaining, the splash stays until the minimum is reached.
+   - Then the splash closes and the main window appears — simultaneously.
+
+The main window never shows before the splash closes, so there is no visible overlap.
+
+---
+
 ## Notes
 
 - The splash window is frameless, always-on-top, centered, and excluded from the taskbar.
 - The image is displayed centered with `object-fit: contain` — it scales to fit without cropping.
-- `minDisplayTime` is a floor, not an exact duration. If the app takes longer to load, the splash stays visible until load completes.
-- `backgroundColor: 'transparent'` enables a transparent window, which works best with a `png` that has an alpha channel.
-- The splash is shown in both development and production. Set `splashScreen` only in the environments where you want it, or conditionally configure it in `capacitor.config.ts`.
+- `minDisplayTime` is a floor, not a fixed duration. If the app takes longer to load, the
+  splash stays until loading completes, even if that exceeds `minDisplayTime`.
+- `backgroundColor: 'transparent'` enables a transparent window — works best with a PNG
+  that has an alpha channel.
+- The splash is shown in both development and production. Configure `splashScreen` only
+  in environments where you want it, or conditionally in `capacitor.config.ts`:
+
+  ```ts
+  const isDev = process.env.NODE_ENV === 'development';
+  export default defineConfig({
+    plugins: {
+      Electron: {
+        splashScreen: isDev ? undefined : {
+          image: 'assets/splash.png',
+          minDisplayTime: 2000,
+        },
+      },
+    },
+  });
+  ```

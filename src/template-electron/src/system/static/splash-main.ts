@@ -1,21 +1,23 @@
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
+import { pathToFileURL } from 'url';
 import type { ElectronConfig } from './types';
 
 /**
  * Create a splash-screen window and return a callback that closes it.
  *
  * The splash is a frameless, always-on-top, centered window that displays `cfg.splashScreen.image`.
- * Pass the returned callback to `win.webContents.once('did-finish-load', hideSplash)` so the splash
- * closes automatically when the main renderer finishes loading.
+ * The image is served via a temp HTML file that references it as a file:// URL so Chromium loads
+ * it directly from disk — no base64 encoding overhead for large images.
  *
  * Returns `null` when `cfg.splashScreen` is not configured or has no `image` path.
  *
  * @param cfg  Electron platform config read from `capacitor.config.json`.
- * @returns    A `hideSplash()` function, or `null` if the splash is disabled.
+ * @returns    A `hideSplash(onClosed?)` function, or `null` if the splash is disabled.
  */
-export function setupSplash(cfg: ElectronConfig): (() => void) | null {
+export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => void) | null {
   if (!cfg.splashScreen) return null;
 
   const {
@@ -28,10 +30,15 @@ export function setupSplash(cfg: ElectronConfig): (() => void) | null {
 
   if (!image) return null;
 
-  const imageSrc = resolveImage(image);
-  if (!imageSrc) return null;
+  const abs = path.join(__dirname, '..', image);
+  if (!fs.existsSync(abs)) return null;
 
-  const html = buildHTML(backgroundColor, imageSrc);
+  const htmlPath = path.join(os.tmpdir(), `cap-electron-splash-${Date.now()}.html`);
+  try {
+    fs.writeFileSync(htmlPath, buildHTML(backgroundColor, pathToFileURL(abs).href), 'utf-8');
+  } catch {
+    return null;
+  }
 
   const splash = new BrowserWindow({
     width,
@@ -46,39 +53,21 @@ export function setupSplash(cfg: ElectronConfig): (() => void) | null {
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
 
-  splash.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  splash.loadFile(htmlPath);
 
   const shownAt = Date.now();
 
-  return function hideSplash(): void {
+  return function hideSplash(onClosed?: () => void): void {
     const remaining = minDisplayTime - (Date.now() - shownAt);
-    const close = () => { if (!splash.isDestroyed()) splash.close(); };
+    const close = () => {
+      if (!splash.isDestroyed()) splash.close();
+      onClosed?.();
+    };
     if (remaining > 0) setTimeout(close, remaining);
     else close();
   };
 }
 
-function resolveImage(rel: string): string {
-  const abs = path.join(__dirname, '..', rel);
-  if (!fs.existsSync(abs)) return '';
-  try {
-    const data = fs.readFileSync(abs);
-    const ext = path.extname(abs).slice(1).toLowerCase();
-    const mime =
-      ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
-      ext === 'png'  ? 'image/png'       :
-      ext === 'svg'  ? 'image/svg+xml'   :
-      ext === 'gif'  ? 'image/gif'       :
-      ext === 'webp' ? 'image/webp'      : 'image/png';
-    return `data:${mime};base64,${data.toString('base64')}`;
-  } catch {
-    return '';
-  }
-}
-
-function buildHTML(bg: string, imageSrc: string): string {
-  const imgTag = imageSrc
-    ? `<img src="${imageSrc}" style="max-width:100%;max-height:100%;object-fit:contain">`
-    : '';
-  return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;background:${bg};overflow:hidden">${imgTag}</body></html>`;
+function buildHTML(bg: string, imageUrl: string): string {
+  return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;background:${bg};overflow:hidden"><img src="${imageUrl}" style="max-width:100%;max-height:100%;object-fit:contain"></body></html>`;
 }
