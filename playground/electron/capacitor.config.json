@@ -1,0 +1,5 @@
+{
+  "appId": "com.devioarts.example.electron",
+  "appName": "cap-electron-playground",
+  "webDir": "dist"
+}

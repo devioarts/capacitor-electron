@@ -1,0 +1,119 @@
+import React from "react";
+import { Button } from "../components/Button.tsx";
+import { useLogger } from "../components/Logger.tsx";
+
+export const PageWindow: React.FC = () => {
+  const log = useLogger();
+  const E = window.Electron;
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Stav okna</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="primary" onClick={async () => {
+            try {
+              const v = await E.isMaximized();
+              log.info("Electron", "isMaximized", v);
+            } catch (e) { log.error("Electron", "isMaximized", e); }
+          }}>
+            isMaximized()
+          </Button>
+
+          <Button type="primary" onClick={async () => {
+            try {
+              const v = await E.isFullscreen();
+              log.info("Electron", "isFullscreen", v);
+            } catch (e) { log.error("Electron", "isFullscreen", e); }
+          }}>
+            isFullscreen()
+          </Button>
+
+          <Button type="primary" onClick={async () => {
+            try {
+              const v = await E.getAppVersion();
+              log.info("Electron", "getAppVersion", v);
+            } catch (e) { log.error("Electron", "getAppVersion", e); }
+          }}>
+            getAppVersion()
+          </Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Ovládání okna</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="neutral" onClick={async () => {
+            try { await E.minimize(); log.info("Electron", "minimize", "done"); }
+            catch (e) { log.error("Electron", "minimize", e); }
+          }}>minimize()</Button>
+
+          <Button type="neutral" onClick={async () => {
+            try { await E.maximize(); log.info("Electron", "maximize", "done"); }
+            catch (e) { log.error("Electron", "maximize", e); }
+          }}>maximize()</Button>
+
+          <Button type="neutral" onClick={async () => {
+            try { await E.unmaximize(); log.info("Electron", "unmaximize", "done"); }
+            catch (e) { log.error("Electron", "unmaximize", e); }
+          }}>unmaximize()</Button>
+
+          <Button type="neutral" onClick={async () => {
+            try { await E.toggleMaximize(); log.info("Electron", "toggleMaximize", "done"); }
+            catch (e) { log.error("Electron", "toggleMaximize", e); }
+          }}>toggleMaximize()</Button>
+
+          <Button type="neutral" onClick={async () => {
+            try { await E.focus(); log.info("Electron", "focus", "done"); }
+            catch (e) { log.error("Electron", "focus", e); }
+          }}>focus()</Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Fullscreen</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="yellow" onClick={async () => {
+            try { await E.setFullscreen(true); log.info("Electron", "setFullscreen(true)", "done"); }
+            catch (e) { log.error("Electron", "setFullscreen", e); }
+          }}>setFullscreen(true)</Button>
+
+          <Button type="yellow" onClick={async () => {
+            try { await E.setFullscreen(false); log.info("Electron", "setFullscreen(false)", "done"); }
+            catch (e) { log.error("Electron", "setFullscreen", e); }
+          }}>setFullscreen(false)</Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">DevTools</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="neutral" onClick={async () => {
+            try { await E.openDevTools(); log.info("Electron", "openDevTools", "done"); }
+            catch (e) { log.error("Electron", "openDevTools", e); }
+          }}>openDevTools()</Button>
+
+          <Button type="neutral" onClick={async () => {
+            try { await E.closeDevTools(); log.info("Electron", "closeDevTools", "done"); }
+            catch (e) { log.error("Electron", "closeDevTools", e); }
+          }}>closeDevTools()</Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Nebezpečné akce</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="red" onClick={async () => {
+            try { await E.reload(); log.info("Electron", "reload", "done"); }
+            catch (e) { log.error("Electron", "reload", e); }
+          }}>reload() ⚠</Button>
+
+          <Button type="red" onClick={async () => {
+            try { await E.quit(); }
+            catch (e) { log.error("Electron", "quit", e); }
+          }}>quit() ⚠</Button>
+        </div>
+      </section>
+    </div>
+  );
+};
