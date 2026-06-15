@@ -2,12 +2,20 @@
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { registerPlugin, type AnyRecord } from './functions';
+import { registerPlugin, loadConfig, type AnyRecord } from './functions';
 
 // ── In-memory store + disk persistence ───────────────────────────────────────
 
+// Namespace by appId so multiple Capacitor apps in dev mode don't share storage.
+// In production each app already has its own userData; this also protects dev.
+const { appCfg } = loadConfig();
+const appId      = appCfg.appId ?? app.getName();
+
 const store     = new Map<string, string>();
-const storePath = path.join(app.getPath('userData'), 'preferences.json');
+const storeDir  = path.join(app.getPath('userData'), 'CapacitorStorage', appId);
+const storePath = path.join(storeDir, 'preferences.json');
+
+fs.mkdirSync(storeDir, { recursive: true });
 
 try {
   const raw = JSON.parse(fs.readFileSync(storePath, 'utf-8')) as Record<string, unknown>;

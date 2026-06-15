@@ -92,7 +92,7 @@ class Filesystem {
     try {
       if (recursive) await fs.mkdir(path.dirname(abs), { recursive: true });
       await fs.writeFile(abs, enc ? data : Buffer.from(data, 'base64'), enc ? { encoding: enc } : undefined);
-      return { uri: toUri(abs) };
+      return { uri: toUri(abs), path: abs };
     } catch (e) { return mapError(e, 'writeFile'); }
   }
 
@@ -131,21 +131,22 @@ class Filesystem {
       const files = await Promise.all(entries.map(async e => {
         const ep = path.join(abs, e.name);
         const st = await fs.stat(ep);
-        return { name: e.name, type: e.isDirectory() ? 'directory' : 'file', size: st.size, mtime: st.mtimeMs, ctime: st.ctimeMs, uri: toUri(ep) };
+        return { name: e.name, type: e.isDirectory() ? 'directory' : 'file', size: st.size, mtime: st.mtimeMs, ctime: st.ctimeMs, uri: toUri(ep), path: ep };
       }));
       return { files };
     } catch (e) { return mapError(e, 'readdir'); }
   }
 
-  async getUri(opts: AnyRecord): Promise<{ uri: string }> {
-    return { uri: toUri(resolvePath(opts['path'] as string, opts['directory'] as string | undefined)) };
+  async getUri(opts: AnyRecord): Promise<{ uri: string; path: string }> {
+    const abs = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
+    return { uri: toUri(abs), path: abs };
   }
 
-  async stat(opts: AnyRecord): Promise<{ type: string; size: number; mtime: number; ctime: number; uri: string }> {
+  async stat(opts: AnyRecord): Promise<{ type: string; size: number; mtime: number; ctime: number; uri: string; path: string }> {
     const abs = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
     try {
       const st = await fs.stat(abs);
-      return { type: st.isDirectory() ? 'directory' : 'file', size: st.size, mtime: st.mtimeMs, ctime: st.ctimeMs, uri: toUri(abs) };
+      return { type: st.isDirectory() ? 'directory' : 'file', size: st.size, mtime: st.mtimeMs, ctime: st.ctimeMs, uri: toUri(abs), path: abs };
     } catch (e) { return mapError(e, 'stat'); }
   }
 
@@ -155,16 +156,16 @@ class Filesystem {
     try { await fs.rename(from, to); } catch (e) { return mapError(e, 'rename'); }
   }
 
-  async copy(opts: AnyRecord): Promise<{ uri: string }> {
+  async copy(opts: AnyRecord): Promise<{ uri: string; path: string }> {
     const from = resolvePath(opts['from'] as string, opts['fromDirectory'] as string | undefined);
     const to   = resolvePath(opts['to']   as string, opts['toDirectory']   as string | undefined);
     try {
       await fs.copyFile(from, to);
-      return { uri: toUri(to) };
+      return { uri: toUri(to), path: to };
     } catch (e) { return mapError(e, 'copy'); }
   }
 
-  async downloadFile(opts: AnyRecord): Promise<{ path: string }> {
+  async downloadFile(opts: AnyRecord): Promise<{ path: string; uri: string }> {
     const url     = opts['url']  as string;
     const dest    = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
     const headers = (opts['headers'] as Record<string, string> | undefined) ?? {};
@@ -174,7 +175,7 @@ class Filesystem {
       const buf = Buffer.from(await res.arrayBuffer());
       await fs.mkdir(path.dirname(dest), { recursive: true });
       await fs.writeFile(dest, buf);
-      return { path: dest };
+      return { path: dest, uri: toUri(dest) };
     } catch (e) { return mapError(e, 'downloadFile'); }
   }
 }

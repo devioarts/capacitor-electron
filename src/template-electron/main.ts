@@ -10,6 +10,11 @@ const isDev = !app.isPackaged;
 
 const { appCfg, cfg } = loadConfig();
 
+// Set app identity before app.ready so Windows Action Center and macOS dock
+// show the correct name. On Windows, AUMID must also be set before ready.
+if (appCfg.appName) app.setName(appCfg.appName);
+if (process.platform === 'win32' && appCfg.appId) app.setAppUserModelId(appCfg.appId);
+
 const iconImage = (() => {
   if (!cfg.icon) return undefined;
   const p = path.join(__dirname, '..', 'assets', cfg.icon);

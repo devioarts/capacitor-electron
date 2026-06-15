@@ -8,7 +8,9 @@ function getMainWindow(): BrowserWindow | undefined {
 
 function parseLaunchUrl(): string | null {
   const argv = process.argv.slice(app.isPackaged ? 1 : 2);
-  return argv.find(a => a.includes('://')) ?? null;
+  const deepLink = argv.find(a => /^[a-z][a-z0-9+\-.]*:\/\//i.test(a) && !a.startsWith('http'));
+  if (deepLink) return deepLink;
+  return getMainWindow()?.webContents.getURL() ?? null;
 }
 
 // ── Plugin class ──────────────────────────────────────────────────────────────

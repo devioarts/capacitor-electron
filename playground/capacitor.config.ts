@@ -1,9 +1,35 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.devioarts.example.electron',
+  appId:   'com.devioarts.example.electron',
   appName: 'cap-electron-playground',
-  webDir: 'dist'
+  webDir:  'dist',
+  plugins: {
+    Electron: {
+      splashScreen: {
+        image:           'splash.svg',
+        width:           400,
+        height:          280,
+        backgroundColor: 'transparent',
+        minDisplayTime:  1200,
+      },
+      menu: {
+        editMenu: false,
+        viewMenu: true,
+      },
+      tray: {
+        enabled:        true,
+        icon:           'tray.png',
+        tooltip:        'cap-electron playground',
+        minimizeToTray: false,
+      },
+      deepLinkingScheme: 'capelectron',
+      width:  1200,
+      height: 800,
+      center: true,
+      icon:   'icon.png',
+    },
+  },
 };
 
 export default config;

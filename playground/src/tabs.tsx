@@ -9,6 +9,7 @@ import { PageNotifications } from "./pages/PageNotifications.tsx";
 import { PageBrowser }       from "./pages/PageBrowser.tsx";
 import { PageWindow }        from "./pages/PageWindow.tsx";
 import { PageShortcuts }     from "./pages/PageShortcuts.tsx";
+import { PageDeepLink }      from "./pages/PageDeepLink.tsx";
 
 export type TabItem = {
 	id: string;
@@ -27,4 +28,5 @@ export const tabs: TabItem[] = [
 	{ id: 'browser',       label: 'Browser',       page: <PageBrowser /> },
 	{ id: 'window',        label: 'Window',        page: <PageWindow /> },
 	{ id: 'shortcuts',     label: 'Shortcuts',     page: <PageShortcuts /> },
+	{ id: 'deeplink',      label: 'Deep Link',     page: <PageDeepLink /> },
 ];

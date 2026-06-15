@@ -7,6 +7,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync, execSync } from 'child_process';
 import { extract } from 'tar';
+import { CAP_ELECTRON_INIT_JS } from './electron-init-content.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +36,15 @@ console.log('[cap-electron] Adding Electron platform...');
 fs.mkdirSync(electronDir, { recursive: true });
 
 await extract({ file: templatePath, cwd: electronDir, strip: 1 });
+
+// Ensure public/electron-init.js exists so the Vite dev server can serve it.
+// cap-electron copy will also write/update it on every build.
+const publicInit = path.join(capacitorRoot, 'public', 'electron-init.js');
+if (!fs.existsSync(publicInit)) {
+  fs.mkdirSync(path.dirname(publicInit), { recursive: true });
+  fs.writeFileSync(publicInit, CAP_ELECTRON_INIT_JS, 'utf-8');
+  console.log('[cap-electron] Created public/electron-init.js');
+}
 
 const { appName, appId } = readAppMeta(capacitorRoot);
 

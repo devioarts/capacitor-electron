@@ -1,18 +1,5 @@
 import { Notification, BrowserWindow, app } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
 import { emitPluginEvent, registerPlugin, type AnyRecord } from './functions';
-
-// Windows: Action Center requires an App User Model ID set before the app is ready.
-// We read appId from capacitor.config.json which is written by cap-electron sync.
-if (process.platform === 'win32') {
-  try {
-    const cfg = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '..', 'capacitor.config.json'), 'utf-8')
-    ) as { appId?: string };
-    if (cfg.appId) app.setAppUserModelId(cfg.appId);
-  } catch { /* config not yet present — AUMID stays as default */ }
-}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

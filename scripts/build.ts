@@ -62,7 +62,7 @@ try {
   });
 
   console.log('→ CLI scripts (esbuild ESM)');
-  const cliEntries = ['index', 'add', 'copy', 'update', 'open', 'scripts', 'kill', 'upgrade'].map(
+  const cliEntries = ['index', 'add', 'copy', 'update', 'open', 'scripts', 'kill', 'upgrade', 'electron-init-content'].map(
     (n) => join(root, 'src', 'cli', `${n}.ts`),
   );
   await build({
@@ -75,6 +75,12 @@ try {
     packages: 'external',
     sourcemap: true,
   });
+
+  console.log('→ electron-init.js (copy)');
+  await copyFile(
+    join(root, 'src', 'template-electron', 'src', 'system', 'js', 'electron-init.js'),
+    join(root, 'dist', 'electron-init.js'),
+  );
 
   console.log('→ packing template-electron.tar.gz');
   // Exclude generated/installed artifacts — users get these via npm install + npm run build.
