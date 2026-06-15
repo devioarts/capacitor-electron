@@ -12,7 +12,7 @@ const { appCfg, cfg } = loadConfig();
 
 const iconImage = (() => {
   if (!cfg.icon) return undefined;
-  const p = path.join(__dirname, '..', cfg.icon);
+  const p = path.join(__dirname, '..', 'assets', cfg.icon);
   if (!fs.existsSync(p)) return undefined;
   const img = nativeImage.createFromPath(p);
   return img.isEmpty() ? undefined : img;

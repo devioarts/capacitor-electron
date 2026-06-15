@@ -14,36 +14,22 @@ Place a splash image in `electron/assets/`:
 ```
 electron/
   assets/
-    splash.png
+    splash.png   ← or any filename / format you like
 ```
 
 Supported formats: PNG, JPEG, WebP, GIF, SVG. The image is loaded directly from disk —
 no base64 encoding — so even a multi-megabyte file displays instantly.
 
-### 2. Add `assets/**` to `electron-builder.js`
+### 2. Configure in `capacitor.config.json`
 
-The `assets/` directory must be included in the packaged app so the image is accessible
-at runtime. Open `electron/electron-builder.js` and verify `files` contains:
-
-```js
-files: [
-  'dist/**',
-  '!dist/**/*.map',
-  'capacitor.config.json',
-  'assets/**',   // ← required for splash image and window icon
-],
-```
-
-This is already present in freshly scaffolded projects.
-
-### 3. Configure in `capacitor.config.json`
+Use just the **filename** — `assets/` is always the base directory:
 
 ```json
 {
   "plugins": {
     "Electron": {
       "splashScreen": {
-        "image": "assets/splash.png",
+        "image": "splash.png",
         "width": 600,
         "height": 400,
         "backgroundColor": "#1a1a2e",
@@ -64,7 +50,7 @@ All options live under `plugins.Electron.splashScreen` in `capacitor.config.json
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `image` | `string` | — | **Required.** Path to the splash image relative to the `electron/` directory (e.g. `assets/splash.png`). Omitting this disables the splash screen entirely. |
+| `image` | `string` | — | **Required.** Filename of the splash image inside `electron/assets/` (e.g. `splash.png`). Omitting this disables the splash screen entirely. |
 | `width` | `number` | `400` | Width of the splash window in px |
 | `height` | `number` | `300` | Height of the splash window in px |
 | `backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |

@@ -49,7 +49,7 @@ export function setupTray(
   const iconSrc = cfg.tray.icon ?? cfg.icon;
   let image = nativeImage.createEmpty();
   if (iconSrc) {
-    const abs = path.join(__dirname, '..', iconSrc as string);
+    const abs = path.join(__dirname, '..', 'assets', iconSrc as string);
     if (fs.existsSync(abs)) image = nativeImage.createFromPath(abs);
   }
 

@@ -132,7 +132,7 @@ export default config;
 | `frame` | `boolean` | `true` | Show native window frame and title bar (`false` = frameless) |
 | `titleBarStyle` | `string` | — | macOS title bar style: `default`, `hidden`, `hiddenInset`, `customButtonsOnHover` |
 | `autoHideMenuBar` | `boolean` | `false` | Auto-hide menu bar on Windows/Linux (press Alt to show) |
-| `icon` | `string` | — | Path to the **window icon** (title bar, taskbar, Dock) relative to `electron/` (e.g. `assets/icon.png`) — see [docs/icons.md](docs/icons.md) |
+| `icon` | `string` | — | Filename of the **window icon** in `electron/assets/` (e.g. `icon.png`) — see [docs/icons.md](docs/icons.md) |
 | `openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
 | `sandbox` | `boolean` | Electron default | Renderer process sandbox — leave unset unless a plugin requires Node.js access in the preload |
 | `csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
@@ -359,7 +359,7 @@ plugins: {
   Electron: {
     tray: {
       enabled: true,
-      icon: 'assets/tray.png',
+      icon: 'tray.png',
       tooltip: 'My App',
       minimizeToTray: true,  // hide to tray on close instead of quitting
     },
@@ -445,7 +445,7 @@ A frameless window shown while the app is loading. Closes automatically when the
 plugins: {
   Electron: {
     splashScreen: {
-      image: 'assets/splash.png',
+      image: 'splash.png',
       width: 600,
       height: 400,
       backgroundColor: '#1a1a2e',

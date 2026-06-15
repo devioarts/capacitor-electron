@@ -30,7 +30,7 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
 
   if (!image) return null;
 
-  const abs = path.join(__dirname, '..', image);
+  const abs = path.join(__dirname, '..', 'assets', image);
   if (!fs.existsSync(abs)) return null;
 
   const htmlPath = path.join(os.tmpdir(), `cap-electron-splash-${Date.now()}.html`);

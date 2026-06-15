@@ -60,7 +60,7 @@ export interface ElectronConfig {
     viewMenu?: boolean;
   };
   /**
-   * Path to the **window icon** relative to the `electron/` directory (e.g. `'assets/icon.png'`).
+   * Filename of the **window icon** inside `electron/assets/` (e.g. `'icon.png'`).
    * Sets the icon shown in the title bar and taskbar (Windows / Linux) and the macOS Dock at runtime.
    *
    * This is separate from the **app bundle icon** (shown in the OS file explorer, installer,
@@ -95,7 +95,7 @@ export interface ElectronConfig {
   tray?: {
     /** Enable the tray icon. Default: false */
     enabled?: boolean;
-    /** Path to tray icon relative to electron/ directory (e.g. 'assets/tray.png'). Fallback: window icon. */
+    /** Filename of the tray icon inside `electron/assets/` (e.g. `'tray.png'`). Fallback: window icon. */
     icon?: string;
     /** Tooltip text shown on hover. */
     tooltip?: string;
@@ -110,12 +110,11 @@ export interface ElectronConfig {
    */
   splashScreen?: {
     /**
-     * Path to the splash image relative to the `electron/` directory (e.g. `'assets/splash.png'`).
+     * Filename of the splash image inside `electron/assets/` (e.g. `'splash.png'`).
      * Supports PNG, JPEG, WebP, GIF, and SVG. Required — omitting disables the splash screen.
      *
      * The image is loaded directly from disk (no base64 encoding), so even large files
-     * display instantly. Make sure `'assets/**'` is listed in `files` in `electron-builder.js`
-     * so the image is bundled into the packaged app.
+     * display instantly.
      */
     image?: string;
     /** Width of splash window in px. Default: 400 */

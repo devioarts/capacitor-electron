@@ -12,20 +12,17 @@ There are two separate icon concepts in a packaged Electron app:
 
 ## Window icon (`plugins.Electron.icon`)
 
-Set in `capacitor.config.json`:
+Set in `capacitor.config.json` — use just the **filename**, `assets/` is always the base directory:
 
 ```json
 {
   "plugins": {
     "Electron": {
-      "icon": "assets/icon.png"
+      "icon": "icon.png"
     }
   }
 }
 ```
-
-The path is relative to the `electron/` directory. The image file must be included in
-`files` in `electron-builder.js` (see [assets in packaged app](#assets-in-packaged-app) below).
 
 **Platform behavior:**
 - **Windows** — shown in the window title bar and taskbar button
