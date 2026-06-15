@@ -52,12 +52,24 @@ if (fs.existsSync(htmlPath)) {
   }
 }
 
-// 3. Ensure public/electron-init.js exists for the Vite dev server
+// 3. Always write public/electron-init.js so the Vite dev server serves the latest version.
 const publicInit = path.join(capacitorRoot, 'public', 'electron-init.js');
-if (!fs.existsSync(publicInit)) {
-  fs.mkdirSync(path.dirname(publicInit), { recursive: true });
-  fs.writeFileSync(publicInit, CAP_ELECTRON_INIT_JS, 'utf-8');
-  console.log('[cap-electron] Created public/electron-init.js');
+fs.mkdirSync(path.dirname(publicInit), { recursive: true });
+fs.writeFileSync(publicInit, CAP_ELECTRON_INIT_JS, 'utf-8');
+
+// 4. Inject <script src="/electron-init.js"> into the root index.html (dev mode template)
+//    so it loads before any <script type="module"> in dev mode too.
+const rootHtmlPath = path.join(capacitorRoot, 'index.html');
+if (fs.existsSync(rootHtmlPath)) {
+  const rootHtml = fs.readFileSync(rootHtmlPath, 'utf-8');
+  if (!rootHtml.includes('electron-init.js')) {
+    fs.writeFileSync(
+      rootHtmlPath,
+      rootHtml.replace('<body>', '<body>\n    <script src="/electron-init.js"></script>'),
+      'utf-8',
+    );
+    console.log('[cap-electron] Injected electron-init.js into root index.html');
+  }
 }
 
 console.log('[cap-electron] Copy done.');
