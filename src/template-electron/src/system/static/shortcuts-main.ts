@@ -43,7 +43,7 @@ export type MainAction =
  * { accelerator: 'CmdOrCtrl+Shift+K', event: 'open-search' }
  *
  * // Run a built-in action
- * { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggle-window' }
+ * { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggleWindow' }
  *
  * // Custom main-process code
  * { accelerator: 'CmdOrCtrl+Shift+L', handler: () => { myService.doSomething(); } }

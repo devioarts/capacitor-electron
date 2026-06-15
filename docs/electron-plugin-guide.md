@@ -30,7 +30,7 @@ export const pluginsUser = {
 ### 2. Implement handlers in `plugins-main-user.ts`
 
 ```typescript
-import { registerPlugin } from './src';
+import { registerPlugin, type AnyRecord } from '../system/static/functions';
 
 class MyPlugin {
   async getData(opts: { key: string }) {
@@ -42,13 +42,23 @@ class MyPlugin {
   }
 }
 
-registerPlugin('MyPlugin', new MyPlugin(), ['getData', 'setConfig']);
+registerPlugin('MyPlugin', new MyPlugin() as unknown as AnyRecord, ['getData', 'setConfig']);
 ```
 
 ### 3. Call from the renderer
 
+Use the Capacitor `Plugins` object (requires `@capacitor/core`):
+
 ```typescript
-const result = await CapacitorCustomPlatform.plugins.MyPlugin.getData({ key: 'foo' });
+import { Plugins } from '@capacitor/core';
+
+const result = await (Plugins as any).MyPlugin.getData({ key: 'foo' });
+```
+
+Or call the underlying IPC bridge directly (no import needed):
+
+```typescript
+const result = await window.Capacitor.nativePromise('MyPlugin', 'getData', { key: 'foo' });
 ```
 
 ---
@@ -73,13 +83,13 @@ This causes the preload to expose `addListener`, `removeListener`, and `removeAl
 ### 2. Emit events from `plugins-main-user.ts`
 
 ```typescript
-import { registerPlugin, emitPluginEvent } from './src';
+import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/static/functions';
 
 class MyPlugin {
   async getData() { /* ... */ }
 }
 
-registerPlugin('MyPlugin', new MyPlugin(), ['getData']);
+registerPlugin('MyPlugin', new MyPlugin() as unknown as AnyRecord, ['getData']);
 
 // Emit whenever something happens — from anywhere in the main process:
 setInterval(() => {
@@ -92,13 +102,15 @@ setInterval(() => {
 ### 3. Listen in the renderer
 
 ```typescript
-const listenerId = await CapacitorCustomPlatform.plugins.MyPlugin.addListener(
+import { Plugins } from '@capacitor/core';
+
+const handle = await (Plugins as any).MyPlugin.addListener(
   'dataReceived',
-  (data) => console.log(data.value),
+  (data: { value: number }) => console.log(data.value),
 );
 
 // Later:
-await CapacitorCustomPlatform.plugins.MyPlugin.removeListener(listenerId);
+handle.remove();
 ```
 
 ---
@@ -108,7 +120,7 @@ await CapacitorCustomPlatform.plugins.MyPlugin.removeListener(listenerId);
 If starting the event source is expensive (hardware sensor, WebSocket, file watcher), use the `events` parameter of `registerPlugin` to start and stop it only when the renderer is actually listening.
 
 ```typescript
-import { registerPlugin, emitPluginEvent } from './src';
+import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/static/functions';
 
 class TemperatureSensor {
   async getUnit() { return { unit: 'celsius' }; }
@@ -118,7 +130,7 @@ let timer: ReturnType<typeof setInterval> | null = null;
 
 registerPlugin(
   'TemperatureSensor',
-  new TemperatureSensor(),
+  new TemperatureSensor() as unknown as AnyRecord,
   ['getUnit'],
   {
     temperatureChanged: {

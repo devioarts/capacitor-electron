@@ -33,9 +33,13 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
   const abs = path.join(__dirname, '..', 'assets', image);
   if (!fs.existsSync(abs)) return null;
 
-  const htmlPath = path.join(os.tmpdir(), `cap-electron-splash-${Date.now()}.html`);
+  // Stable filename — avoids accumulating files across launches.
+  // Write only when content has changed (e.g. different image or color after a config update).
+  const htmlPath = path.join(os.tmpdir(), 'cap-electron-splash.html');
+  const htmlContent = buildHTML(backgroundColor, pathToFileURL(abs).href);
   try {
-    fs.writeFileSync(htmlPath, buildHTML(backgroundColor, pathToFileURL(abs).href), 'utf-8');
+    const existing = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf-8') : null;
+    if (existing !== htmlContent) fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
   } catch {
     return null;
   }

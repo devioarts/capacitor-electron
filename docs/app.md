@@ -149,5 +149,5 @@ No-op on Electron — desktop apps have no hardware back button. The listener is
 | Feature | Status | Reason |
 |---------|--------|--------|
 | `backButton` event | No-op | No hardware back button on desktop |
-| `getLaunchUrl()` persistence | First call only | `process.argv` is read once at startup |
+| `getLaunchUrl()` persistence | Startup URL only | `process.argv` is read at startup; subsequent deep links arrive via `appUrlOpen` |
 | `minimizeApp()` in fullscreen | Exits fullscreen first | Matches the behaviour of `window.Electron.minimize()` |

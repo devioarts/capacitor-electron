@@ -14,7 +14,7 @@ import type { GlobalShortcutDef } from '../system/static/shortcuts-main';
 
 export const shortcuts: GlobalShortcutDef[] = [
   { accelerator: 'CmdOrCtrl+Shift+K', event: 'open-search' },
-  { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggle-window' },
+  { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggleWindow' },
 ];
 ```
 
@@ -38,7 +38,7 @@ Listen for it with `window.Electron.onShortcut()` — see [Listening in the rend
 ### `action` — built-in main-process action
 
 ```typescript
-{ accelerator: 'CmdOrCtrl+Shift+H', action: 'toggle-window' }
+{ accelerator: 'CmdOrCtrl+Shift+H', action: 'toggleWindow' }
 ```
 
 Runs one of the built-in actions directly in the main process.

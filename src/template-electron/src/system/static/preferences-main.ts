@@ -33,7 +33,7 @@ function persist(): void {
 /**
  * Electron implementation of the Capacitor Preferences plugin.
  *
- * Stores data in `userData/preferences.json`. An in-memory Map serves as a
+ * Stores data in `userData/CapacitorStorage/{appId}/preferences.json`. An in-memory Map serves as a
  * write-through cache so reads never hit disk.
  *
  * Advantages over the web fallback (localStorage):

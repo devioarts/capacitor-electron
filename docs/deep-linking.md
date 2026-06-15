@@ -81,9 +81,11 @@ The method is only present when `deepLinkingScheme` is configured — guard with
 
 | Platform | How the URL arrives |
 |---|---|
-| **macOS / Linux** | System fires `app.on('open-url')`. Works when the app is already running or launched cold via the link. |
+| **macOS** | System fires `app.on('open-url')`. Works when the app is already running or launched cold via the link. |
 | **Windows (cold start)** | URL is passed as a CLI argument in `process.argv`. Processed after the window is created. |
 | **Windows (app running)** | Second-instance lock fires with the URL in `argv`. The existing window is focused and the URL is forwarded. |
+| **Linux (app running)** | Second-instance lock fires with the URL in `argv`. Works the same as Windows. |
+| **Linux (cold start)** | Not supported — `app.on('open-url')` is macOS-only and Linux cold-start URL is not extracted from `process.argv`. Register the shortcut in your `.desktop` file and handle the URL on startup manually. |
 
 In all cases the window is restored (if minimized or hidden), focused, and then the `deepLink` IPC event is sent to the renderer.
 

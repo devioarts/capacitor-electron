@@ -3,7 +3,7 @@
 //
 // Three variants:
 //   { accelerator: 'CmdOrCtrl+Shift+K', event: 'my-event' }        → renderer: window.Electron.onShortcut()
-//   { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggle-window' }  → built-in main-process action
+//   { accelerator: 'CmdOrCtrl+Shift+H', action: 'toggleWindow' }   → built-in main-process action
 //   { accelerator: 'CmdOrCtrl+Shift+L', handler: () => { ... } }   → custom main-process code
 //
 // Available actions: quit | minimize | maximize | toggleMaximize | toggleFullscreen | toggleWindow | focus | reload | openDevTools

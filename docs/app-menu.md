@@ -60,7 +60,7 @@ On macOS the first menu item is always the application name — this is an OS co
 
 ## Related options
 
-- [`autoHideMenuBar`](../src/shared/types.ts) — hides the menu bar on Windows/Linux until the user presses **Alt**. Works independently of `menu`.
+- `autoHideMenuBar` — hides the menu bar on Windows/Linux until the user presses **Alt**. Works independently of `menu`.
 - `frame: false` + `titleBarStyle` — for fully custom title bars, consider hiding the menu as well.
 
 ---

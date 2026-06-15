@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     Electron: {
       tray: {
         enabled: true,
-        icon: 'assets/tray.png',
+        icon: 'tray.png',
         tooltip: 'My App',
         minimizeToTray: true,
       },
@@ -30,7 +30,7 @@ const config: CapacitorConfig = {
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | `boolean` | `false` | Enable the tray icon |
-| `icon` | `string` | — | Path to icon relative to `electron/` (e.g. `assets/tray.png`). Falls back to the window icon (`icon` option). |
+| `icon` | `string` | — | Filename of the tray icon inside `electron/assets/` (e.g. `'tray.png'`). Falls back to the window icon (`icon` option). |
 | `tooltip` | `string` | — | Tooltip shown on hover |
 | `minimizeToTray` | `boolean` | `false` | Hide the window instead of quitting when the user clicks the close button |
 
@@ -100,7 +100,7 @@ When `minimizeToTray: true`:
 - **Windows / Linux** — use a PNG (typically 16×16 or 32×32 px)
 - **macOS** — use a template image: a monochrome PNG named `tray.png` with a `tray@2x.png` at 2× the size. macOS automatically applies the correct color for light/dark mode when the image is a template image (transparent background, black shapes)
 
-Place icons in `electron/assets/` and reference them as `'assets/tray.png'`.
+Place icons in `electron/assets/` and reference them by filename only (e.g. `'tray.png'`).
 
 ---
 

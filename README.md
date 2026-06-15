@@ -243,7 +243,7 @@ await Preferences.set({ key: 'theme', value: 'dark' });
 const { value } = await Preferences.get({ key: 'theme' });
 ```
 
-Stored in `{userData}/preferences.json` — survives "Clear browsing data". See [docs/preferences.md](docs/preferences.md).
+Stored in `{userData}/CapacitorStorage/{appId}/preferences.json` — survives "Clear browsing data". See [docs/preferences.md](docs/preferences.md).
 
 ### Toast
 

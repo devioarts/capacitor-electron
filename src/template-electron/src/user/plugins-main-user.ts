@@ -1,7 +1,7 @@
 // Custom main-process setup — edit freely, never overwritten by cap-electron sync.
 // Add plugins that are not auto-detected, or override auto-detected ones.
 
-// import { registerPlugin, AnyRecord } from '../system/functions';
+// import { registerPlugin, type AnyRecord } from '../system/static/functions';
 // import { MyPlugin } from 'my-plugin/electron';
 //
 // void (async () => {

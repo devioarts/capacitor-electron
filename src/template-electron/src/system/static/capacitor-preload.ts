@@ -59,20 +59,39 @@ const PLUGIN_HEADERS: PluginHeader[] = Object.entries(allPlugins).map(([name, en
 
 // ── Event subscription registry ───────────────────────────────────────────────
 
-const subs = new Map<string, Map<string, ListenerFn>>();
+const subs        = new Map<string, Map<string, ListenerFn>>();
+const ipcListeners = new Map<string, (_: IpcRendererEvent, data: unknown) => void>();
+
+function ipcChannel(key: string): string {
+  const sep = key.indexOf('::');
+  return `event-${key.slice(0, sep)}-${key.slice(sep + 2)}`;
+}
 
 function addSub(pluginName: string, eventName: string, fn: ListenerFn): string {
   const key = `${pluginName}::${eventName}`;
   if (!subs.has(key)) {
     subs.set(key, new Map());
     ipcRenderer.send(`event-add-${pluginName}`, eventName);
-    ipcRenderer.on(`event-${pluginName}-${eventName}`, (_: IpcRendererEvent, data: unknown) => {
+    // Store the listener reference so it can be removed when the last subscriber leaves,
+    // preventing duplicate calls if the same event is re-subscribed after full cleanup.
+    const listener = (_: IpcRendererEvent, data: unknown) => {
       subs.get(key)?.forEach(f => f(data));
-    });
+    };
+    ipcListeners.set(key, listener);
+    ipcRenderer.on(ipcChannel(key), listener);
   }
   const id = `${key}::${Date.now()}-${Math.random().toString(36).slice(2)}`;
   subs.get(key)!.set(id, fn);
   return id;
+}
+
+function teardownKey(key: string): void {
+  const listener = ipcListeners.get(key);
+  if (listener) {
+    ipcRenderer.removeListener(ipcChannel(key), listener);
+    ipcListeners.delete(key);
+  }
+  ipcRenderer.send(`event-remove-${ipcChannel(key).slice('event-'.length)}`);
 }
 
 function removeSub(callbackId: string): void {
@@ -84,8 +103,7 @@ function removeSub(callbackId: string): void {
   bucket.delete(callbackId);
   if (bucket.size === 0) {
     subs.delete(key);
-    const sep = key.indexOf('::');
-    ipcRenderer.send(`event-remove-${key.slice(0, sep)}-${key.slice(sep + 2)}`);
+    teardownKey(key);
   }
 }
 
@@ -94,8 +112,7 @@ function removeAllSubs(pluginName: string, eventName?: string): void {
     if (!key.startsWith(`${pluginName}::`)) continue;
     if (eventName && key !== `${pluginName}::${eventName}`) continue;
     subs.delete(key);
-    const sep = key.indexOf('::');
-    ipcRenderer.send(`event-remove-${key.slice(0, sep)}-${key.slice(sep + 2)}`);
+    teardownKey(key);
   }
 }
 

@@ -2,7 +2,7 @@
 
 Built-in Electron implementation of `@capacitor/preferences`. No extra configuration required — install the Capacitor plugin and it works on Electron out of the box.
 
-Data is stored in `{userData}/preferences.json`. An in-memory Map serves as a write-through cache so reads never hit disk.
+Data is stored in `{userData}/CapacitorStorage/{appId}/preferences.json`. An in-memory Map serves as a write-through cache so reads never hit disk.
 
 ---
 
@@ -98,9 +98,9 @@ No-op.
 
 | Platform | Path |
 |----------|------|
-| Windows  | `%APPDATA%\{appName}\preferences.json` |
-| macOS    | `~/Library/Application Support/{appName}/preferences.json` |
-| Linux    | `~/.config/{appName}/preferences.json` |
+| Windows  | `%APPDATA%\{appName}\CapacitorStorage\{appId}\preferences.json` |
+| macOS    | `~/Library/Application Support/{appName}/CapacitorStorage/{appId}/preferences.json` |
+| Linux    | `~/.config/{appName}/CapacitorStorage/{appId}/preferences.json` |
 
 The file is created automatically on the first write.
 
