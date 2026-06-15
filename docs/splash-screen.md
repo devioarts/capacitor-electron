@@ -87,7 +87,7 @@ The main window never shows before the splash closes, so there is no visible ove
     plugins: {
       Electron: {
         splashScreen: isDev ? undefined : {
-          image: 'assets/splash.png',
+          image: 'splash.png',
           minDisplayTime: 2000,
         },
       },

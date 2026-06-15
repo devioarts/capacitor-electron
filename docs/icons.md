@@ -61,25 +61,6 @@ electron/
 
 ---
 
-## Assets in packaged app
-
-Both the window icon and the splash image are read from disk at runtime, so `assets/`
-must be included in the packaged app. Open `electron/electron-builder.js` and verify:
-
-```js
-files: [
-  'dist/**',
-  '!dist/**/*.map',
-  'capacitor.config.json',
-  'assets/**',   // ← required
-],
-```
-
-Without this line, `assets/icon.png` and `assets/splash.png` are not bundled and both
-features silently do nothing in the packaged build.
-
----
-
 ## Windows icon cache
 
 After changing the `.exe` icon, Windows may still show the old icon due to the icon cache.
