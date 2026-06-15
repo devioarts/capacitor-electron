@@ -45,9 +45,12 @@ npm install --save-dev github:devioarts/capacitor-electron#main
 npm update @devioarts/capacitor-electron
 ```
 
-After updating, run `cap-electron upgrade` (or `cap-electron restore`) to apply any changes to system files, then `cap-electron sync` to regenerate plugin bridges.
+After updating, run `npx cap-electron upgrade` (or `npx cap-electron restore`) to apply any changes to system files, then `npx cap-electron sync` to regenerate plugin bridges.
 
 ## Quick start
+
+> **Why `npx cap-electron add` instead of `npx cap add electron`?**
+> `npx cap add <platform>` resolves the platform by looking for a package named `@capacitor/<platform>` or `@capacitor-community/<platform>`. Because this package is published as `@devioarts/capacitor-electron`, the Capacitor CLI cannot find it that way. Use the dedicated `cap-electron` CLI instead.
 
 ### 1. Add Electron to your Capacitor project
 
@@ -79,13 +82,13 @@ Starts your Vite dev server (if not already running), builds the Electron app, a
 
 | Command | Description |
 |---|---|
-| `cap-electron add` | Add Electron to the project — installs template, runs sync + copy |
-| `cap-electron sync` | Scan installed plugins, generate IPC bridges, sync `capacitor.config` |
-| `cap-electron copy` | Copy web build output to `electron/app/` |
-| `cap-electron open` | Launch dev mode — starts dev server + Electron in watch mode |
-| `cap-electron kill` | Kill all Electron/Node processes tied to this project |
-| `cap-electron scripts` | Add `electron:*` helper scripts to root `package.json` |
-| `cap-electron upgrade` / `restore` | Update system files from the installed package version — user files are never touched. Pass `--all` to also update `electron-builder.js` |
+| `npx cap-electron add` | Add Electron to the project — installs template, runs sync + copy |
+| `npx cap-electron sync` | Scan installed plugins, generate IPC bridges, sync `capacitor.config` |
+| `npx cap-electron copy` | Copy web build output to `electron/app/` |
+| `npx cap-electron open` | Launch dev mode — starts dev server + Electron in watch mode |
+| `npx cap-electron kill` | Kill all Electron/Node processes tied to this project |
+| `npx cap-electron scripts` | Add `electron:*` helper scripts to root `package.json` |
+| `npx cap-electron upgrade` / `restore` | Update system files from the installed package version — user files are never touched. Pass `--all` to also update `electron-builder.js` |
 
 ---
 
