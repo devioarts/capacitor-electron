@@ -19,7 +19,7 @@ npm install --save-dev @devioarts/capacitor-electron
 Pin to a specific version:
 
 ```bash
-npm install --save-dev @devioarts/capacitor-electron@0.0.1
+npm install --save-dev @devioarts/capacitor-electron@0.1.1
 ```
 
 ### Installing the latest unreleased version
