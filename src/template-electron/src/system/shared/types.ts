@@ -65,9 +65,8 @@ export interface ElectronConfig {
    *
    * This is separate from the **app bundle icon** (shown in the OS file explorer, installer,
    * Start Menu, or Finder). The bundle icon is configured in `electron-builder.js`:
-   * place `assets/icon.png` (min 512×512, recommended 1024×1024) in `electron/assets/` and
-   * electron-builder will auto-convert it to `.icns` for macOS and `.ico` for Windows.
-   * Per-platform overrides: `assets/icon.icns` / `assets/icon.ico` take priority if present.
+   * place `assets/icon.png` in `electron/assets/`, with optional platform overrides
+   * `assets/icon.ico` for Windows and `assets/icon.icns` for macOS.
    */
   icon?: string;
 

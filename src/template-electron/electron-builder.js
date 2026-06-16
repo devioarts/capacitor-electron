@@ -13,13 +13,12 @@ try {
 }
 
 const asset = (file) => fs.existsSync(path.join(__dirname, 'assets', file))
-  ? path.join('assets', file)
+  ? path.join(__dirname, 'assets', file)
   : undefined;
 
 // App bundle icon (shown in OS file explorer, installer, Start Menu, Dock).
-// electron-builder auto-converts a single PNG (min 512×512, recommended 1024×1024) to
-// .icns (macOS) and .ico (Windows), so assets/icon.png alone is enough for all platforms.
-// Override per-platform with assets/icon.icns or assets/icon.ico if you need a custom file.
+// electron-builder can convert assets/icon.png for platform package icons.
+// Use assets/icon.icns or assets/icon.ico when you need a hand-crafted platform file.
 const iconPng  = asset('icon.png');
 const iconIcns = asset('icon.icns') ?? iconPng;
 const iconIco  = asset('icon.ico')  ?? iconPng;
@@ -51,7 +50,9 @@ module.exports = {
   win: {
     icon: iconIco,
     target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
-    signAndEditExecutable: false,
+    // Keep executable resource editing enabled so electron-builder can write the
+    // app icon and metadata into the .exe. This only disables code signing.
+    signExecutable: false,
   },
   linux: {
     icon: iconPng,
