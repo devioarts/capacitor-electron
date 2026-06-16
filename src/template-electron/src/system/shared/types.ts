@@ -316,4 +316,8 @@ export interface ElectronBridge {
   getCursorDisplay(): Promise<ElectronDisplay>;
   /** Subscribe to display change events (added/removed/metrics-changed). Returns unsubscribe fn. */
   onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
+
+  // ── Process guardian ────────────────────────────────────────────────────────
+  /** Subscribe to uncaught main-process errors (uncaughtException / unhandledRejection). Returns unsubscribe fn. */
+  onElectronError(callback: (data: { message: string; stack: string | undefined; type: 'exception' | 'rejection' }) => void): () => void;
 }

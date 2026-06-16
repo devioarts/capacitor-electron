@@ -74,6 +74,12 @@ const bridge: ElectronBridge = {
     ipcRenderer.on('screen:event', listener);
     return () => ipcRenderer.removeListener('screen:event', listener);
   },
+
+  onElectronError: (callback: (data: { message: string; stack: string | undefined; type: 'exception' | 'rejection' }) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, data: { message: string; stack: string | undefined; type: 'exception' | 'rejection' }) => callback(data);
+    ipcRenderer.on('electronError', listener);
+    return () => ipcRenderer.removeListener('electronError', listener);
+  },
 };
 
 contextBridge.exposeInMainWorld('Electron', bridge);
