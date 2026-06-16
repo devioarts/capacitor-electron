@@ -145,6 +145,7 @@ export default config;
 | `tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
 | `splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
 | `autoUpdater` | `object` | — | Auto-updater settings — see [docs/auto-updater.md](docs/auto-updater.md) |
+| `capacitor.preferences` | `boolean` | `true` | Native `@capacitor/preferences` bridge. Set `false` to use the plugin's web/localStorage fallback |
 
 ---
 
@@ -244,6 +245,18 @@ const { value } = await Preferences.get({ key: 'theme' });
 ```
 
 Stored in `{userData}/CapacitorStorage/{appId}/preferences.json` — survives "Clear browsing data". See [docs/preferences.md](docs/preferences.md).
+
+Prefer the web/localStorage fallback instead:
+
+```typescript
+plugins: {
+  Electron: {
+    capacitor: {
+      preferences: false,
+    },
+  },
+}
+```
 
 ### Toast
 

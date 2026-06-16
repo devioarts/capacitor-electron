@@ -7,6 +7,8 @@
  *                        window.Capacitor.PluginHeaders.  Built-in Capacitor
  *                        plugins (App, ActionSheet, …) are NOT listed here;
  *                        they are defined statically in electron-init.js.
+ *   getBuiltinCapacitorConfig()
+ *                      — sync config snapshot for built-in Capacitor plugin switches.
  *   invoke()          — calls ipcMain.handle('PluginName-method', opts)
  *   nativeCallback()  — manages addListener / removeListener / removeAllListeners
  *                        for event-based plugins routed through PluginHeaders.
@@ -25,6 +27,7 @@ import { pluginsUser } from '../../../user/plugins-preload-user';
 type RType = 'promise' | 'callback';
 type ListenerFn = (data: unknown) => void;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
+type BuiltinCapacitorConfig = { preferences: boolean };
 interface PluginMethod { name: string; rtype: RType }
 interface PluginHeader { name: string; methods: PluginMethod[] }
 
@@ -45,6 +48,20 @@ const PLUGIN_HEADERS: PluginHeader[] = Object.entries(allPlugins).map(([name, en
     ...(entry.events?.length ? CB_METHODS : []),
   ],
 }));
+
+function getBuiltinCapacitorConfig(): BuiltinCapacitorConfig {
+  try {
+    const cfg = ipcRenderer.sendSync('CapElectron-getBuiltinCapacitorConfig') as Partial<BuiltinCapacitorConfig> | undefined;
+
+    return {
+      preferences: cfg?.preferences !== false,
+    };
+  } catch {
+    return { preferences: true };
+  }
+}
+
+const BUILTIN_CAPACITOR_CONFIG = getBuiltinCapacitorConfig();
 
 // ── Event subscription registry ───────────────────────────────────────────────
 
@@ -107,6 +124,7 @@ function removeAllSubs(pluginName: string, eventName?: string): void {
 
 contextBridge.exposeInMainWorld('_CapElectron', {
   getPluginHeaders: () => PLUGIN_HEADERS,
+  getBuiltinCapacitorConfig: () => BUILTIN_CAPACITOR_CONFIG,
 
   invoke: (channel: string, opts: unknown) =>
     ipcRenderer.invoke(channel, opts ?? {}),

@@ -42,17 +42,21 @@ try {
 }
 
 const { appName, appId } = readAppMeta(capacitorRoot);
+const packageName = toNpmPackageName(appName, appId);
 
-const pkgFile = path.join(electronDir, 'package.json');
-if (fs.existsSync(pkgFile)) {
+for (const pkgFile of [
+  path.join(electronDir, 'package.json'),
+  path.join(electronDir, 'package-lock.json'),
+]) {
+  if (!fs.existsSync(pkgFile)) continue;
   try {
     fs.writeFileSync(pkgFile,
       fs.readFileSync(pkgFile, 'utf-8')
-        .replace(/__APP_NAME__/g, appName)
+        .replace(/__APP_NAME__/g, packageName)
         .replace(/__APP_ID__/g, appId),
     );
   } catch (e) {
-    console.error(`[cap-electron] Failed to patch electron/package.json: ${e instanceof Error ? e.message : String(e)}`);
+    console.error(`[cap-electron] Failed to patch ${path.relative(electronDir, pkgFile)}: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   }
 }
@@ -124,4 +128,22 @@ function readAppMeta(root: string): { appName: string; appId: string } {
   } catch { /* fall through */ }
 
   return { appName: 'app', appId: 'com.example.app' };
+}
+
+function toNpmPackageName(name: string, fallback: string): string {
+  for (const candidate of [name, fallback, 'app']) {
+    const safe = candidate
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/[-._]{2,}/g, '-')
+      .replace(/^[._-]+|[._-]+$/g, '')
+      .slice(0, 214);
+
+    if (safe) return safe;
+  }
+
+  return 'app';
 }

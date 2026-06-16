@@ -4,6 +4,20 @@ Built-in Electron implementation of `@capacitor/preferences`. No extra configura
 
 Data is stored in `{userData}/CapacitorStorage/{appId}/preferences.json`. An in-memory Map serves as a write-through cache so reads never hit disk.
 
+If you prefer the plugin's web fallback, disable the native bridge:
+
+```typescript
+plugins: {
+  Electron: {
+    capacitor: {
+      preferences: false,
+    },
+  },
+}
+```
+
+With that setting, `@capacitor/preferences` uses `localStorage` in the renderer.
+
 ---
 
 ## Setup

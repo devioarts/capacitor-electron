@@ -31,6 +31,10 @@
   var b = window._CapElectron;
   if (!b) return;
 
+  var builtinConfig = typeof b.getBuiltinCapacitorConfig === 'function'
+    ? b.getBuiltinCapacitorConfig()
+    : {};
+
   // Preserve third-party plugin bridges set by plugins-preload.ts via contextBridge.
   // Must be read BEFORE we overwrite window.CapacitorCustomPlatform below.
   var prevPlugins = (window.CapacitorCustomPlatform && window.CapacitorCustomPlatform.plugins) || {};
@@ -79,6 +83,10 @@
       'createChannel','deleteChannel','listChannels',
     ], true),
   ];
+
+  if (builtinConfig.preferences === false) {
+    BUILTIN = BUILTIN.filter(function (p) { return p.name !== 'Preferences'; });
+  }
 
   // ── window.Capacitor ──────────────────────────────────────────────────────
   //

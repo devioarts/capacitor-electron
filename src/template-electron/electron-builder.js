@@ -16,6 +16,26 @@ const asset = (file) => fs.existsSync(path.join(__dirname, 'assets', file))
   ? path.join(__dirname, 'assets', file)
   : undefined;
 
+const appExecutableName = toSafeFileName(appName, appId);
+
+function toSafeFileName(name, fallback) {
+  for (const candidate of [name, fallback, 'app']) {
+    const safe = candidate
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/[-._]{2,}/g, '-')
+      .replace(/^[._-]+|[._-]+$/g, '')
+      .slice(0, 214);
+
+    if (safe) return safe;
+  }
+
+  return 'app';
+}
+
 // App bundle icon (shown in OS file explorer, installer, Start Menu, Dock).
 // electron-builder can convert assets/icon.png for platform package icons.
 // Use assets/icon.icns or assets/icon.ico when you need a hand-crafted platform file.
@@ -49,6 +69,8 @@ module.exports = {
   },
   win: {
     icon: iconIco,
+    executableName: appExecutableName,
+    artifactName: `${appExecutableName}-Setup-\${version}-\${arch}.\${ext}`,
     target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
     // Keep executable resource editing enabled so electron-builder can write the
     // app icon and metadata into the .exe. This only disables code signing.
@@ -62,5 +84,7 @@ module.exports = {
   nsis: {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
+    createStartMenuShortcut: true,
+    shortcutName: appName,
   },
 };

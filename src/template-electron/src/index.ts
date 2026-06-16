@@ -15,6 +15,7 @@ export type { TrayMenuItemDef, TrayMenuAction } from './system/static/electron-a
 import './system/static/electron-api/system-main';
 import './system/static/electron-api/power-monitor-main';
 import './system/static/electron-api/screen-main';
+import './system/static/capacitor-api/config-main';
 import './system/static/capacitor-api/local-notifications-main';
 import './system/static/capacitor-api/action-sheet-main';
 import './system/static/capacitor-api/dialog-main';

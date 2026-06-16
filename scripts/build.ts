@@ -12,22 +12,31 @@ await rm(join(root, 'dist'), { recursive: true, force: true });
 await mkdir(join(root, 'dist'), { recursive: true });
 
 // Sync template types into shared/types.ts before tsc, restore after build.
+// bridge-types.ts is inlined first (it re-exports from types.ts would create a relative
+// import that src/shared/ can't resolve), then types.ts with the re-export line removed.
 const sharedTypesPath    = join(root, 'src', 'shared', 'types.ts');
 const templateTypesPath  = join(root, 'src', 'template-electron', 'src', 'system', 'shared', 'types.ts');
+const bridgeTypesPath    = join(root, 'src', 'template-electron', 'src', 'system', 'shared', 'bridge-types.ts');
 const originalShared     = await readFile(sharedTypesPath, 'utf8');
+const bridgeContent      = await readFile(bridgeTypesPath, 'utf8');
 const templateContent    = await readFile(templateTypesPath, 'utf8');
+const templateNoReexport = templateContent.replace(/^export \* from '\.\/bridge-types';\n?/m, '');
 
-await writeFile(sharedTypesPath, templateContent + "\nexport * from './plugin-settings';\n");
+await writeFile(sharedTypesPath, bridgeContent + '\n' + templateNoReexport + "\nexport * from './plugin-settings';\n");
 
 try {
   console.log('→ types (tsc)');
   execSync('tsc --emitDeclarationOnly', { stdio: 'inherit', cwd: root });
 
-  console.log('→ globals.d.ts (copy)');
-  await copyFile(
-    join(root, 'src', 'shared', 'globals.d.ts'),
-    join(root, 'dist', 'shared', 'globals.d.ts'),
-  );
+  console.log('→ globals.d.ts (generate)');
+  const globalsContent =
+    '// Generated from src/template-electron/src/system/shared/bridge-types.ts — do not edit.\n' +
+    '// Reference this file once in your renderer project:\n' +
+    '//   /// <reference types="@devioarts/capacitor-electron/globals" />\n' +
+    '// cap-electron sync writes that line automatically.\n\n' +
+    (await readFile(bridgeTypesPath, 'utf8')).replace(/^export /gm, '') +
+    '\ninterface Window {\n  Electron: ElectronBridge;\n}\n';
+  await writeFile(join(root, 'dist', 'shared', 'globals.d.ts'), globalsContent);
 
   console.log('→ shared types (esbuild ESM + CJS)');
   await build({

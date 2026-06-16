@@ -162,9 +162,11 @@ await LocalNotifications.addListener('localNotificationActionPerformed', ({ noti
 
 ### Windows
 
-Windows Action Center requires an **App User Model ID** before the app is ready. The Electron implementation reads `appId` from `capacitor.config.json` and calls `app.setAppUserModelId(appId)` automatically at module load time.
+Windows Action Center requires a Start Menu shortcut with an **App User Model ID**. The Electron template reads `appId` from `capacitor.config.json` and calls `app.setAppUserModelId(appId)` before `app.whenReady()`. The Windows installer also uses the same `appId` and creates a Start Menu shortcut whose display name comes from `appName`.
 
-In **development**, notifications may appear without an app name or icon in the Action Center unless the project has been at least partially packaged once (so Windows can associate the AUMID). In **production** (packaged app) they work correctly.
+In **development**, and when launching an unpacked build directly from `dist-electron/win-unpacked`, notifications may still be attributed to `electron.exe` and show `Electron` as the app name. For production verification, install the generated NSIS installer and launch the installed app from its Start Menu shortcut.
+
+If Windows still shows `Electron` after installing, uninstall older builds, remove stale Start Menu shortcuts for the app, rebuild after `cap-electron sync`, then reinstall. Windows caches notification attribution by AUMID, so stale shortcuts can keep the old display name.
 
 ### macOS
 
