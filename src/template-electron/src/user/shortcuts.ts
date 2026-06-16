@@ -8,6 +8,6 @@
 //
 // Available actions: quit | minimize | maximize | toggleMaximize | toggleFullscreen | toggleWindow | focus | reload | openDevTools
 
-import type { GlobalShortcutDef } from '../system/static/shortcuts-main';
+import type { GlobalShortcutDef } from '../system/static/electron-api/shortcuts-main';
 
 export const shortcuts: GlobalShortcutDef[] = [];

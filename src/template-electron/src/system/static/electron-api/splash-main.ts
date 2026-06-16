@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { pathToFileURL } from 'url';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 /**
  * Create a splash-screen window and return a callback that closes it.

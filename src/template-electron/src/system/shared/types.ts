@@ -150,6 +150,55 @@ export interface AppConfig {
   plugins?: { Electron?: ElectronConfig };
 }
 
+// ── Power Monitor ─────────────────────────────────────────────────────────────
+
+export type PowerMonitorEventName =
+  | 'suspend'
+  | 'resume'
+  | 'lock-screen'
+  | 'unlock-screen'
+  | 'on-battery'
+  | 'on-ac'
+  | 'shutdown';
+
+export type IdleState = 'active' | 'idle' | 'locked' | 'unknown';
+
+// ── Screen / Display ──────────────────────────────────────────────────────────
+
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ElectronDisplay {
+  id: number;
+  label: string;
+  bounds: Rect;
+  workArea: Rect;
+  size: { width: number; height: number };
+  workAreaSize: { width: number; height: number };
+  scaleFactor: number;
+  rotation: number;
+  internal: boolean;
+  touchSupport: 'available' | 'unavailable' | 'unknown';
+  accelerometerSupport: 'available' | 'unavailable' | 'unknown';
+  colorDepth: number;
+  colorSpace: string;
+  depthPerComponent: number;
+  displayFrequency: number;
+  detected: boolean;
+  monochrome: boolean;
+}
+
+export type ScreenEventName = 'display-added' | 'display-removed' | 'display-metrics-changed';
+
+export interface ScreenEventPayload {
+  type: ScreenEventName;
+  data: ElectronDisplay | { display: ElectronDisplay; changedMetrics: string[] };
+}
+
 export interface UpdateInfo {
   version: string;
   releaseNotes?: string | string[] | null;
@@ -235,6 +284,28 @@ export interface ElectronBridge {
    * }, []);
    */
   onShortcut(callback: (data: { event: string }) => void): () => void;
+
+  // ── Badge count ─────────────────────────────────────────────────────────────
+  /** Set the dock/taskbar badge count. Returns false on unsupported platforms. */
+  setBadgeCount(count: number): Promise<boolean>;
+  getBadgeCount(): Promise<number>;
+
+  // ── Power Monitor ───────────────────────────────────────────────────────────
+  /** Subscribe to power monitor events (suspend/resume/lock-screen etc.). Returns unsubscribe fn. */
+  onPowerMonitorEvent(callback: (data: { type: PowerMonitorEventName }) => void): () => void;
+  /** Returns whether the system is active, idle, locked, or unknown. */
+  getPowerMonitorIdleState(idleThreshold: number): Promise<IdleState>;
+  /** Returns the time in seconds since the last user input. */
+  getPowerMonitorIdleTime(): Promise<number>;
+
+  // ── Screen / Display ────────────────────────────────────────────────────────
+  getAllDisplays(): Promise<ElectronDisplay[]>;
+  getPrimaryDisplay(): Promise<ElectronDisplay>;
+  getCursorScreenPoint(): Promise<{ x: number; y: number }>;
+  /** Returns the display under the current cursor position. */
+  getCursorDisplay(): Promise<ElectronDisplay>;
+  /** Subscribe to display change events (added/removed/metrics-changed). Returns unsubscribe fn. */
+  onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
 }
 
 declare global {

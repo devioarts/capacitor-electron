@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { ElectronBridge, UpdaterBridge, UpdaterEventName } from './types';
+import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, ScreenEventPayload } from '../../shared/types';
 
 const bridge: ElectronBridge = {
   quit:           ()                  => ipcRenderer.invoke('system:quit'),
@@ -45,6 +45,34 @@ const bridge: ElectronBridge = {
     const listener = (_e: IpcRendererEvent, data: { event: string }) => callback(data);
     ipcRenderer.on('shortcut', listener);
     return () => ipcRenderer.removeListener('shortcut', listener);
+  },
+
+  // ── Badge count ─────────────────────────────────────────────────────────────
+  setBadgeCount: (count: number): Promise<boolean> =>
+    ipcRenderer.invoke('system:setBadgeCount', count),
+  getBadgeCount: (): Promise<number> =>
+    ipcRenderer.invoke('system:getBadgeCount'),
+
+  // ── Power Monitor ───────────────────────────────────────────────────────────
+  onPowerMonitorEvent: (callback: (data: { type: PowerMonitorEventName }) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, data: { type: PowerMonitorEventName }) => callback(data);
+    ipcRenderer.on('powerMonitor:event', listener);
+    return () => ipcRenderer.removeListener('powerMonitor:event', listener);
+  },
+  getPowerMonitorIdleState: (idleThreshold: number) =>
+    ipcRenderer.invoke('powerMonitor:getSystemIdleState', idleThreshold),
+  getPowerMonitorIdleTime: () =>
+    ipcRenderer.invoke('powerMonitor:getSystemIdleTime'),
+
+  // ── Screen / Display ────────────────────────────────────────────────────────
+  getAllDisplays:      () => ipcRenderer.invoke('screen:getAllDisplays'),
+  getPrimaryDisplay:   () => ipcRenderer.invoke('screen:getPrimaryDisplay'),
+  getCursorScreenPoint:() => ipcRenderer.invoke('screen:getCursorScreenPoint'),
+  getCursorDisplay:    () => ipcRenderer.invoke('screen:getCursorDisplay'),
+  onScreenEvent: (callback: (data: ScreenEventPayload) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, data: ScreenEventPayload) => callback(data);
+    ipcRenderer.on('screen:event', listener);
+    return () => ipcRenderer.removeListener('screen:event', listener);
   },
 };
 

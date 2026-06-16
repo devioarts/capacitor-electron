@@ -1,6 +1,6 @@
 // Electron implementation of @capacitor/browser and @capacitor/app-launcher
 import { shell } from 'electron';
-import { registerPlugin, type AnyRecord } from './functions';
+import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
 const UNSAFE_SCHEMES = ['javascript:', 'data:', 'vbscript:'];
 

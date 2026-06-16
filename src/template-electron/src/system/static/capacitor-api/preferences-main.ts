@@ -2,7 +2,7 @@
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { registerPlugin, loadConfig, type AnyRecord } from './functions';
+import { registerPlugin, loadConfig, type AnyRecord } from '../../shared/functions';
 
 // ── In-memory store + disk persistence ───────────────────────────────────────
 

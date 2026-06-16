@@ -23,7 +23,8 @@
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run build",
-    "release": "npm publish --access public"
+    "release": "npm publish --access public",
+    "capacitor:sync:after": "cap-electron sync"
   },
   "repository": {
     "type": "git",

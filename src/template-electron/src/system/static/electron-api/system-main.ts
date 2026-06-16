@@ -25,3 +25,5 @@ ipcMain.handle('system:reload',         (e)                 => { win(e)?.reload(
 ipcMain.handle('system:openDevTools',   (e)                 => { win(e)?.webContents.openDevTools(); });
 ipcMain.handle('system:closeDevTools',  (e)                 => { win(e)?.webContents.closeDevTools(); });
 ipcMain.handle('system:getAppVersion',  ()                  => app.getVersion());
+ipcMain.handle('system:setBadgeCount',  (_, count: number)  => app.setBadgeCount(count));
+ipcMain.handle('system:getBadgeCount',  ()                  => app.getBadgeCount());

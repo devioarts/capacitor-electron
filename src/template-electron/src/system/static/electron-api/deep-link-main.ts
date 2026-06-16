@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from 'electron';
-import { emitPluginEvent } from './functions';
+import { emitPluginEvent } from '../../shared/functions';
 
 let _pending: string | null = null;
 

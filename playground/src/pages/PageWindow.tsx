@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
+import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/Logger.tsx";
 
 export const PageWindow: React.FC = () => {
   const log = useLogger();
   const E = window.Electron;
+  const [badgeCount, setBadgeCountState] = useState("5");
 
   return (
     <div className="space-y-6">
@@ -97,6 +99,50 @@ export const PageWindow: React.FC = () => {
             try { await E.closeDevTools(); log.info("Electron", "closeDevTools", "done"); }
             catch (e) { log.error("Electron", "closeDevTools", e); }
           }}>closeDevTools()</Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Badge count</p>
+        <p className="text-xs text-slate-500">
+          Nastaví číslo na ikoně v Docku (macOS) nebo taskbaru. 0 = odstraní badge.
+        </p>
+        <Label label="Počet">
+          <Input
+            type="number"
+            min="0"
+            value={badgeCount}
+            onChange={(e) => setBadgeCountState(e.target.value)}
+          />
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          <Button type="primary" onClick={async () => {
+            try {
+              const n = parseInt(badgeCount, 10) || 0;
+              const ok = await E.setBadgeCount(n);
+              log.info("Electron", `setBadgeCount(${n})`, { ok });
+            } catch (e) { log.error("Electron", "setBadgeCount", e); }
+          }}>
+            setBadgeCount()
+          </Button>
+
+          <Button type="neutral" onClick={async () => {
+            try {
+              const ok = await E.setBadgeCount(0);
+              log.info("Electron", "setBadgeCount(0)", { ok });
+            } catch (e) { log.error("Electron", "setBadgeCount(0)", e); }
+          }}>
+            Clear badge
+          </Button>
+
+          <Button type="neutral" onClick={async () => {
+            try {
+              const n = await E.getBadgeCount();
+              log.info("Electron", "getBadgeCount", n);
+            } catch (e) { log.error("Electron", "getBadgeCount", e); }
+          }}>
+            getBadgeCount()
+          </Button>
         </div>
       </section>
 

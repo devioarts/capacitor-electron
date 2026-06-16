@@ -1,6 +1,6 @@
 // Electron implementation of @capacitor/dialog
 import { dialog, BrowserWindow } from 'electron';
-import { registerPlugin, type AnyRecord } from './functions';
+import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
 function mainWindow(): BrowserWindow | null {
   return BrowserWindow.getAllWindows()[0] ?? null;

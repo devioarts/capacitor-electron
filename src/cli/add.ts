@@ -7,7 +7,6 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync, execSync } from 'child_process';
 import { extract } from 'tar';
-import { CAP_ELECTRON_INIT_JS } from './electron-init-content.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,41 +32,51 @@ if (!fs.existsSync(templatePath)) {
 }
 
 console.log('[cap-electron] Adding Electron platform...');
-fs.mkdirSync(electronDir, { recursive: true });
-
-await extract({ file: templatePath, cwd: electronDir, strip: 1 });
-
-// Ensure public/electron-init.js exists so the Vite dev server can serve it.
-// cap-electron copy will also write/update it on every build.
-const publicInit = path.join(capacitorRoot, 'public', 'electron-init.js');
-if (!fs.existsSync(publicInit)) {
-  fs.mkdirSync(path.dirname(publicInit), { recursive: true });
-  fs.writeFileSync(publicInit, CAP_ELECTRON_INIT_JS, 'utf-8');
-  console.log('[cap-electron] Created public/electron-init.js');
+try {
+  fs.mkdirSync(electronDir, { recursive: true });
+  await extract({ file: templatePath, cwd: electronDir, strip: 1 });
+} catch (e) {
+  console.error(`[cap-electron] Failed to extract template: ${e instanceof Error ? e.message : String(e)}`);
+  fs.rmSync(electronDir, { recursive: true, force: true });
+  process.exit(1);
 }
 
 const { appName, appId } = readAppMeta(capacitorRoot);
 
 const pkgFile = path.join(electronDir, 'package.json');
 if (fs.existsSync(pkgFile)) {
-  fs.writeFileSync(pkgFile,
-    fs.readFileSync(pkgFile, 'utf-8')
-      .replace(/__APP_NAME__/g, appName)
-      .replace(/__APP_ID__/g, appId),
-  );
+  try {
+    fs.writeFileSync(pkgFile,
+      fs.readFileSync(pkgFile, 'utf-8')
+        .replace(/__APP_NAME__/g, appName)
+        .replace(/__APP_ID__/g, appId),
+    );
+  } catch (e) {
+    console.error(`[cap-electron] Failed to patch electron/package.json: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
+  }
 }
 
 console.log('[cap-electron] Installing dependencies...');
-execSync('npm install', { cwd: electronDir, stdio: 'inherit' });
+try {
+  execSync('npm install', { cwd: electronDir, stdio: 'inherit' });
+} catch {
+  console.error('[cap-electron] npm install failed in electron/ — check the output above.');
+  process.exit(1);
+}
 
-console.log('\n[cap-electron] Running sync...');
-execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
+console.log('\n[cap-electron] Running update...');
+try {
+  execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
+} catch {
+  process.exit(1); // update already printed its own error
+}
 
 console.log('\n[cap-electron] Running copy...');
 try {
   execFileSync(process.execPath, [path.join(__dirname, 'copy.js')], { stdio: 'inherit' });
 } catch {
-  console.warn('[cap-electron] Copy skipped — build your web app first, then run cap-electron copy.');
+  console.warn('[cap-electron] Copy skipped — run: cap-electron copy (after building the web app).');
 }
 
 console.log('\n[cap-electron] Done — electron/ added.');

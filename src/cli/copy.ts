@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// capacitor:copy — copies the web build into electron/app/ (mirrors iOS/Android copy)
+// cap-electron copy — copies the web build into electron/app/ (mirrors iOS/Android copy)
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { cp, rm } from 'fs/promises';
-import { CAP_ELECTRON_INIT_JS } from './electron-init-content.js';
+import { ensureAppInit } from './electron-init.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,56 +31,23 @@ if (!fs.existsSync(webDir)) {
 const appDir = path.join(electronDir, 'app');
 console.log(`[cap-electron] Copying web assets: ${path.relative(capacitorRoot, webDir)} → electron/app`);
 
-if (fs.existsSync(appDir)) await rm(appDir, { recursive: true, force: true });
-await cp(webDir, appDir, { recursive: true });
-
-// ── electron-init.js ──────────────────────────────────────────────────────────
-
-// 1. Always write fresh init file into electron/app/ (production build)
-fs.writeFileSync(path.join(appDir, 'electron-init.js'), CAP_ELECTRON_INIT_JS, 'utf-8');
-
-// 2. Inject <script> right after <body> in the copied index.html
-const htmlPath = path.join(appDir, 'index.html');
-if (fs.existsSync(htmlPath)) {
-  const html = fs.readFileSync(htmlPath, 'utf-8');
-  if (!html.includes('electron-init.js')) {
-    fs.writeFileSync(
-      htmlPath,
-      html.replace('<body>', '<body>\n    <script src="/electron-init.js"></script>'),
-      'utf-8',
-    );
-  }
+try {
+  if (fs.existsSync(appDir)) await rm(appDir, { recursive: true, force: true });
+  await cp(webDir, appDir, { recursive: true });
+} catch (e) {
+  console.error(`[cap-electron] Failed to copy web assets: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
 }
 
-// 3. Always write public/electron-init.js so the Vite dev server serves the latest version.
-const publicInit = path.join(capacitorRoot, 'public', 'electron-init.js');
-fs.mkdirSync(path.dirname(publicInit), { recursive: true });
-fs.writeFileSync(publicInit, CAP_ELECTRON_INIT_JS, 'utf-8');
-
-// 4. Inject <script src="/electron-init.js"> into the root index.html (dev mode template)
-//    so it loads before any <script type="module"> in dev mode too.
-const rootHtmlPath = path.join(capacitorRoot, 'index.html');
-if (fs.existsSync(rootHtmlPath)) {
-  const rootHtml = fs.readFileSync(rootHtmlPath, 'utf-8');
-  if (!rootHtml.includes('electron-init.js')) {
-    fs.writeFileSync(
-      rootHtmlPath,
-      rootHtml.replace('<body>', '<body>\n    <script src="/electron-init.js"></script>'),
-      'utf-8',
-    );
-    console.log('[cap-electron] Injected electron-init.js into root index.html');
-  }
-}
+ensureAppInit(appDir);
 
 console.log('[cap-electron] Copy done.');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getWebDir(): string {
-  // 1. Capacitor CLI env var
   if (process.env['CAPACITOR_WEB_DIR']) return process.env['CAPACITOR_WEB_DIR'];
 
-  // 2. Already-processed electron/capacitor.config.json (written by sync)
   try {
     const cfg = JSON.parse(
       fs.readFileSync(path.join(electronDir, 'capacitor.config.json'), 'utf-8')
@@ -88,7 +55,5 @@ function getWebDir(): string {
     if (cfg.webDir) return path.join(capacitorRoot, cfg.webDir);
   } catch { /* fall through */ }
 
-  // 3. Fallback
   return path.join(capacitorRoot, 'dist');
 }
-

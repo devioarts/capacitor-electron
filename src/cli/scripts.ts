@@ -24,9 +24,13 @@ if (!fs.existsSync(pkgPath)) {
   process.exit(1);
 }
 
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as {
-  scripts?: Record<string, string>;
-};
+let pkg: { scripts?: Record<string, string> };
+try {
+  pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { scripts?: Record<string, string> };
+} catch (e) {
+  console.error(`[cap-electron] Failed to read package.json: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
+}
 
 pkg.scripts ??= {};
 
@@ -42,7 +46,12 @@ for (const [name, command] of Object.entries(SCRIPTS)) {
   }
 }
 
-fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+try {
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+} catch (e) {
+  console.error(`[cap-electron] Failed to write package.json: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
+}
 
 if (added.length) {
   console.log('[cap-electron] Added scripts:');

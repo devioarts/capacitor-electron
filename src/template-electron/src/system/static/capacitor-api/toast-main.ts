@@ -1,6 +1,6 @@
 // Electron implementation of @capacitor/toast
 import { Notification } from 'electron';
-import { registerPlugin, type AnyRecord } from './functions';
+import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
 /**
  * Electron implementation of the Capacitor Toast plugin.

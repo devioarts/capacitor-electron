@@ -8,7 +8,7 @@
 //
 // Only used when tray.enabled is true in capacitor.config.ts.
 
-import type { TrayMenuItemDef } from '../system/static/tray-main';
+import type { TrayMenuItemDef } from '../system/static/electron-api/tray-main';
 
 export const trayMenu: TrayMenuItemDef[] = [
   { label: 'Open', action: 'show' },

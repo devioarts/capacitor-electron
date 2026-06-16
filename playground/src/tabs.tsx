@@ -9,7 +9,9 @@ import { PageNotifications } from "./pages/PageNotifications.tsx";
 import { PageBrowser }       from "./pages/PageBrowser.tsx";
 import { PageWindow }        from "./pages/PageWindow.tsx";
 import { PageShortcuts }     from "./pages/PageShortcuts.tsx";
-import { PageDeepLink }      from "./pages/PageDeepLink.tsx";
+import { PageDeepLink }        from "./pages/PageDeepLink.tsx";
+import { PagePowerMonitor }    from "./pages/PagePowerMonitor.tsx";
+import { PageScreen }          from "./pages/PageScreen.tsx";
 
 export type TabItem = {
 	id: string;
@@ -29,4 +31,6 @@ export const tabs: TabItem[] = [
 	{ id: 'window',        label: 'Window',        page: <PageWindow /> },
 	{ id: 'shortcuts',     label: 'Shortcuts',     page: <PageShortcuts /> },
 	{ id: 'deeplink',      label: 'Deep Link',     page: <PageDeepLink /> },
+	{ id: 'powermonitor',  label: 'Power Monitor', page: <PagePowerMonitor /> },
+	{ id: 'screen',        label: 'Screen',        page: <PageScreen /> },
 ];

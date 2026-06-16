@@ -1,5 +1,5 @@
 import { Notification, BrowserWindow, app } from 'electron';
-import { emitPluginEvent, registerPlugin, type AnyRecord } from './functions';
+import { emitPluginEvent, registerPlugin, type AnyRecord } from '../../shared/functions';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

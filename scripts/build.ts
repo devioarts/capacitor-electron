@@ -13,7 +13,7 @@ await mkdir(join(root, 'dist'), { recursive: true });
 
 // Sync template types into shared/types.ts before tsc, restore after build.
 const sharedTypesPath    = join(root, 'src', 'shared', 'types.ts');
-const templateTypesPath  = join(root, 'src', 'template-electron', 'src', 'system', 'static', 'types.ts');
+const templateTypesPath  = join(root, 'src', 'template-electron', 'src', 'system', 'shared', 'types.ts');
 const originalShared     = await readFile(sharedTypesPath, 'utf8');
 const templateContent    = await readFile(templateTypesPath, 'utf8');
 
@@ -62,7 +62,7 @@ try {
   });
 
   console.log('→ CLI scripts (esbuild ESM)');
-  const cliEntries = ['index', 'add', 'copy', 'update', 'open', 'scripts', 'kill', 'upgrade', 'electron-init-content'].map(
+  const cliEntries = ['index', 'add', 'copy', 'update', 'sync', 'run', 'open', 'build', 'scripts', 'kill', 'upgrade'].map(
     (n) => join(root, 'src', 'cli', `${n}.ts`),
   );
   await build({

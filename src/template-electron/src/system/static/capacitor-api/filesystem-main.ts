@@ -2,7 +2,7 @@
 import { app } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { registerPlugin, type AnyRecord } from './functions';
+import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
 // ── Directory mapping ─────────────────────────────────────────────────────────
 

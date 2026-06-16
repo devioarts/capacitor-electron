@@ -1,5 +1,5 @@
 import { session } from 'electron';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 const DEV_CSP = [
   "default-src 'self' 'unsafe-inline' http://localhost:* ws://localhost:*",

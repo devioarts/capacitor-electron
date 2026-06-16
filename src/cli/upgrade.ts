@@ -28,6 +28,7 @@ const SYSTEM_FILES = [
 
 // Directories always updated (all contents replaced).
 const SYSTEM_DIRS = [
+  'src/system/shared',
   'src/system/static',
 ];
 
@@ -49,7 +50,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cap-electron-upgrade-'));
+  let tmpDir: string;
+  try {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cap-electron-upgrade-'));
+  } catch (e) {
+    console.error(`[cap-electron] Failed to create temp directory: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
+  }
+
   try {
     await extract({ file: templatePath, cwd: tmpDir, strip: 1 });
 
@@ -125,6 +133,9 @@ async function main(): Promise<void> {
 
     console.log('\nRunning sync...');
     execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
+  } catch (e) {
+    console.error(`[cap-electron] Upgrade failed: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -163,4 +174,7 @@ function copyDirSync(src: string, dest: string): void {
   }
 }
 
-await main();
+main().catch((e) => {
+  console.error(`[cap-electron] Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
+});

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, screen } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 interface SavedState {
   x: number;

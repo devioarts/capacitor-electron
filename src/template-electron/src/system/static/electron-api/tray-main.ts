@@ -1,7 +1,7 @@
 import { app, Tray, Menu, BrowserWindow, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 export type TrayMenuAction = 'show' | 'quit' | 'separator';
 

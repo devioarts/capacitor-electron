@@ -1,6 +1,6 @@
 import { app, ipcMain, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 // Variant B: exposed via window.Electron.updater namespace.
 // Chosen over a Capacitor pseudo-plugin (Variant A) because the updater is

@@ -1,6 +1,6 @@
 // Electron implementation of @capacitor/app
 import { app, BrowserWindow } from 'electron';
-import { registerPlugin, emitPluginEvent, loadConfig, type AnyRecord, type EventHooks } from './functions';
+import { registerPlugin, emitPluginEvent, loadConfig, type AnyRecord, type EventHooks } from '../../shared/functions';
 
 function getMainWindow(): BrowserWindow | undefined {
   return BrowserWindow.getAllWindows()[0];

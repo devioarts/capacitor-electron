@@ -1,6 +1,26 @@
+/**
+ * Exposes window._CapElectron via contextBridge — the raw IPC bridge used by
+ * electron-init.js to set up window.Capacitor in the renderer.
+ *
+ * _CapElectron provides:
+ *   getPluginHeaders() — list of third-party plugins (auto + user) for
+ *                        window.Capacitor.PluginHeaders.  Built-in Capacitor
+ *                        plugins (App, ActionSheet, …) are NOT listed here;
+ *                        they are defined statically in electron-init.js.
+ *   invoke()          — calls ipcMain.handle('PluginName-method', opts)
+ *   nativeCallback()  — manages addListener / removeListener / removeAllListeners
+ *                        for event-based plugins routed through PluginHeaders.
+ *
+ * Why '_CapElectron' and not 'Capacitor':
+ *   contextBridge freezes the exposed object.  @capacitor/core needs to add
+ *   Capacitor.Plugins = {} at runtime, which would throw on a frozen object.
+ *   electron-init.js therefore reads _CapElectron and creates a plain mutable
+ *   window.Capacitor that core can freely extend.
+ */
+
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import { pluginsAuto } from '../generated/plugins-preload-auto';
-import { pluginsUser } from '../../user/plugins-preload-user';
+import { pluginsAuto } from '../../generated/plugins-preload-auto';
+import { pluginsUser } from '../../../user/plugins-preload-user';
 
 type RType = 'promise' | 'callback';
 type ListenerFn = (data: unknown) => void;
@@ -8,40 +28,9 @@ type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 interface PluginMethod { name: string; rtype: RType }
 interface PluginHeader { name: string; methods: PluginMethod[] }
 
-const pluginsSystem: Record<string, PluginEntry> = {
-  LocalNotifications: {
-    methods: [
-      'schedule', 'cancel', 'getPending',
-      'getDeliveredNotifications', 'removeDeliveredNotifications', 'removeAllDeliveredNotifications',
-      'registerActionTypes', 'checkPermissions', 'requestPermissions',
-      'checkExactNotificationSetting', 'changeExactNotificationSetting',
-      'areEnabled', 'createChannel', 'deleteChannel', 'listChannels',
-    ],
-    events: ['localNotificationReceived', 'localNotificationActionPerformed'],
-  },
-  ActionSheet:  { methods: ['showActions'] },
-  Dialog:       { methods: ['alert', 'confirm', 'prompt'] },
-  App: {
-    methods: ['getInfo', 'getState', 'exitApp', 'minimizeApp', 'getLaunchUrl'],
-    events:  ['appStateChange', 'appUrlOpen', 'resume', 'pause', 'backButton'],
-  },
-  Browser: {
-    methods: ['open', 'close', 'getSnapshot'],
-    events:  ['browserFinished', 'browserPageLoaded'],
-  },
-  AppLauncher:  { methods: ['canOpenUrl', 'openUrl'] },
-  Filesystem: {
-    methods: [
-      'readFile', 'writeFile', 'appendFile', 'deleteFile',
-      'mkdir', 'rmdir', 'readdir', 'getUri', 'stat',
-      'rename', 'copy', 'downloadFile',
-    ],
-  },
-  Preferences: { methods: ['get', 'set', 'remove', 'clear', 'keys', 'migrate', 'removeOld'] },
-  Toast:        { methods: ['show'] },
-};
-
-const allPlugins: Record<string, PluginEntry> = { ...pluginsSystem, ...pluginsAuto, ...pluginsUser };
+// Only third-party plugins belong in PluginHeaders here.
+// Built-in Capacitor plugins are handled by electron-init.js (static, non-critical path).
+const allPlugins: Record<string, PluginEntry> = { ...pluginsAuto, ...pluginsUser };
 
 const CB_METHODS: PluginMethod[] = [
   { name: 'addListener',        rtype: 'callback' },
@@ -72,8 +61,6 @@ function addSub(pluginName: string, eventName: string, fn: ListenerFn): string {
   if (!subs.has(key)) {
     subs.set(key, new Map());
     ipcRenderer.send(`event-add-${pluginName}`, eventName);
-    // Store the listener reference so it can be removed when the last subscriber leaves,
-    // preventing duplicate calls if the same event is re-subscribed after full cleanup.
     const listener = (_: IpcRendererEvent, data: unknown) => {
       subs.get(key)?.forEach(f => f(data));
     };
@@ -117,14 +104,6 @@ function removeAllSubs(pluginName: string, eventName?: string): void {
 }
 
 // ── Expose bridge ─────────────────────────────────────────────────────────────
-//
-// Exposed as '_CapElectron' (not 'Capacitor') because contextBridge freezes the
-// object and @capacitor/core would throw "Cannot add property Plugins, object is
-// not extensible" if we exposed it directly as window.Capacitor.
-//
-// electron-init.js (injected into index.html by cap-electron copy) reads
-// window._CapElectron and creates a plain mutable window.Capacitor with
-// PluginHeaders + nativePromise + nativeCallback before @capacitor/core loads.
 
 contextBridge.exposeInMainWorld('_CapElectron', {
   getPluginHeaders: () => PLUGIN_HEADERS,

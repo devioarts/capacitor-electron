@@ -1,5 +1,5 @@
 import { app, Menu, type MenuItemConstructorOptions } from 'electron';
-import type { ElectronConfig } from './types';
+import type { ElectronConfig } from '../../shared/types';
 
 /**
  * Configure the native application menu (menu bar).

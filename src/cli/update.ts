@@ -10,6 +10,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import type { PluginSettings } from '../shared/plugin-settings.js';
+import { ensurePublicInit, ensureRootScriptTag } from './electron-init.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -147,10 +148,13 @@ function generateElectronMainAuto(plugins: PluginEntry[]): string {
 const GLOBALS_REFERENCE = '/// <reference types="@devioarts/capacitor-electron/globals" />';
 
 function injectGlobalsReference(projectRoot: string): void {
-  // Candidate files where a Vite/Capacitor project keeps ambient references.
+  // Candidate files where Vite/Capacitor/Nuxt/SvelteKit projects keep ambient references.
   const candidates = [
     path.join(projectRoot, 'src', 'vite-env.d.ts'),
     path.join(projectRoot, 'src', 'env.d.ts'),
+    path.join(projectRoot, 'src', 'app.d.ts'),
+    path.join(projectRoot, 'vite-env.d.ts'),
+    path.join(projectRoot, 'env.d.ts'),
   ];
 
   for (const candidate of candidates) {
@@ -175,6 +179,9 @@ function injectGlobalsReference(projectRoot: string): void {
 }
 
 function main(): void {
+  ensurePublicInit(capacitorRoot);
+  ensureRootScriptTag(capacitorRoot);
+
   const generatedDir = path.join(electronDir, 'src', 'system', 'generated');
   fs.mkdirSync(generatedDir, { recursive: true });
 
@@ -242,7 +249,12 @@ function main(): void {
   }
 }
 
-main();
+try {
+  main();
+} catch (e) {
+  console.error(`[cap-electron] Update failed: ${e instanceof Error ? e.message : String(e)}`);
+  process.exit(1);
+}
 
 // ── Config helpers ────────────────────────────────────────────────────────────
 
