@@ -1,3 +1,4 @@
+import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
