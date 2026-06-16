@@ -178,7 +178,7 @@ function injectGlobalsReference(projectRoot: string): void {
   }
 }
 
-function main(): void {
+async function main(): Promise<void> {
   ensurePublicInit(capacitorRoot);
   ensureRootScriptTag(capacitorRoot);
 
@@ -210,7 +210,7 @@ function main(): void {
   // ── 3. Capacitor config → electron/capacitor.config.json ─────────────────
 
   console.log('\nProcessing capacitor config...');
-  const cfg = readCapacitorConfig();
+  const cfg = await readCapacitorConfig();
   if (cfg) {
     const filtered: Record<string, unknown> = {};
     if (cfg['appId'])            filtered['appId']            = cfg['appId'];
@@ -249,83 +249,32 @@ function main(): void {
   }
 }
 
-try {
-  main();
-} catch (e) {
+main().catch((e) => {
   console.error(`[cap-electron] Update failed: ${e instanceof Error ? e.message : String(e)}`);
   process.exit(1);
-}
+});
 
 // ── Config helpers ────────────────────────────────────────────────────────────
 
-function readCapacitorConfig(): Record<string, unknown> | null {
+async function readCapacitorConfig(): Promise<Record<string, unknown> | null> {
   if (process.env['CAPACITOR_CONFIG']) {
     try { return JSON.parse(process.env['CAPACITOR_CONFIG']) as Record<string, unknown>; } catch { /* fall through */ }
   }
 
-  const jsonPath = path.join(capacitorRoot, 'capacitor.config.json');
-  if (fs.existsSync(jsonPath)) {
-    try { return JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as Record<string, unknown>; } catch { /* fall through */ }
-  }
-
-  for (const ext of ['ts', 'js']) {
-    const cfgPath = path.join(capacitorRoot, `capacitor.config.${ext}`);
-    if (!fs.existsSync(cfgPath)) continue;
-    try {
-      const result = tsObjectToJson(fs.readFileSync(cfgPath, 'utf-8'));
-      if (result) return result;
-      console.warn(`[cap-electron] Could not parse ${path.basename(cfgPath)} — unexpected format.`);
-    } catch (err) {
-      console.warn(`[cap-electron] Failed to parse ${path.basename(cfgPath)}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  return null;
-}
-
-function tsObjectToJson(src: string): Record<string, unknown> | null {
-  src = src
-    // block comments first — may span lines containing import keywords
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    // all import statements (regular + type, single-line + multi-line)
-    .replace(/import\s+.*?;/gs, '')
-    // line comments — negative lookbehind preserves URLs (http://)
-    .replace(/(?<!:)\/\/[^\n]*/g, '')
-    // type annotation on variable before `=`: `: CapacitorConfig`, `: Partial<Foo>`, `: A & B`
-    .replace(/:\s*[\w<>, [\]|&.]+(?=\s*=)/g, '')
-    // `as const` and `as TypeName<...>` — type assertions
-    .replace(/\bas\s+(?:const|[\w<>, [\]|&.]+)/g, '')
-    // `satisfies TypeName<...>`
-    .replace(/\bsatisfies\s+[\w<>, [\]|&.]+/g, '')
-    // `export default identifier;` — re-exported variable
-    .replace(/\bexport\s+default\s+\w+\s*;?/g, '')
-    // `export default` keyword before object literal
-    .replace(/\bexport\s+default\b/g, '')
-    // remaining `export` keyword (export const, export let, export var)
-    .replace(/\bexport\b\s*/g, '')
-    // variable declaration: `const/let/var name =`
-    .replace(/\b(?:const|let|var)\s+\w+\s*=\s*/g, '')
-    .trim()
-    .replace(/;$/, '');
-
-  const start = src.indexOf('{');
-  if (start === -1) return null;
-  let depth = 0, end = -1;
-  for (let i = start; i < src.length; i++) {
-    if (src[i] === '{') depth++;
-    else if (src[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-  }
-  if (end === -1) return null;
-
-  let obj = src.slice(start, end + 1);
-  obj = obj
-    .replace(/'/g, '"')
-    .replace(/,(\s*[}\]])/g, '$1')
-    .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
-
   try {
-    return JSON.parse(obj) as Record<string, unknown>;
-  } catch {
+    const { loadConfig } = depRequire('@capacitor/cli/dist/config.js') as {
+      loadConfig: () => Promise<{ app?: { extConfig?: Record<string, unknown> } }>;
+    };
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(capacitorRoot);
+      const loaded = await loadConfig();
+      return loaded.app?.extConfig ?? null;
+    } finally {
+      process.chdir(originalCwd);
+    }
+  } catch (err) {
+    console.warn(`[cap-electron] Failed to load capacitor config with @capacitor/cli: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }

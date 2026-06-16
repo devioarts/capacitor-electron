@@ -1,17 +1,45 @@
 // Electron implementation of @capacitor/browser and @capacitor/app-launcher
 import { shell } from 'electron';
-import { registerPlugin, type AnyRecord } from '../../shared/functions';
+import { loadConfig, registerPlugin, type AnyRecord } from '../../shared/functions';
 
-// Only allow http/https for shell.openExternal — file:, smb:, mailto:, custom schemes, etc.
-// can be powerful OS primitives. Custom schemes can be opted in via config if needed.
-const ALLOWED_SCHEMES = new Set(['http:', 'https:']);
+// Browser is intentionally web-only. AppLauncher may opt custom schemes in via
+// plugins.Electron.appLauncherSchemes.
+const WEB_SCHEMES = new Set(['http:', 'https:']);
+const BLOCKED_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:']);
+const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 
-function isSafe(url: string): boolean {
+const { cfg } = loadConfig();
+const appLauncherSchemes = normalizeSchemes(cfg.appLauncherSchemes);
+
+function normalizeSchemes(value: unknown): Set<string> {
+  if (!Array.isArray(value)) return new Set();
+
+  const schemes = value
+    .filter((scheme): scheme is string => typeof scheme === 'string')
+    .map((scheme) => scheme.trim().toLowerCase().replace(/:\/\/$/, '').replace(/:$/, ''))
+    .filter((scheme) => SCHEME_RE.test(scheme))
+    .map((scheme) => `${scheme}:`)
+    .filter((scheme) => !BLOCKED_SCHEMES.has(scheme));
+
+  return new Set(schemes);
+}
+
+function protocolOf(url: string): string | null {
   try {
-    return ALLOWED_SCHEMES.has(new URL(url).protocol);
+    return new URL(url).protocol;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function isBrowserUrlAllowed(url: string): boolean {
+  const protocol = protocolOf(url);
+  return protocol !== null && WEB_SCHEMES.has(protocol);
+}
+
+function isAppLauncherUrlAllowed(url: string): boolean {
+  const protocol = protocolOf(url);
+  return protocol !== null && !BLOCKED_SCHEMES.has(protocol) && (WEB_SCHEMES.has(protocol) || appLauncherSchemes.has(protocol));
 }
 
 // ── @capacitor/browser ────────────────────────────────────────────────────────
@@ -30,7 +58,7 @@ function isSafe(url: string): boolean {
 class Browser {
   async open(opts: AnyRecord): Promise<void> {
     const url = opts['url'] as string;
-    if (!isSafe(url)) throw new Error(`Refused to open unsafe URL: ${url}`);
+    if (!isBrowserUrlAllowed(url)) throw new Error(`Browser.open only supports http/https URLs: ${url}`);
     await shell.openExternal(url);
   }
 
@@ -49,17 +77,21 @@ registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close
  * Uses `shell.openExternal` to open URLs / app deep-link URIs.
  *
  * Limitations:
- * - `canOpenUrl()` always returns `{ value: true }` — Electron has no API to test
- *   whether a URL scheme is registered on the system.
+ * - `canOpenUrl()` returns `{ value: false }` for schemes rejected by the local
+ *   allowlist, similar to undeclared iOS/Android schemes. `{ value: true }`
+ *   means the URL is allowed, not that an OS handler exists.
+ * - Android package-name inputs are not supported; Electron's shell.openExternal
+ *   requires a URL.
  */
 class AppLauncher {
-  async canOpenUrl(): Promise<{ value: boolean }> {
-    return { value: true };
+  async canOpenUrl(opts: AnyRecord): Promise<{ value: boolean }> {
+    const url = opts['url'] as string;
+    return { value: isAppLauncherUrlAllowed(url) };
   }
 
   async openUrl(opts: AnyRecord): Promise<{ completed: boolean }> {
     const url = opts['url'] as string;
-    if (!isSafe(url)) return { completed: false };
+    if (!isAppLauncherUrlAllowed(url)) return { completed: false };
     try {
       await shell.openExternal(url);
       return { completed: true };

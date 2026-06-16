@@ -24,6 +24,7 @@ const config: CapacitorConfig = {
         minimizeToTray: false,
       },
       deepLinkingScheme: 'capelectron',
+      appLauncherSchemes: ['capelectron'],
       width:  1200,
       height: 800,
       center: true,

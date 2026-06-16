@@ -91,6 +91,17 @@ export interface ElectronConfig {
   /** Custom URL protocol scheme for deep linking (e.g. 'myapp' enables myapp:// links). Disabled by default. */
   deepLinkingScheme?: string;
 
+  /**
+   * Additional URL schemes allowed for `@capacitor/app-launcher`.
+   *
+   * `Browser.open()` always stays limited to `http://` and `https://`. AppLauncher
+   * follows Capacitor's platform declaration model: it also allows those web
+   * schemes, and may open custom app deep links listed here (for example
+   * `['slack', 'myapp']`). Values can be written with or without `:` / `://`;
+   * unsafe script schemes are ignored.
+   */
+  appLauncherSchemes?: string[];
+
   /** System tray icon and context menu. Disabled by default. */
   tray?: {
     /** Enable the tray icon. Default: false */
@@ -307,4 +318,3 @@ export interface ElectronBridge {
   /** Subscribe to display change events (added/removed/metrics-changed). Returns unsubscribe fn. */
   onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
 }
-

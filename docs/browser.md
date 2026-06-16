@@ -1,8 +1,31 @@
 # Browser & App Launcher
 
-Built-in Electron implementations of `@capacitor/browser` and `@capacitor/app-launcher`. Both plugins open URLs in the default OS application — they share the same underlying `shell.openExternal` call and are implemented in one file.
+Built-in Electron implementations of `@capacitor/browser` and `@capacitor/app-launcher`. The goal is to keep the same API semantics as the official Capacitor plugins while mapping them onto Electron's `shell.openExternal` primitive:
 
-No extra configuration required — install either plugin and it works on Electron out of the box.
+- `Browser.open()` accepts only `http://` and `https://`.
+- `AppLauncher.openUrl()` accepts `http://`, `https://`, and custom schemes explicitly listed in `plugins.Electron.appLauncherSchemes`.
+
+No extra configuration required for Browser or for AppLauncher web URLs — install either plugin and it works on Electron out of the box.
+
+Custom AppLauncher schemes are disabled by default. This mirrors the platform declaration model used by Capacitor on iOS (`LSApplicationQueriesSchemes`) and Android (`queries`): declare only schemes your app deliberately needs to query or open.
+
+```typescript
+// capacitor.config.ts
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.example.app',
+  appName: 'Example',
+  webDir: 'dist',
+  plugins: {
+    Electron: {
+      appLauncherSchemes: ['myotherapp', 'slack'],
+    },
+  },
+};
+
+export default config;
+```
 
 ---
 
@@ -38,11 +61,11 @@ await Browser.open({ url: 'https://example.com' });
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `url`  | `string` | URL to open — must be `https://`, `http://`, or a custom scheme |
+| `url`  | `string` | URL to open — must be `https://` or `http://` |
 
 Opens the URL with `shell.openExternal`. The call resolves once the OS has accepted the request, not when the browser page has loaded.
 
-Unsafe schemes (`javascript:`, `data:`, `vbscript:`) are rejected with an error.
+Non-web schemes, including custom app schemes, are rejected with an error. Use `AppLauncher.openUrl()` for explicitly allowlisted app deep links.
 
 #### `close()`
 
@@ -65,7 +88,7 @@ The listener is accepted without error but never fires. Use `addListener` / `rem
 
 ## @capacitor/app-launcher
 
-Opens a URL or deep-link URI in the appropriate app. On Electron this is equivalent to Browser — `shell.openExternal` delegates to the OS.
+Opens a URL or deep-link URI in the appropriate app. Electron delegates the handoff to the OS via `shell.openExternal`.
 
 ### Basic usage
 
@@ -73,7 +96,7 @@ Opens a URL or deep-link URI in the appropriate app. On Electron this is equival
 import { AppLauncher } from '@capacitor/app-launcher';
 
 const { completed } = await AppLauncher.openUrl({ url: 'https://example.com' });
-// or a custom scheme:
+// or a custom scheme listed in plugins.Electron.appLauncherSchemes:
 const { completed } = await AppLauncher.openUrl({ url: 'myotherapp://action/open' });
 ```
 
@@ -81,28 +104,32 @@ const { completed } = await AppLauncher.openUrl({ url: 'myotherapp://action/open
 
 #### `canOpenUrl(options)`
 
-Always returns `{ value: true }` — Electron has no API to check whether a URL scheme is registered on the system.
+Returns `{ value: false }` when the URL scheme is rejected by the local policy. Returns `{ value: true }` for `http://`, `https://`, or a custom scheme listed in `plugins.Electron.appLauncherSchemes`.
+
+Electron has no reliable API to check whether a URL scheme is actually registered on the system, so `{ value: true }` means "allowed by config", not "installed".
+
+The Android-only package-name form such as `com.twitter.android` is not supported on Electron because `shell.openExternal` requires a URL.
 
 ```typescript
 const { value } = await AppLauncher.canOpenUrl({ url: 'myapp://...' });
-// value is always true
+// value is true only if 'myapp' is listed in plugins.Electron.appLauncherSchemes
 ```
 
 #### `openUrl(options)`
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `url`  | `string` | URL or deep-link URI to open |
+| `url`  | `string` | `http://`, `https://`, or an allowlisted app deep-link URI |
 
 Returns `{ completed: true }` on success, `{ completed: false }` on error or rejected scheme.
 
-Unsafe schemes (`javascript:`, `data:`, `vbscript:`) return `{ completed: false }` without throwing.
+Rejected schemes return `{ completed: false }` without throwing. Script-like schemes (`javascript:`, `data:`, `vbscript:`) are always rejected, even if listed in config.
 
 ---
 
 ## Platform behaviour
 
-`shell.openExternal` is an OS-level call — it opens whatever application is registered for the URL scheme (browser for `http://https://`, file manager for `file://`, etc.). The call is asynchronous and resolves once the OS has accepted the handoff.
+`shell.openExternal` is an OS-level call. Browser limits that handoff to web URLs. AppLauncher allows web URLs plus configured app schemes. The call is asynchronous and resolves once the OS has accepted the handoff.
 
 ---
 
@@ -112,5 +139,5 @@ Unsafe schemes (`javascript:`, `data:`, `vbscript:`) return `{ completed: false 
 |---------|--------|--------|
 | `close()` | No-op | No Electron API to close external windows |
 | `getSnapshot()` | Returns null | No access to external browser content |
-| `canOpenUrl()` | Always true | No OS API to test scheme registration in Electron |
+| `canOpenUrl()` | Checks local scheme policy only | No reliable OS API to test scheme registration in Electron |
 | `browserFinished` / `browserPageLoaded` | Never emitted | `shell.openExternal` is fire-and-forget |

@@ -44,8 +44,8 @@ export const PageBrowser: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">@capacitor/app-launcher</p>
         <p className="text-xs text-slate-500">
-          canOpenUrl() vždy vrací <code>true</code> — Electron nemá API na ověření schématu.
-          openUrl() používá <code>shell.openExternal</code>.
+          canOpenUrl() ověřuje lokální allowlist schémat; Electron neumí spolehlivě zjistit,
+          jestli je schéma v OS registrované. openUrl() používá <code>shell.openExternal</code>.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button type="neutral" onClick={async () => {

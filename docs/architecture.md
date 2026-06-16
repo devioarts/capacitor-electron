@@ -153,7 +153,7 @@ capacitor.config.ts / .json   (project root)
 
 `main.ts` reads `capacitor.config.json` at startup via `loadConfig()`. The Capacitor CLI sets the `CAPACITOR_CONFIG` environment variable when running hooks, which `cap-electron sync` reads preferentially over the file — this allows the CLI to handle `.ts` config files without needing a TypeScript runtime.
 
-For `.ts` and `.js` config files read directly, a lightweight regex-based stripper removes TypeScript-specific syntax before `JSON.parse` — no `tsx` or `ts-node` dependency in the CLI.
+When `CAPACITOR_CONFIG` is not provided, `cap-electron sync` loads `capacitor.config.ts` / `.js` / `.json` through Capacitor CLI's own config loader and reads `app.extConfig`. This keeps Electron sync behaviour aligned with Capacitor itself and supports normal TypeScript config patterns such as `defineConfig`, variables, spreads, and environment-derived values.
 
 ---
 

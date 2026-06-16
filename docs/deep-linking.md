@@ -120,7 +120,7 @@ onMounted(() => {
 
 ## Notes
 
-- Protocol registration is automatically cleaned up on `will-quit` via `app.removeAsDefaultProtocolClient`.
+- Protocol registration is intentionally kept after quit so cold-start deep links continue to work.
 - In dev mode, registering the protocol works but may conflict with other Electron apps using the same scheme — use a unique scheme per project.
 - The `onDeepLink` handler may fire before your router is ready. Queue or defer handling if needed.
 - `singleInstance` (default `true`) is required for Windows second-instance deep links to work. If you disable it, the second process exits immediately and the URL is never forwarded.
