@@ -3,7 +3,7 @@ import { Browser } from "@capacitor/browser";
 import { AppLauncher } from "@capacitor/app-launcher";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageBrowser: React.FC = () => {
   const log = useLogger();

@@ -54,6 +54,67 @@ interface ElectronBridge {
   registerShortcut(accelerator: string, event: string): Promise<boolean>;
   unregisterShortcut(accelerator: string): Promise<void>;
   onShortcut(callback: (data: { event: string }) => void): () => void;
+
+  // ── Badge count ─────────────────────────────────────────────────────────────
+  setBadgeCount(count: number): Promise<boolean>;
+  getBadgeCount(): Promise<number>;
+
+  // ── Power Monitor ───────────────────────────────────────────────────────────
+  onPowerMonitorEvent(callback: (data: { type: PowerMonitorEventName }) => void): () => void;
+  getPowerMonitorIdleState(idleThreshold: number): Promise<IdleState>;
+  getPowerMonitorIdleTime(): Promise<number>;
+
+  // ── Screen / Display ────────────────────────────────────────────────────────
+  getAllDisplays(): Promise<ElectronDisplay[]>;
+  getPrimaryDisplay(): Promise<ElectronDisplay>;
+  getCursorScreenPoint(): Promise<{ x: number; y: number }>;
+  getCursorDisplay(): Promise<ElectronDisplay>;
+  onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
+}
+
+type PowerMonitorEventName =
+  | 'suspend'
+  | 'resume'
+  | 'lock-screen'
+  | 'unlock-screen'
+  | 'on-battery'
+  | 'on-ac'
+  | 'shutdown';
+
+type IdleState = 'active' | 'idle' | 'locked' | 'unknown';
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface ElectronDisplay {
+  id: number;
+  label: string;
+  bounds: Rect;
+  workArea: Rect;
+  size: { width: number; height: number };
+  workAreaSize: { width: number; height: number };
+  scaleFactor: number;
+  rotation: number;
+  internal: boolean;
+  touchSupport: 'available' | 'unavailable' | 'unknown';
+  accelerometerSupport: 'available' | 'unavailable' | 'unknown';
+  colorDepth: number;
+  colorSpace: string;
+  depthPerComponent: number;
+  displayFrequency: number;
+  detected: boolean;
+  monochrome: boolean;
+}
+
+type ScreenEventName = 'display-added' | 'display-removed' | 'display-metrics-changed';
+
+interface ScreenEventPayload {
+  type: ScreenEventName;
+  data: ElectronDisplay | { display: ElectronDisplay; changedMetrics: string[] };
 }
 
 interface Window {

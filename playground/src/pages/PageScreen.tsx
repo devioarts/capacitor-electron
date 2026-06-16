@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageScreen: React.FC = () => {
   const log = useLogger();
+  const { info } = log;
   const [listening, setListening] = useState(false);
 
   useEffect(() => {
     if (!listening) return;
     const unsub = window.Electron.onScreenEvent((payload) => {
-      log.info("Screen", payload.type, payload.data);
+      info("Screen", payload.type, payload.data);
     });
     return unsub;
-  }, [listening]);
+  }, [listening, info]);
 
   return (
     <div className="space-y-6">

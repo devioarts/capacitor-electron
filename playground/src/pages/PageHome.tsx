@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../components/Button.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 import { Capacitor } from "@capacitor/core";
 
 export const PageHome: React.FC = () => {

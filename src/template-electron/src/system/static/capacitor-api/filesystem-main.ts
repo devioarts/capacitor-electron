@@ -2,6 +2,7 @@
 import { app } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
 // ── Directory mapping ─────────────────────────────────────────────────────────
@@ -16,9 +17,14 @@ const DIR_MAP: Record<string, Parameters<typeof app.getPath>[0]> = {
 };
 
 function resolvePath(filePath: string, directory?: string): string {
-  if (!directory) return filePath;
-  const base = app.getPath(DIR_MAP[directory] ?? 'userData');
-  return path.join(base, filePath);
+  // No directory = absolute path, an intentional desktop-only feature.
+  if (!directory) return path.resolve(filePath);
+  const base = path.resolve(app.getPath(DIR_MAP[directory] ?? 'userData'));
+  const resolved = path.resolve(base, filePath);
+  if (resolved !== base && !resolved.startsWith(base + path.sep)) {
+    throw new Error(`Path traversal: "${filePath}" escapes the ${directory} directory`);
+  }
+  return resolved;
 }
 
 // ── Encoding helpers ──────────────────────────────────────────────────────────
@@ -53,7 +59,7 @@ function mapError(err: unknown, op: string): never {
 }
 
 function toUri(abs: string): string {
-  return `file://${abs.split(path.sep).join('/')}`;
+  return pathToFileURL(abs).href;
 }
 
 // ── Plugin class ──────────────────────────────────────────────────────────────
@@ -92,7 +98,7 @@ class Filesystem {
     try {
       if (recursive) await fs.mkdir(path.dirname(abs), { recursive: true });
       await fs.writeFile(abs, enc ? data : Buffer.from(data, 'base64'), enc ? { encoding: enc } : undefined);
-      return { uri: toUri(abs), path: abs };
+      return { uri: toUri(abs) };
     } catch (e) { return mapError(e, 'writeFile'); }
   }
 
@@ -166,11 +172,16 @@ class Filesystem {
   }
 
   async downloadFile(opts: AnyRecord): Promise<{ path: string; uri: string }> {
-    const url     = opts['url']  as string;
+    const rawUrl = opts['url'] as string;
+    let parsedUrl: URL;
+    try { parsedUrl = new URL(rawUrl); } catch { throw new Error('Invalid download URL'); }
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error('Download URL must use http: or https:');
+    }
     const dest    = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
     const headers = (opts['headers'] as Record<string, string> | undefined) ?? {};
     try {
-      const res = await fetch(url, { headers });
+      const res = await fetch(rawUrl, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const buf = Buffer.from(await res.arrayBuffer());
       await fs.mkdir(path.dirname(dest), { recursive: true });

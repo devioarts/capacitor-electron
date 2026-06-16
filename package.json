@@ -39,11 +39,19 @@
   "capacitor": {
     "electron": {
       "binary": "cap-electron",
-      "platforms": ["electron"]
+      "platforms": [
+        "electron"
+      ]
     }
   },
-  "publishConfig": { "access": "public" },
-  "keywords": ["capacitor", "electron", "platform"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "capacitor",
+    "electron",
+    "platform"
+  ],
   "peerDependencies": {
     "@capacitor/cli": ">=8.0.0"
   },
@@ -54,7 +62,7 @@
     "@capacitor/cli": "^8.4.0",
     "@types/node": "^24.0.0",
     "electron": "^42.4.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "tsx": "^4.0.0",
     "typescript": "^5.8.0"
   }

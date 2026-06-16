@@ -9,8 +9,9 @@ function getMainWindow(): BrowserWindow | undefined {
 function parseLaunchUrl(): string | null {
   const argv = process.argv.slice(app.isPackaged ? 1 : 2);
   const deepLink = argv.find(a => /^[a-z][a-z0-9+\-.]*:\/\//i.test(a) && !a.startsWith('http'));
-  if (deepLink) return deepLink;
-  return getMainWindow()?.webContents.getURL() ?? null;
+  return deepLink ?? null;
+  // Intentionally NOT falling back to webContents.getURL() — getLaunchUrl() must return null
+  // on a normal launch (no deep link), matching Capacitor's documented behaviour.
 }
 
 // ── Plugin class ──────────────────────────────────────────────────────────────

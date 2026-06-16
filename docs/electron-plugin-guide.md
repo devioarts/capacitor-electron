@@ -30,7 +30,7 @@ export const pluginsUser = {
 ### 2. Implement handlers in `plugins-main-user.ts`
 
 ```typescript
-import { registerPlugin, type AnyRecord } from '../system/static/functions';
+import { registerPlugin, type AnyRecord } from '../system/shared/functions';
 
 class MyPlugin {
   async getData(opts: { key: string }) {
@@ -83,7 +83,7 @@ This causes the preload to expose `addListener`, `removeListener`, and `removeAl
 ### 2. Emit events from `plugins-main-user.ts`
 
 ```typescript
-import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/static/functions';
+import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/shared/functions';
 
 class MyPlugin {
   async getData() { /* ... */ }
@@ -120,7 +120,7 @@ handle.remove();
 If starting the event source is expensive (hardware sensor, WebSocket, file watcher), use the `events` parameter of `registerPlugin` to start and stop it only when the renderer is actually listening.
 
 ```typescript
-import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/static/functions';
+import { registerPlugin, emitPluginEvent, type AnyRecord } from '../system/shared/functions';
 
 class TemperatureSensor {
   async getUnit() { return { unit: 'celsius' }; }

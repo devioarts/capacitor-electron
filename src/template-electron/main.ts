@@ -1,7 +1,7 @@
 import { app, BrowserWindow, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { trayMenu } from './src/user/tray';
 import { onReady } from './src/user/main-user';
@@ -78,19 +78,27 @@ function setup(): void {
     });
 
     if (isDev) {
-      win.loadURL(cfg.devUrl ?? 'http://localhost:5173');
+      const devUrl = cfg.devUrl ?? 'http://localhost:5173';
+      const devOrigin = (() => { try { return new URL(devUrl).origin; } catch { return devUrl; } })();
+      setIpcSenderCheck(url => { try { return new URL(url).origin === devOrigin; } catch { return false; } });
+      win.loadURL(devUrl);
       if (cfg.openDevTools !== false) win.webContents.openDevTools();
       watchPreloadSignal(win);
     } else if (cfg.serveMode === 'server') {
       const w = win;
       startLocalServer(path.join(process.resourcesPath, 'app')).then((port) => {
-        if (!w.isDestroyed()) w.loadURL(`http://127.0.0.1:${port}/index.html`);
+        const serverOrigin = `http://127.0.0.1:${port}`;
+        setIpcSenderCheck(url => { try { return new URL(url).origin === serverOrigin; } catch { return false; } });
+        if (!w.isDestroyed()) w.loadURL(`${serverOrigin}/index.html`);
       });
       if (cfg.openDevTools === true) win.webContents.openDevTools();
     } else {
+      setIpcSenderCheck(url => url.startsWith('file:'));
       win.loadFile(path.join(process.resourcesPath, 'app', 'index.html'));
       if (cfg.openDevTools === true) win.webContents.openDevTools();
     }
+
+    applySecurityHardening(win, isDev);
 
     if (windowState.isMaximized) win.maximize();
     if (cfg.persistWindowState) trackWindowState(win);
@@ -143,6 +151,41 @@ function setup(): void {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
+  });
+}
+
+/**
+ * Apply security hardening to a BrowserWindow:
+ *  - Block unexpected navigations (allow only same-origin or same file://)
+ *  - Deny window.open / target=_blank (use shell.openExternal explicitly if needed)
+ *  - Deny all permission requests by default
+ */
+function applySecurityHardening(win: BrowserWindow, dev: boolean): void {
+  win.webContents.on('will-navigate', (event, url) => {
+    const current = win.webContents.getURL();
+    let allow = false;
+    try {
+      const newU = new URL(url);
+      if (current) {
+        const curU = new URL(current);
+        allow = (curU.protocol === 'file:' && newU.protocol === 'file:')
+             || (curU.origin !== 'null' && curU.origin === newU.origin);
+      }
+    } catch { /* ignore invalid URLs */ }
+    if (!allow) {
+      event.preventDefault();
+      if (dev) console.warn('[cap-electron] Blocked navigation to:', url);
+    }
+  });
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (dev) console.warn('[cap-electron] Blocked window.open for:', url);
+    return { action: 'deny' };
+  });
+
+  win.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
+    if (dev) console.warn('[cap-electron] Blocked permission request:', permission);
+    callback(false);
   });
 }
 

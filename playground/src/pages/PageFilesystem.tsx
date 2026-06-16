@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Filesystem } from "@capacitor/filesystem";
 import { Button } from "../components/Button.tsx";
 import { Input, TextArea, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 import { DIRECTORIES } from "../helpers/filesystem.ts";
 
 export const PageFilesystem: React.FC = () => {

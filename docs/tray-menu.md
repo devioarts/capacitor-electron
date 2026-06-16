@@ -41,7 +41,7 @@ const config: CapacitorConfig = {
 Edit `electron/src/user/tray.ts` — this file is never overwritten by `cap-electron sync`.
 
 ```typescript
-import type { TrayMenuItemDef } from '../system/static/tray-main';
+import type { TrayMenuItemDef } from '../system/static/electron-api/tray-main';
 
 export const trayMenu: TrayMenuItemDef[] = [
   { label: 'Open', action: 'show' },

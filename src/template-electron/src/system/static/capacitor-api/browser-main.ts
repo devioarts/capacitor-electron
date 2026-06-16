@@ -2,11 +2,16 @@
 import { shell } from 'electron';
 import { registerPlugin, type AnyRecord } from '../../shared/functions';
 
-const UNSAFE_SCHEMES = ['javascript:', 'data:', 'vbscript:'];
+// Only allow http/https for shell.openExternal — file:, smb:, mailto:, custom schemes, etc.
+// can be powerful OS primitives. Custom schemes can be opted in via config if needed.
+const ALLOWED_SCHEMES = new Set(['http:', 'https:']);
 
 function isSafe(url: string): boolean {
-  const lower = url.trim().toLowerCase();
-  return !UNSAFE_SCHEMES.some(s => lower.startsWith(s));
+  try {
+    return ALLOWED_SCHEMES.has(new URL(url).protocol);
+  } catch {
+    return false;
+  }
 }
 
 // ── @capacitor/browser ────────────────────────────────────────────────────────

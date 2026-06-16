@@ -41,17 +41,32 @@ const MIME: Record<string, string> = {
  */
 export function startLocalServer(distDir: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    const server = http.createServer((req, res) => {
-      let urlPath = req.url?.split('?')[0] ?? '/';
-      if (urlPath === '/') urlPath = '/index.html';
+    const base = path.resolve(distDir);
+    const indexPath = path.join(base, 'index.html');
 
-      const filePath = path.join(distDir, urlPath);
+    const server = http.createServer((req, res) => {
+      let pathname: string;
+      try {
+        pathname = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
+      } catch {
+        res.writeHead(400); res.end('Bad Request'); return;
+      }
+
+      if (pathname === '/') pathname = '/index.html';
+
+      const filePath = path.resolve(base, '.' + pathname);
+
+      // Guard against path traversal (covers %2e%2e, %5C, null-byte, backslash variants)
+      if (filePath !== base && !filePath.startsWith(base + path.sep)) {
+        res.writeHead(403); res.end('Forbidden'); return;
+      }
+
       const ext = path.extname(filePath).toLowerCase();
 
       fs.readFile(filePath, (err, data) => {
         if (err) {
           // SPA fallback — serve index.html for unknown paths
-          fs.readFile(path.join(distDir, 'index.html'), (err2, html) => {
+          fs.readFile(indexPath, (err2, html) => {
             if (err2) { res.writeHead(404); res.end('Not found'); return; }
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(html);

@@ -47,7 +47,8 @@ export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | n
     }
   });
 
-  app.on('will-quit', () => app.removeAsDefaultProtocolClient(scheme));
+  // Intentionally NOT calling removeAsDefaultProtocolClient on quit —
+  // removing it on normal exit would break OS protocol associations for cold starts.
 }
 
 /**

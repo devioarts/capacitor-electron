@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageShortcuts: React.FC = () => {
   const log = useLogger();
+  const { info } = log;
   const [accelerator, setAccelerator] = useState("CmdOrCtrl+Shift+T");
   const [eventName, setEventName]     = useState("test-shortcut");
   const [unregAccel, setUnregAccel]   = useState("CmdOrCtrl+Shift+T");
@@ -13,10 +14,10 @@ export const PageShortcuts: React.FC = () => {
   useEffect(() => {
     if (!listening) return;
     const unsub = window.Electron.onShortcut(({ event }) => {
-      log.info("Shortcut", "triggered", { event });
+      info("Shortcut", "triggered", { event });
     });
     return unsub;
-  }, [listening]);
+  }, [listening, info]);
 
   return (
     <div className="space-y-6">

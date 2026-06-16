@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Dialog } from "@capacitor/dialog";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageDialog: React.FC = () => {
   const log = useLogger();

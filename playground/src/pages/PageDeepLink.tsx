@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Button } from "../components/Button.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 interface DeepLinkEvent {
   url: string;
@@ -10,6 +10,7 @@ interface DeepLinkEvent {
 
 export const PageDeepLink: React.FC = () => {
   const log = useLogger();
+  const { info } = log;
   const [events, setEvents] = useState<DeepLinkEvent[]>([]);
   const [listening, setListening] = useState(false);
 
@@ -19,11 +20,11 @@ export const PageDeepLink: React.FC = () => {
     const unsub = window.Electron?.onDeepLink?.((data) => {
       const entry: DeepLinkEvent = { url: data.url, receivedAt: new Date().toLocaleTimeString() };
       setEvents((prev) => [entry, ...prev]);
-      log.info("DeepLink", "received", data);
+      info("DeepLink", "received", data);
     });
 
     return unsub;
-  }, [listening]);
+  }, [listening, info]);
 
   const scheme = "capelectron";
 

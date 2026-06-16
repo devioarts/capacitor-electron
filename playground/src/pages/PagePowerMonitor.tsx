@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PagePowerMonitor: React.FC = () => {
   const log = useLogger();
+  const { info } = log;
   const [listening, setListening] = useState(false);
   const [idleThreshold, setIdleThreshold] = useState("30");
 
   useEffect(() => {
     if (!listening) return;
     const unsub = window.Electron.onPowerMonitorEvent(({ type }) => {
-      log.info("PowerMonitor", "event", { type });
+      info("PowerMonitor", "event", { type });
     });
     return unsub;
-  }, [listening]);
+  }, [listening, info]);
 
   return (
     <div className="space-y-6">

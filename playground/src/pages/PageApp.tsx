@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Button } from "../components/Button.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageApp: React.FC = () => {
   const log = useLogger();
+  const { info } = log;
   const [listening, setListening] = useState(false);
 
   useEffect(() => {
     if (!listening) return;
 
     const handles: Array<Promise<{ remove: () => Promise<void> }>> = [
-      App.addListener("appStateChange", (state) => log.info("App", "appStateChange", state)),
-      App.addListener("resume", () => log.info("App", "resume")),
-      App.addListener("pause", () => log.info("App", "pause")),
+      App.addListener("appStateChange", (state) => info("App", "appStateChange", state)),
+      App.addListener("resume", () => info("App", "resume")),
+      App.addListener("pause", () => info("App", "pause")),
     ];
 
     return () => {
       handles.forEach((h) => h.then((r) => r.remove()));
     };
-  }, [listening]);
+  }, [listening, info]);
 
   return (
     <div className="space-y-3">

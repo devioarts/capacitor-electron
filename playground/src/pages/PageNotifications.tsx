@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 let nextId = 1;
 

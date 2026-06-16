@@ -3,122 +3,92 @@
  * runs before <script type="module"> (which loads @capacitor/core).
  *
  * Responsibilities:
- *   1. Read window.CapacitorCustomPlatform that plugins-preload.ts already set via
- *      contextBridge (contains third-party plugin bridges — TCPClient, etc.).
- *   2. Add built-in Capacitor plugin bridges (App, ActionSheet, …) on top.
- *   3. Write the merged object back as window.CapacitorCustomPlatform.
- *   4. Set up window.Capacitor so @capacitor/core can route calls through IPC
- *      (PluginHeaders + nativePromise + nativeCallback).
+ *   1. Preserve third-party plugin bridges already set on window.CapacitorCustomPlatform
+ *      by plugins-preload.ts via contextBridge (e.g. plugins using the 'electron:' factory).
+ *   2. Write window.CapacitorCustomPlatform = { name: 'electron', plugins: <preserved> }
+ *      so Capacitor.getPlatform() returns 'electron' and third-party plugin bridges survive.
+ *   3. Register built-in Capacitor plugin PluginHeaders so @capacitor/core routes their
+ *      calls through nativePromise/nativeCallback (→ IPC) instead of falling back to the
+ *      web implementation.
+ *   4. Append third-party plugin headers from _CapElectron.getPluginHeaders() so plugins
+ *      that do NOT use the 'electron:' factory key are also routed natively.
  *
- * Fault-isolation guarantee:
- *   Third-party plugins go through plugins-preload.ts (contextBridge, preload).
- *   Even if this script throws, window.CapacitorCustomPlatform from the preload
- *   remains intact and those plugins keep working.  Only the built-in Capacitor
- *   plugins and the new-style PluginHeaders routing are affected by a failure here.
- *
- * Built-in plugins are defined statically (not generated) — they change only when
- * the supported @capacitor/* package set changes, which is rare and deliberate.
+ * Two routing paths in Capacitor 6+:
+ *   a) PluginHeaders + nativePromise/nativeCallback — used by built-in @capacitor/* plugins
+ *      and third-party plugins that declare PluginHeaders in their preload.
+ *   b) CapacitorCustomPlatform.plugins — used by third-party plugins that register with
+ *      the 'electron:' factory key in registerPlugin.
+ *   Both paths must be populated; this script handles both.
  *
  * Injection:
- *   Production  — cap-electron copy writes it to electron/app/ and injects the
- *                 <script> tag into app/index.html.
- *   Development — cap-electron copy writes it to public/electron-init.js and
- *                 injects the <script> tag into the root index.html so the Vite
- *                 dev server serves it at /electron-init.js.
+ *   Development  — cap-electron update writes it to public/electron-init.js and
+ *                  injects the <script> tag into the root index.html so the Vite
+ *                  dev server serves it at /electron-init.js.
+ *   Production   — cap-electron copy writes it to electron/app/ and injects the
+ *                  <script> tag into app/index.html.
  */
 (function () {
   var b = window._CapElectron;
   if (!b) return;
 
-  // ── Read third-party plugins from preload (contextBridge, frozen proxy) ─────
-  //
-  // Save a reference BEFORE we overwrite window.CapacitorCustomPlatform.
-  // Object.assign can read from a frozen object just fine.
+  // Preserve third-party plugin bridges set by plugins-preload.ts via contextBridge.
+  // Must be read BEFORE we overwrite window.CapacitorCustomPlatform below.
   var prevPlugins = (window.CapacitorCustomPlatform && window.CapacitorCustomPlatform.plugins) || {};
 
-  // ── Built-in Capacitor plugin bridges (static) ────────────────────────────
-  //
-  // Each entry mirrors the ipcMain.handle registrations in capacitor-api/*-main.ts.
-  // Methods:  opts → ipcRenderer.invoke via _CapElectron.invoke
-  // Events:   addListener / removeListener / removeAllListeners via nativeCallback
+  // Mark this as the electron platform and keep third-party bridges intact.
+  window.CapacitorCustomPlatform = { name: 'electron', plugins: prevPlugins };
 
-  function mk(name, methods, hasEvents) {
-    var o = {};
-    for (var i = 0; i < methods.length; i++) {
-      (function (m) {
-        o[m] = function (opts) { return b.invoke(name + '-' + m, opts); };
-      })(methods[i]);
-    }
-    if (hasEvents) {
-      (function (n) {
-        o.addListener = function (ev, fn) {
-          return b.nativeCallback(n, 'addListener', { eventName: ev }, fn);
-        };
-        o.removeListener = function (id) {
-          b.nativeCallback(n, 'removeListener', { callbackId: id }, undefined);
-        };
-        o.removeAllListeners = function (ev) {
-          b.nativeCallback(n, 'removeAllListeners', ev ? { eventName: ev } : undefined, undefined);
-        };
-      })(name);
-    }
-    return o;
+  // ── Build a PluginHeader entry ─────────────────────────────────────────────
+  //
+  // Methods list must match the ipcMain.handle registrations in *-main.ts.
+  // hasEvents = true adds addListener / removeListener / removeAllListeners
+  // (callback rtype) which route through nativeCallback → IPC event channels.
+
+  function ph(name, methods, hasEvents) {
+    var m = methods.map(function (n) { return { name: n, rtype: 'promise' }; });
+    if (hasEvents) m = m.concat([
+      { name: 'addListener',        rtype: 'callback' },
+      { name: 'removeListener',     rtype: 'callback' },
+      { name: 'removeAllListeners', rtype: 'callback' },
+    ]);
+    return { name: name, methods: m };
   }
 
-  var BUILTIN = {
-    // @capacitor/app
-    App: mk('App', ['getInfo', 'getState', 'exitApp', 'minimizeApp', 'getLaunchUrl'], true),
-    // @capacitor/action-sheet
-    ActionSheet: mk('ActionSheet', ['showActions'], false),
-    // @capacitor/dialog
-    Dialog: mk('Dialog', ['alert', 'confirm', 'prompt'], false),
-    // @capacitor/browser
-    Browser: mk('Browser', ['open', 'close', 'getSnapshot'], true),
-    // @capacitor/app-launcher
-    AppLauncher: mk('AppLauncher', ['canOpenUrl', 'openUrl'], false),
-    // @capacitor/filesystem
-    Filesystem: mk('Filesystem', [
-      'readFile', 'writeFile', 'appendFile', 'deleteFile',
-      'mkdir', 'rmdir', 'readdir', 'getUri', 'stat',
-      'rename', 'copy', 'downloadFile',
+  // ── Built-in Capacitor plugin headers (static) ────────────────────────────
+
+  var BUILTIN = [
+    ph('App',         ['getInfo','getState','exitApp','minimizeApp','getLaunchUrl'], true),
+    ph('ActionSheet', ['showActions'], false),
+    ph('Dialog',      ['alert','confirm','prompt'], false),
+    ph('Browser',     ['open','close','getSnapshot'], true),
+    ph('AppLauncher', ['canOpenUrl','openUrl'], false),
+    ph('Filesystem',  [
+      'readFile','writeFile','appendFile','deleteFile',
+      'mkdir','rmdir','readdir','getUri','stat',
+      'rename','copy','downloadFile',
     ], false),
-    // @capacitor/preferences
-    Preferences: mk('Preferences', ['get', 'set', 'remove', 'clear', 'keys', 'migrate', 'removeOld'], false),
-    // @capacitor/toast
-    Toast: mk('Toast', ['show'], false),
-    // @capacitor/local-notifications
-    LocalNotifications: mk('LocalNotifications', [
-      'schedule', 'cancel', 'getPending',
-      'getDeliveredNotifications', 'removeDeliveredNotifications', 'removeAllDeliveredNotifications',
+    ph('Preferences', ['get','set','remove','clear','keys','migrate','removeOld'], false),
+    ph('Toast',       ['show'], false),
+    ph('LocalNotifications', [
+      'schedule','cancel','getPending',
+      'getDeliveredNotifications','removeDeliveredNotifications','removeAllDeliveredNotifications',
       'registerActionTypes',
-      'checkPermissions', 'requestPermissions',
-      'checkExactNotificationSetting', 'changeExactNotificationSetting',
+      'checkPermissions','requestPermissions',
+      'checkExactNotificationSetting','changeExactNotificationSetting',
       'areEnabled',
-      'createChannel', 'deleteChannel', 'listChannels',
+      'createChannel','deleteChannel','listChannels',
     ], true),
-  };
+  ];
 
-  // ── Atomic merge & write ──────────────────────────────────────────────────
+  // ── window.Capacitor ──────────────────────────────────────────────────────
   //
-  // prevPlugins (third-party, from preload) merged with BUILTIN.
-  // BUILTIN intentionally does NOT override prevPlugins keys so a third-party
-  // plugin cannot accidentally shadow a built-in.
-
-  window.CapacitorCustomPlatform = {
-    name: 'electron',
-    plugins: Object.assign({}, BUILTIN, prevPlugins),
-  };
-
-  // ── window.Capacitor — needed by @capacitor/core for new-style routing ────
-  //
-  // PluginHeaders tells core which plugins are available natively so it can
-  // route calls through nativePromise / nativeCallback instead of the web impl.
-  // This covers both built-in plugins and any third-party plugins that do NOT
-  // use the `electron:` factory key in registerPlugin.
+  // PluginHeaders = built-in headers + third-party headers from preload.
+  // nativePromise  → ipcMain.handle(`${plugin}-${method}`, opts)
+  // nativeCallback → addListener/removeListener via IPC event channels
 
   window.Capacitor = {
-    PluginHeaders: b.getPluginHeaders(),
-    nativePromise: function (p, m, o) { return b.invoke(p + '-' + m, o); },
+    PluginHeaders:  BUILTIN.concat(b.getPluginHeaders()),
+    nativePromise:  function (p, m, o) { return b.invoke(p + '-' + m, o); },
     nativeCallback: function (p, m, o, fn) { return b.nativeCallback(p, m, o, fn); },
   };
 })();

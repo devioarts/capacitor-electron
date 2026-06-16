@@ -6,6 +6,19 @@ import type { AppConfig, ElectronConfig } from './types';
 export type AnyRecord = Record<string, unknown>;
 export type EventHooks = Record<string, { onAdd?: () => void; onRemove?: () => void }>;
 
+// IPC sender trust filter — default allows all (backwards-compatible).
+// Override with setIpcSenderCheck() from main.ts once the app URL is known.
+let _senderCheck: ((url: string) => boolean) | null = null;
+
+/**
+ * Restrict all plugin IPC handlers to frames whose URL satisfies `fn`.
+ * Call this from main.ts after the loaded URL is known (dev URL, file://, or local server origin).
+ * Frames that fail the check receive a FORBIDDEN error instead of being dispatched.
+ */
+export function setIpcSenderCheck(fn: (url: string) => boolean): void {
+  _senderCheck = fn;
+}
+
 function isPlainObject(v: unknown): v is AnyRecord {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -47,7 +60,11 @@ export function emitPluginEvent(pluginClass: string, eventType: string, data?: u
  */
 export function registerPlugin(pluginClass: string, instance: AnyRecord, methods: readonly string[], events?: EventHooks): void {
   for (const method of methods) {
-    ipcMain.handle(`${pluginClass}-${method}`, async (_event, opts: unknown) => {
+    ipcMain.handle(`${pluginClass}-${method}`, async (event, opts: unknown) => {
+      const senderUrl = event.senderFrame?.url ?? '';
+      if (_senderCheck && !_senderCheck(senderUrl)) {
+        return { success: false, error: { code: 'FORBIDDEN', message: 'IPC sender not trusted', platform: 'electron', method, details: {} } };
+      }
       if (!isPlainObject(opts) && opts !== undefined) {
         return { success: false, error: { code: 'INVALID_PARAMS', message: 'Options must be a plain object', platform: 'electron', method, details: {} } };
       }

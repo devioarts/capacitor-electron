@@ -1,26 +1,7 @@
 import React, { useEffect } from "react";
+import { type LoggerSink, type LogEntry, type LoggerCtx, LoggerCtxObj, useLogger } from "./logger-context";
 
-export type LoggerSink = "panel" | "console" | "both";
-
-export interface LogEntry {
-  ts: number;
-  level: "info" | "warn" | "error";
-  scope: string;
-  msg: string;
-  data?: unknown;
-}
-
-interface LoggerCtx {
-  sink: LoggerSink;
-  setSink: (s: LoggerSink) => void;
-  logs: LogEntry[];
-  clear: () => void;
-  info: (scope: string, msg: string, data?: unknown) => void;
-  warn: (scope: string, msg: string, data?: unknown) => void;
-  error: (scope: string, msg: string, data?: unknown) => void;
-}
-
-const Ctx = React.createContext<LoggerCtx | null>(null);
+export type { LoggerSink, LogEntry };
 
 export const LoggerProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [sink, setSink] = React.useState<LoggerSink>("console");
@@ -45,22 +26,15 @@ export const LoggerProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     [sink],
   );
 
-  const ctx: LoggerCtx = {
-    sink, setSink, logs,
-    clear: () => setLogs([]),
-    info:  (scope, msg, data) => push("info",  scope, msg, data),
-    warn:  (scope, msg, data) => push("warn",  scope, msg, data),
-    error: (scope, msg, data) => push("error", scope, msg, data),
-  };
+  const clear = React.useCallback(() => setLogs([]), []);
+  const info  = React.useCallback((scope: string, msg: string, data?: unknown) => push("info",  scope, msg, data), [push]);
+  const warn  = React.useCallback((scope: string, msg: string, data?: unknown) => push("warn",  scope, msg, data), [push]);
+  const error = React.useCallback((scope: string, msg: string, data?: unknown) => push("error", scope, msg, data), [push]);
 
-  return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>;
+  const ctx: LoggerCtx = { sink, setSink, logs, clear, info, warn, error };
+
+  return <LoggerCtxObj.Provider value={ctx}>{children}</LoggerCtxObj.Provider>;
 };
-
-export function useLogger(): LoggerCtx {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error("LoggerProvider missing");
-  return v;
-}
 
 export const LoggerSinkSwitch: React.FC = () => {
   const { sink, setSink } = useLogger();

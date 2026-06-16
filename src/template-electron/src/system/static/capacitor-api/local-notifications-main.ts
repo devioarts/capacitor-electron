@@ -54,7 +54,7 @@ function fire(n: NotifSchema): void {
   const notif = new Notification({ title: n.title, body: n.body ?? '', silent: n.silent ?? false });
   notif.on('show', () => {
     delivered.push(n);
-    emitPluginEvent('LocalNotifications', 'localNotificationReceived', { notification: n });
+    emitPluginEvent('LocalNotifications', 'localNotificationReceived', n);
   });
   notif.on('failed', (_e, err) => {
     // On macOS (Electron 42+) unsigned apps cannot show notifications via UNNotification.

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, TextArea, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 import { Capacitor } from "@capacitor/core";
 
 const Section: React.FC<{ dot: string; title: string; children: React.ReactNode }> = ({ dot, title, children }) => (

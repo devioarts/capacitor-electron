@@ -109,7 +109,7 @@ function generateElectronMainAuto(plugins: PluginEntry[]): string {
   parts.push(
     '',
     "import { app } from 'electron';",
-    "import { registerPlugin, AnyRecord } from '../static/functions';",
+    "import { registerPlugin, AnyRecord } from '../shared/functions';",
   );
 
   const extraImports = new Set<string>();

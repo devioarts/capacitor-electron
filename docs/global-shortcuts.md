@@ -10,7 +10,7 @@ Useful for tray apps, menu-bar utilities, or any app that needs a "bring to fron
 Define shortcuts in `electron/src/user/shortcuts.ts`. This file is never overwritten by `cap-electron sync`.
 
 ```typescript
-import type { GlobalShortcutDef } from '../system/static/shortcuts-main';
+import type { GlobalShortcutDef } from '../system/static/electron-api/shortcuts-main';
 
 export const shortcuts: GlobalShortcutDef[] = [
   { accelerator: 'CmdOrCtrl+Shift+K', event: 'open-search' },

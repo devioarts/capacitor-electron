@@ -20,10 +20,10 @@
 | `add`<br><sub>Creates `electron/` with template files, `package.json` and default config</sub> | Add Electron platform to a project | ✅ | — | ✅ | — | |
 | `copy`<br><sub>Copies web assets into `electron/app/`, injects `electron-init.js` into index.html</sub> | Copy web assets into the Electron project | ✅ | — | ✅ | — | |
 | `open`<br><sub>Starts dev server + esbuild watch + Electron; hot-restarts on main change, reloads renderer on preload change</sub> | Open the project in Electron | ⚠️ | — | ⚠️ | — | Process cleanup on Ctrl+C |
-| `update`<br><sub>Overwrites system files in `electron/src/system/`, leaves user files untouched</sub> | Update the Electron platform | ✅ | — | ✅ | — | |
-| `upgrade`<br><sub>Updates npm dependencies in `electron/` to latest compatible versions</sub> | Upgrade dependencies | ✅ | — | ✅ | — | |
+| `update`<br><sub>Generates plugin bridge (`plugins-main-auto.ts`), injects `electron-init.js`, and syncs config from `capacitor.config`; leaves user files untouched</sub> | Update the Electron platform | ✅ | — | ✅ | — | |
+| `upgrade`<br><sub>Copies system files from the template into `electron/src/system/`; with `--all` also merges `package.json` dependencies</sub> | Upgrade system files | ✅ | — | ✅ | — | |
 | `kill`<br><sub>Finds and terminates the running Electron process started by `cap-electron open`</sub> | Kill a running process | ✅ | — | ✅ | — | |
-| `scripts`<br><sub>Runs a script defined in `electron/package.json`, forwarding any extra arguments</sub> | Run project scripts | ✅ | — | ✅ | — | |
+| `scripts`<br><sub>Adds `electron:*` scripts to the root `package.json` and runs one, forwarding any extra arguments</sub> | Run project scripts | ✅ | — | ✅ | — | |
 
 ---
 
@@ -36,8 +36,8 @@
 | App Launcher<br><sub>canOpenUrl() — checks whether the OS can open a URL; openUrl() — opens it in the default app/browser</sub> | — | ❌ | — | ❌ | — | Not tested |
 | App Menu<br><sub>Native application menu bar configured via `menu` in capacitor.config; editMenu, viewMenu options</sub> | [app-menu.md](docs/app-menu.md) | ❌ | — | ✅ | — | Mac not work |
 | Auto Updater<br><sub>electron-updater: checkForUpdate, download, quitAndInstall; latest/beta/alpha channels</sub> | [auto-updater.md](docs/auto-updater.md) | ❌ | — | ❌ | — | Not tested |
-| Browser (InAppBrowser)<br><sub>open() — new BrowserWindow; close() — closes it; getSnapshot() — screenshot of the content</sub> | [browser.md](docs/browser.md) | ❌ | — | ❌ | — | Not tested |
-| Dialog<br><sub>alert(), confirm(), prompt() — native Electron dialogs; showOpenDialog / showSaveDialog for files</sub> | [dialog.md](docs/dialog.md) | ✅ | — | ✅ | — | |
+| Browser (InAppBrowser)<br><sub>open() — opens URL in the default OS browser via `shell.openExternal`; close() — no-op; getSnapshot() — returns null</sub> | [browser.md](docs/browser.md) | ❌ | — | ❌ | — | Not tested |
+| Dialog<br><sub>alert(), confirm(), prompt() — native Electron dialogs (no file dialogs)</sub> | [dialog.md](docs/dialog.md) | ✅ | — | ✅ | — | |
 | Filesystem<br><sub>readFile, writeFile, mkdir, readdir, stat, rename, copy, downloadFile; Capacitor directory mapping to OS paths</sub> | [filesystem.md](docs/filesystem.md) | ✅ | — | ✅ | — | |
 | Global Shortcuts<br><sub>Register shortcuts in main.ts or at runtime from the renderer via registerShortcut/unregisterShortcut; onShortcut callback</sub> | [global-shortcuts.md](docs/global-shortcuts.md) | ✅ | — | ✅ | — | |
 | Local Notifications<br><sub>schedule, cancel, getPending; checkPermissions/requestPermissions; action types and channels</sub> | [local-notifications.md](docs/local-notifications.md) | ❌ | — | ✅⚠️ | — | On Windows caption shows "Electron" |
@@ -57,7 +57,7 @@
 | Fullscreen<br><sub>setFullscreen(true/false), isFullscreen() — enter/exit fullscreen and query current state</sub> | ✅ | — | ✅ | — | |
 | App controls<br><sub>quit(), focus(), reload() — quit the app, focus the window, reload the renderer programmatically</sub> | ✅ | — | ✅ | — | |
 | DevTools<br><sub>openDevTools(), closeDevTools() — open/close Electron DevTools programmatically</sub> | ✅ | — | ✅ | — | |
-| getAppVersion<br><sub>Returns the app version from package.json — available in the renderer without an IPC round-trip</sub> | ✅ | — | ✅ | — | |
+| getAppVersion<br><sub>Returns the app version from package.json via `ipcRenderer.invoke("system:getAppVersion")`</sub> | ✅ | — | ✅ | — | |
 | Badge count<br><sub>setBadgeCount(n), getBadgeCount() — badge on the Dock icon (macOS) or taskbar (Windows)</sub> | ❌ | — | ❌ | — | Not tested |
 | Power Monitor<br><sub>onPowerMonitorEvent (suspend/resume/lock-screen…), getSystemIdleState, getSystemIdleTime</sub> | ❌ | — | ❌ | — | Not tested |
 | Screen / Display<br><sub>getAllDisplays, getPrimaryDisplay, getCursorScreenPoint; onScreenEvent (display-added/removed/metrics-changed)</sub> | ❌ | — | ❌ | — | Not tested |

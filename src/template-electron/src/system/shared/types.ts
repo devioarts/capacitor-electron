@@ -308,8 +308,3 @@ export interface ElectronBridge {
   onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
 }
 
-declare global {
-  interface Window {
-    Electron: ElectronBridge;
-  }
-}

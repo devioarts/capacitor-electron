@@ -3,7 +3,7 @@ import { Toast } from "@capacitor/toast";
 import { ActionSheet, ActionSheetButtonStyle } from "@capacitor/action-sheet";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
-import { useLogger } from "../components/Logger.tsx";
+import { useLogger } from "../components/logger-context";
 
 export const PageToast: React.FC = () => {
   const log = useLogger();

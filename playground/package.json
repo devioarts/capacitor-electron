@@ -5,29 +5,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "build": {
-    "appId": "com.devioarts.example.electron",
-    "productName": "cap-electron-playground",
-    "directories": {
-      "buildResources": "public",
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/main.cjs",
-      "electron/preload.cjs"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "public/vite.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": true
-    }
-  },
-  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -36,13 +13,6 @@
     "cap:sync": "npx cap sync",
     "open-ios": "npx cap open ios",
     "open-android": "npx cap open android",
-    "electron:build": "esbuild electron/main.ts --bundle --platform=node --external:electron --outfile=electron/main.cjs && esbuild electron/preload.ts --bundle --platform=node --external:electron --outfile=electron/preload.cjs",
-    "electron:watch": "esbuild electron/main.ts --bundle --platform=node --external:electron --outfile=electron/main.cjs --watch",
-    "electron:dev": "concurrently \"vite\" \"npm run electron:watch\" \"wait-on http://localhost:5173 && electron electron/main.cjs\"",
-    "electron:dist": "npm run build && npm run electron:build && electron-builder",
-    "electron:dist:win": "npm run build && npm run electron:build && electron-builder -w --x64",
-    "electron:dist:mac": "npm run build && npm run electron:build && electron-builder -m --arm64",
-    "electron:dist:lnx": "npm run build && npm run electron:build && electron-builder -l --x64",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
@@ -67,13 +37,11 @@
     "@capacitor/cli": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
     "@devioarts/capacitor-electron": "file:..",
-    "@electron/rebuild": "^4.0.4",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.3.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "concurrently": "^10.0.3",
     "electron": "^42.4.0",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.28.0",
@@ -83,7 +51,6 @@
     "globals": "^17.6.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.0",
-    "vite": "^8.0.16",
-    "wait-on": "^9.0.10"
+    "vite": "^8.0.16"
   }
 }
