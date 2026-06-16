@@ -70,6 +70,9 @@ interface ElectronBridge {
   getCursorScreenPoint(): Promise<{ x: number; y: number }>;
   getCursorDisplay(): Promise<ElectronDisplay>;
   onScreenEvent(callback: (data: ScreenEventPayload) => void): () => void;
+
+  // ── Process guardian ────────────────────────────────────────────────────────
+  onElectronError(callback: (data: { message: string; stack: string | undefined; type: 'exception' | 'rejection' }) => void): () => void;
 }
 
 type PowerMonitorEventName =
