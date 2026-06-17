@@ -93,10 +93,21 @@ Returns all stored key names.
 
 ```typescript
 const { migrated, existing } = await Preferences.migrate();
-// migrated: [], existing: []
+// migrated: ['theme'], existing: ['token']
 ```
 
-No-op — there is no `localStorage` data to migrate on Electron. Returns empty arrays.
+Migrates Preferences data from renderer `localStorage` into the native Electron file store.
+
+The migration is non-destructive: `localStorage` is not cleared, and native file-store values are never overwritten. Keys that are copied are returned in `migrated`; keys that already exist in the file store are returned in `existing`.
+
+Recognized `localStorage` keys:
+
+| Source key | Stored key |
+|------------|------------|
+| `CapacitorStorage.theme` | `theme` |
+| `_cap_theme` | `theme` |
+
+If both `CapacitorStorage.theme` and `_cap_theme` exist, the `CapacitorStorage.*` value is preferred.
 
 ### `removeOld()`
 
@@ -137,6 +148,6 @@ The web fallback for `@capacitor/preferences` uses `localStorage`. On Electron t
 
 | Feature | Status | Reason |
 |---------|--------|--------|
-| `group` (namespace) | Ignored | All keys share one flat key space. The default group `'CapacitorStorage'` has no effect |
-| `migrate()` / `removeOld()` | No-op | No `localStorage` migration path on Electron |
+| `group` (namespace) | Ignored | All keys share one flat key space. `migrate()` recognizes the default `'CapacitorStorage'` web namespace only |
+| `removeOld()` | No-op | Migrating from `localStorage` is non-destructive on Electron |
 | Concurrent access from multiple processes | Not safe | `writeFileSync` is not coordinated across processes |

@@ -34,8 +34,14 @@ try {
     '// Reference this file once in your renderer project:\n' +
     '//   /// <reference types="@devioarts/capacitor-electron/globals" />\n' +
     '// cap-electron sync writes that line automatically.\n\n' +
-    (await readFile(bridgeTypesPath, 'utf8')).replace(/^export /gm, '') +
-    '\ninterface Window {\n  Electron: ElectronBridge;\n}\n';
+    'export {};\n\n' +
+    'declare global {\n' +
+    (await readFile(bridgeTypesPath, 'utf8'))
+      .replace(/^export /gm, '')
+      .split('\n')
+      .map((line) => line ? `  ${line}` : line)
+      .join('\n') +
+    '\n\n  interface Window {\n    Electron: ElectronBridge;\n  }\n}\n';
   await writeFile(join(root, 'dist', 'shared', 'globals.d.ts'), globalsContent);
 
   console.log('→ shared types (esbuild ESM + CJS)');

@@ -143,18 +143,18 @@ const { type, size, mtime, ctime, uri } = await Filesystem.stat({ path, director
 ### `rename(options)`
 
 ```typescript
-await Filesystem.rename({ from, fromDirectory?, to, toDirectory? });
+await Filesystem.rename({ from, to, directory?, toDirectory? });
 ```
 
-Renames or moves a file. Cross-directory moves work only within the same filesystem volume.
+Renames or moves a file or directory. `directory` is the source directory; `toDirectory` is the destination directory. If `toDirectory` is omitted, the destination uses `directory`. Cross-directory moves work only within the same filesystem volume.
 
 ### `copy(options)`
 
 ```typescript
-const { uri } = await Filesystem.copy({ from, fromDirectory?, to, toDirectory? });
+const { uri } = await Filesystem.copy({ from, to, directory?, toDirectory? });
 ```
 
-Returns the `file://` URI of the destination file.
+Copies a file or directory. `directory` is the source directory; `toDirectory` is the destination directory. If `toDirectory` is omitted, the destination uses `directory`. Returns the `file://` URI of the destination path.
 
 ### `downloadFile(options)`
 

@@ -84,6 +84,126 @@ export interface UpdaterBridge {
   on<K extends UpdaterEventName>(event: K, callback: (data: UpdaterEventMap[K]) => void): () => void;
 }
 
+export interface ElectronDialogsBridge {
+  showOpenDialog(options?: unknown): Promise<unknown>;
+  showSaveDialog(options?: unknown): Promise<unknown>;
+  showMessageBox(options: unknown): Promise<unknown>;
+  showErrorBox(options: { title?: string; content?: string }): Promise<void>;
+}
+
+export interface SecureStorageBridge {
+  isEncryptionAvailable(): Promise<boolean>;
+  getSelectedStorageBackend(): Promise<string>;
+  set(key: string, value: string): Promise<void>;
+  get(key: string): Promise<string | null>;
+  remove(key: string): Promise<void>;
+  clear(): Promise<void>;
+  keys(): Promise<string[]>;
+  encryptString(value: string): Promise<string>;
+  decryptString(value: string): Promise<string>;
+}
+
+export interface ProtocolBridge {
+  getConfiguredSchemes(): Promise<string[]>;
+  isProtocolHandled(scheme: string): Promise<boolean>;
+  isDefaultProtocolClient(scheme: string): Promise<boolean>;
+  setAsDefaultProtocolClient(scheme: string): Promise<boolean>;
+  removeAsDefaultProtocolClient(scheme: string): Promise<boolean>;
+  openExternal(url: string): Promise<void>;
+}
+
+export interface SessionBridge {
+  clearCache(): Promise<void>;
+  clearStorageData(options?: unknown): Promise<void>;
+  getUserAgent(): Promise<string>;
+  setUserAgent(userAgent: string): Promise<void>;
+  resolveProxy(url: string): Promise<string>;
+  setProxy(config: unknown): Promise<void>;
+  closeAllConnections(): Promise<void>;
+  getCookies(filter?: unknown): Promise<unknown[]>;
+  setCookie(cookie: unknown): Promise<void>;
+  removeCookie(options: { url: string; name: string }): Promise<void>;
+}
+
+export interface DownloadState {
+  id: string;
+  url: string;
+  filename: string;
+  savePath?: string;
+  state: 'requested' | 'progressing' | 'completed' | 'cancelled' | 'interrupted';
+  receivedBytes: number;
+  totalBytes: number;
+}
+
+export interface DownloadsBridge {
+  start(options: { url: string; savePath?: string }): Promise<DownloadState>;
+  pause(id: string): Promise<void>;
+  resume(id: string): Promise<void>;
+  cancel(id: string): Promise<void>;
+  getActive(): Promise<DownloadState[]>;
+  on(callback: (event: { type: string; data: DownloadState }) => void): () => void;
+}
+
+export interface PrintBridge {
+  getPrinters(): Promise<unknown[]>;
+  print(options?: unknown): Promise<{ success: boolean; failureReason?: string }>;
+  printToPDF(options?: { options?: unknown; path?: string }): Promise<{ path: string } | { data: string }>;
+}
+
+export interface DesktopCaptureSource {
+  id: string;
+  name: string;
+  display_id: string;
+  thumbnail?: string;
+  appIcon?: string;
+}
+
+export interface DesktopCaptureBridge {
+  getSources(options?: { types?: Array<'window' | 'screen'>; thumbnailSize?: { width: number; height: number }; fetchWindowIcons?: boolean }): Promise<DesktopCaptureSource[]>;
+}
+
+export interface AutoLaunchBridge {
+  isEnabled(): Promise<boolean>;
+  setEnabled(enabled: boolean): Promise<boolean>;
+  getSettings(): Promise<unknown>;
+}
+
+export interface NativeThemeSnapshot {
+  shouldUseDarkColors: boolean;
+  themeSource: 'system' | 'light' | 'dark';
+  shouldUseHighContrastColors: boolean;
+  shouldUseInvertedColorScheme: boolean;
+}
+
+export interface NativeThemeBridge {
+  get(): Promise<NativeThemeSnapshot>;
+  setThemeSource(source: NativeThemeSnapshot['themeSource']): Promise<NativeThemeSnapshot>;
+  onUpdated(callback: (data: NativeThemeSnapshot) => void): () => void;
+}
+
+export interface ManagedWindowInfo {
+  id: number;
+  title: string;
+  bounds: Rect;
+  isVisible: boolean;
+  isFocused: boolean;
+  isMinimized: boolean;
+  isMaximized: boolean;
+  isFullScreen: boolean;
+  isDestroyed: boolean;
+}
+
+export interface WindowsBridge {
+  create(options?: unknown): Promise<ManagedWindowInfo>;
+  list(): Promise<ManagedWindowInfo[]>;
+  focus(id: number): Promise<void>;
+  close(id: number): Promise<void>;
+  show(id: number): Promise<void>;
+  hide(id: number): Promise<void>;
+  setBounds(id: number, bounds: Rect): Promise<void>;
+  openExternal(url: string): Promise<void>;
+}
+
 export interface ElectronBridge {
   quit():                       Promise<void>;
   minimize():                   Promise<void>;
@@ -100,6 +220,16 @@ export interface ElectronBridge {
   getAppVersion():              Promise<string>;
   /** Auto-updater bridge. No-op handlers when autoUpdater.enabled is false. */
   updater?: UpdaterBridge;
+  dialogs: ElectronDialogsBridge;
+  secureStorage: SecureStorageBridge;
+  protocols: ProtocolBridge;
+  session: SessionBridge;
+  downloads: DownloadsBridge;
+  print: PrintBridge;
+  desktopCapture: DesktopCaptureBridge;
+  autoLaunch: AutoLaunchBridge;
+  nativeTheme: NativeThemeBridge;
+  windows: WindowsBridge;
   /**
    * Subscribe to incoming deep link URLs. Returns an unsubscribe function.
    * No-op handler when deepLinkingScheme is not set in capacitor.config.

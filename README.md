@@ -126,6 +126,7 @@ export default config;
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `devUrl` | `string` | `http://localhost:5173` | Dev server URL (`cap-electron open` uses this too) |
+| `serveMode` | `'file' \| 'server'` | `'file'` | Production serving mode. Use `'server'` for Web APIs that require an HTTP origin |
 | `width` | `number` | `1200` | Initial window width in px |
 | `height` | `number` | `800` | Initial window height in px |
 | `minWidth` | `number` | — | Minimum window width |
@@ -146,6 +147,7 @@ export default config;
 | `csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
 | `persistWindowState` | `boolean` | `false` | Remember window size and position between launches — see [docs/window-state-persistence.md](docs/window-state-persistence.md) |
 | `deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking (e.g. `'myapp'` enables `myapp://`) — see [docs/deep-linking.md](docs/deep-linking.md) |
+| `appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
 | `menu` | `false \| object` | Electron default | Native app menu — see [docs/app-menu.md](docs/app-menu.md) |
 | `tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
 | `splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
@@ -240,6 +242,68 @@ await Filesystem.writeFile({
 
 Full read/write/copy/rename/download support via Node.js `fs/promises`. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
 
+### Clipboard
+
+```typescript
+import { Clipboard } from '@capacitor/clipboard';
+
+await Clipboard.write({ string: 'Copied from Electron.' });
+const { value } = await Clipboard.read();
+```
+
+Supports text, URL text, and image data URLs through Electron's native clipboard. See [docs/clipboard.md](docs/clipboard.md).
+
+### Device
+
+```typescript
+import { Device } from '@capacitor/device';
+
+const info = await Device.getInfo();
+const id = await Device.getId();
+```
+
+Returns desktop OS, architecture, app-specific install id, locale, and WebView/Chrome version. See [docs/device.md](docs/device.md).
+
+### Network
+
+```typescript
+import { Network } from '@capacitor/network';
+
+const status = await Network.getStatus();
+```
+
+Reports online/offline state and emits `networkStatusChange`; desktop connection type is usually `unknown`. See [docs/network.md](docs/network.md).
+
+### File Viewer
+
+```typescript
+import { FileViewer } from '@capacitor/file-viewer';
+
+await FileViewer.openDocumentFromLocalPath({ path: '/absolute/path/report.pdf' });
+```
+
+Opens local files and URLs with the OS default application. See [docs/file-viewer.md](docs/file-viewer.md).
+
+### File Transfer
+
+```typescript
+import { FileTransfer } from '@capacitor/file-transfer';
+
+await FileTransfer.downloadFile({ url: 'https://example.com/file.zip', path: 'file:///tmp/file.zip', progress: true });
+```
+
+Supports download, upload, and `progress` events. See [docs/file-transfer.md](docs/file-transfer.md).
+
+### Privacy Screen
+
+```typescript
+import { PrivacyScreen } from '@capacitor/privacy-screen';
+
+await PrivacyScreen.enable();
+```
+
+Uses Electron content protection where the OS supports it. See [docs/privacy-screen.md](docs/privacy-screen.md) for limitations.
+
 ### Preferences
 
 ```typescript
@@ -250,6 +314,8 @@ const { value } = await Preferences.get({ key: 'theme' });
 ```
 
 Stored in `{userData}/CapacitorStorage/{appId}/preferences.json` — survives "Clear browsing data". See [docs/preferences.md](docs/preferences.md).
+
+Switching from the web/localStorage fallback to the native bridge? Call `Preferences.migrate()` once to copy `CapacitorStorage.*` and legacy `_cap_*` localStorage keys into the JSON file without overwriting existing native values.
 
 Prefer the web/localStorage fallback instead:
 
@@ -306,6 +372,23 @@ If you ever need to add it manually:
 | `startPowerSaveBlocker(type)` | `Promise<number>` | Prevent app suspension or display sleep |
 | `stopPowerSaveBlocker(id)` | `Promise<boolean>` | Stop a previously started power save blocker |
 | `isPowerSaveBlockerStarted(id)` | `Promise<boolean>` | Check whether a blocker id is active |
+
+Additional desktop namespaces are exposed under `window.Electron`:
+
+| Namespace | Description |
+|---|---|
+| `dialogs` | Native open/save/message/error dialogs |
+| `secureStorage` | Encrypted local key-value storage via Electron `safeStorage` |
+| `protocols` | Configured protocol/default-client helpers |
+| `session` | Cache, storage, cookies, proxy, user agent |
+| `downloads` | Electron download manager with progress events |
+| `print` | Native print, printer list, and PDF export |
+| `desktopCapture` | Screen/window capture source listing |
+| `autoLaunch` | Login item / start-at-login settings |
+| `nativeTheme` | System theme state and theme source override |
+| `windows` | Managed secondary windows |
+
+See [docs/electron-desktop-apis.md](docs/electron-desktop-apis.md) for the full desktop API surface.
 
 Usage example:
 

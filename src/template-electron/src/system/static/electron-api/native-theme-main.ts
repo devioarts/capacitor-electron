@@ -1,0 +1,24 @@
+import { BrowserWindow, ipcMain, nativeTheme } from 'electron';
+
+function snapshot(): { shouldUseDarkColors: boolean; themeSource: typeof nativeTheme.themeSource; shouldUseHighContrastColors: boolean; shouldUseInvertedColorScheme: boolean } {
+  return {
+    shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+    themeSource: nativeTheme.themeSource,
+    shouldUseHighContrastColors: nativeTheme.shouldUseHighContrastColors,
+    shouldUseInvertedColorScheme: nativeTheme.shouldUseInvertedColorScheme,
+  };
+}
+
+nativeTheme.on('updated', () => {
+  const data = snapshot();
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send('nativeTheme:updated', data);
+  }
+});
+
+ipcMain.handle('nativeTheme:get', () => snapshot());
+ipcMain.handle('nativeTheme:setThemeSource', (_e, source: typeof nativeTheme.themeSource) => {
+  if (!['system', 'light', 'dark'].includes(source)) throw new Error(`Invalid theme source: ${source}`);
+  nativeTheme.themeSource = source;
+  return snapshot();
+});

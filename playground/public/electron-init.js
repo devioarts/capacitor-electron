@@ -31,6 +31,10 @@
   var b = window._CapElectron;
   if (!b) return;
 
+  var builtinConfig = typeof b.getBuiltinCapacitorConfig === 'function'
+    ? b.getBuiltinCapacitorConfig()
+    : {};
+
   // Preserve third-party plugin bridges set by plugins-preload.ts via contextBridge.
   // Must be read BEFORE we overwrite window.CapacitorCustomPlatform below.
   var prevPlugins = (window.CapacitorCustomPlatform && window.CapacitorCustomPlatform.plugins) || {};
@@ -54,6 +58,40 @@
     return { name: name, methods: m };
   }
 
+  function collectPreferencesLocalStorage() {
+    var entries = {};
+    var prefixes = ['CapacitorStorage.', '_cap_'];
+
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var key = window.localStorage.key(i);
+        if (!key) continue;
+
+        var shouldMigrate = prefixes.some(function (prefix) {
+          return key.indexOf(prefix) === 0;
+        });
+        if (!shouldMigrate) continue;
+
+        var value = window.localStorage.getItem(key);
+        if (typeof value === 'string') entries[key] = value;
+      }
+    } catch (_err) {
+      // localStorage may be unavailable for opaque origins or restrictive browser settings.
+    }
+
+    return entries;
+  }
+
+  function withPreferencesMigrationPayload(pluginName, methodName, opts) {
+    if (pluginName !== 'Preferences' || methodName !== 'migrate') return opts;
+
+    var next = opts && Object.prototype.toString.call(opts) === '[object Object]'
+      ? Object.assign({}, opts)
+      : {};
+    next.__localStorage = collectPreferencesLocalStorage();
+    return next;
+  }
+
   // ── Built-in Capacitor plugin headers (static) ────────────────────────────
 
   var BUILTIN = [
@@ -69,6 +107,19 @@
     ], false),
     ph('Preferences', ['get','set','remove','clear','keys','migrate','removeOld'], false),
     ph('Toast',       ['show'], false),
+    ph('Clipboard',   ['write','read'], false),
+    ph('Device',      ['getId','getInfo','getBatteryInfo','getLanguageCode','getLanguageTag'], false),
+    ph('Network',     ['getStatus'], true),
+    ph('FileViewer',  [
+      'openDocumentFromLocalPath',
+      'openDocumentFromResources',
+      'openDocumentFromUrl',
+      'previewMediaContentFromLocalPath',
+      'previewMediaContentFromResources',
+      'previewMediaContentFromUrl',
+    ], false),
+    ph('FileTransfer', ['downloadFile','uploadFile'], true),
+    ph('PrivacyScreen', ['enable','disable','isEnabled'], false),
     ph('LocalNotifications', [
       'schedule','cancel','getPending',
       'getDeliveredNotifications','removeDeliveredNotifications','removeAllDeliveredNotifications',
@@ -80,6 +131,10 @@
     ], true),
   ];
 
+  if (builtinConfig.preferences === false) {
+    BUILTIN = BUILTIN.filter(function (p) { return p.name !== 'Preferences'; });
+  }
+
   // ── window.Capacitor ──────────────────────────────────────────────────────
   //
   // PluginHeaders = built-in headers + third-party headers from preload.
@@ -88,7 +143,7 @@
 
   window.Capacitor = {
     PluginHeaders:  BUILTIN.concat(b.getPluginHeaders()),
-    nativePromise:  function (p, m, o) { return b.invoke(p + '-' + m, o); },
+    nativePromise:  function (p, m, o) { return b.invoke(p + '-' + m, withPreferencesMigrationPayload(p, m, o)); },
     nativeCallback: function (p, m, o, fn) { return b.nativeCallback(p, m, o, fn); },
   };
 })();

@@ -10,8 +10,8 @@
  *                          third-party plugins using the `electron:` factory in
  *                          registerPlugin() always resolve, even if electron-init.js fails.
  *
- *  3. system-preload     — exposes window.Electron (window controls, updater, deep-link…).
+ *  3. electron-preload   — exposes window.Electron (desktop/system APIs).
  */
 import './src/system/static/capacitor-api/capacitor-preload';
 import './src/system/static/plugins-api/plugins-preload';
-import './src/system/static/electron-api/system-preload';
+import './src/system/static/electron-api/electron-preload';

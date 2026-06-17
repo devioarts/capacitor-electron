@@ -62,6 +62,14 @@ function toUri(abs: string): string {
   return pathToFileURL(abs).href;
 }
 
+function sourceDirectory(opts: AnyRecord): string | undefined {
+  return (opts['directory'] ?? opts['fromDirectory']) as string | undefined;
+}
+
+function targetDirectory(opts: AnyRecord, fromDirectory?: string): string | undefined {
+  return (opts['toDirectory'] as string | undefined) ?? fromDirectory;
+}
+
 // ── Plugin class ──────────────────────────────────────────────────────────────
 
 /**
@@ -157,16 +165,22 @@ class Filesystem {
   }
 
   async rename(opts: AnyRecord): Promise<void> {
-    const from = resolvePath(opts['from'] as string, opts['fromDirectory'] as string | undefined);
-    const to   = resolvePath(opts['to']   as string, opts['toDirectory']   as string | undefined);
+    const fromDir = sourceDirectory(opts);
+    const toDir   = targetDirectory(opts, fromDir);
+    const from    = resolvePath(opts['from'] as string, fromDir);
+    const to      = resolvePath(opts['to']   as string, toDir);
     try { await fs.rename(from, to); } catch (e) { return mapError(e, 'rename'); }
   }
 
   async copy(opts: AnyRecord): Promise<{ uri: string; path: string }> {
-    const from = resolvePath(opts['from'] as string, opts['fromDirectory'] as string | undefined);
-    const to   = resolvePath(opts['to']   as string, opts['toDirectory']   as string | undefined);
+    const fromDir = sourceDirectory(opts);
+    const toDir   = targetDirectory(opts, fromDir);
+    const from    = resolvePath(opts['from'] as string, fromDir);
+    const to      = resolvePath(opts['to']   as string, toDir);
     try {
-      await fs.copyFile(from, to);
+      if (from === to) return { uri: toUri(to), path: to };
+      if (to.startsWith(from + path.sep)) throw new Error('To path cannot contain the from path');
+      await fs.cp(from, to, { recursive: true, force: true, errorOnExist: false });
       return { uri: toUri(to), path: to };
     } catch (e) { return mapError(e, 'copy'); }
   }

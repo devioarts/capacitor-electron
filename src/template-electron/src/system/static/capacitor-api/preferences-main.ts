@@ -15,6 +15,8 @@ if (cfg.capacitor?.preferences !== false) {
   const store      = new Map<string, string>();
   const storeDir   = path.join(app.getPath('userData'), 'CapacitorStorage', appId);
   const storePath  = path.join(storeDir, 'preferences.json');
+  const webPrefix  = 'CapacitorStorage.';
+  const oldPrefix  = '_cap_';
 
   fs.mkdirSync(storeDir, { recursive: true });
 
@@ -44,7 +46,7 @@ if (cfg.capacitor?.preferences !== false) {
    *
    * Limitations:
    * - The `group` (namespace) option is ignored — all keys share one flat store.
-   * - `migrate()` and `removeOld()` are no-ops (no localStorage migration on Electron).
+   * - `migrate()` supports the default web fallback namespace only; custom groups are ignored.
    */
   class Preferences {
     async get(opts: AnyRecord): Promise<{ value: string | null }> {
@@ -70,8 +72,40 @@ if (cfg.capacitor?.preferences !== false) {
       return { keys: [...store.keys()] };
     }
 
-    async migrate(): Promise<{ migrated: string[]; existing: string[] }> {
-      return { migrated: [], existing: [] };
+    async migrate(opts: AnyRecord): Promise<{ migrated: string[]; existing: string[] }> {
+      const migrated: string[] = [];
+      const existing: string[] = [];
+      const candidates = new Map<string, string>();
+      const localStorageEntries = opts['__localStorage'] as unknown;
+
+      if (localStorageEntries && typeof localStorageEntries === 'object' && !Array.isArray(localStorageEntries)) {
+        const entries = Object.entries(localStorageEntries as Record<string, unknown>);
+
+        for (const [rawKey, value] of entries) {
+          if (typeof value !== 'string' || !rawKey.startsWith(webPrefix)) continue;
+          const key = rawKey.slice(webPrefix.length);
+          if (key) candidates.set(key, value);
+        }
+
+        for (const [rawKey, value] of entries) {
+          if (typeof value !== 'string' || !rawKey.startsWith(oldPrefix)) continue;
+          const key = rawKey.slice(oldPrefix.length);
+          if (key && !candidates.has(key)) candidates.set(key, value);
+        }
+      }
+
+      for (const [key, value] of candidates) {
+        if (store.has(key)) {
+          existing.push(key);
+        } else {
+          store.set(key, value);
+          migrated.push(key);
+        }
+      }
+
+      if (migrated.length > 0) persist();
+
+      return { migrated, existing };
     }
 
     async removeOld(): Promise<void> {}
