@@ -50,7 +50,7 @@ All options live under `plugins.Electron.splashScreen` in `capacitor.config.json
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `image` | `string` | — | **Required.** Filename of the splash image inside `electron/assets/` (e.g. `splash.png`). Omitting this disables the splash screen entirely. |
+| `image` | `string` | — | **Required.** Splash image asset. Use `splash.png` for `electron/assets/splash.png`, or `/public/assets/splash.png` to copy from the project root during sync. Omitting this disables the splash screen entirely. |
 | `width` | `number` | `400` | Width of the splash window in px |
 | `height` | `number` | `300` | Height of the splash window in px |
 | `backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |

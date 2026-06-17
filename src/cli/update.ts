@@ -29,6 +29,8 @@ interface PluginEntry extends PluginSettings {
   packageName: string;
 }
 
+type MutableRecord = Record<string, unknown>;
+
 function findPlugins(): PluginEntry[] {
   const pkgPath = path.join(capacitorRoot, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
@@ -90,6 +92,77 @@ function generateElectronPluginsAuto(plugins: PluginEntry[]): string {
   lines.push('} as const;', '', 'export type PluginAutoRegistry = typeof pluginsAuto;');
 
   return lines.join('\n') + '\n';
+}
+
+function isRecord(value: unknown): value is MutableRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function cloneJsonObject(value: unknown): unknown {
+  return JSON.parse(JSON.stringify(value)) as unknown;
+}
+
+function isInsideDir(parent: string, child: string): boolean {
+  const relative = path.relative(parent, child);
+  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function copyProjectAssetToElectronAssets(rawValue: string, configPath: string): string {
+  if (!rawValue.startsWith('/')) return rawValue;
+
+  const projectRoot = path.resolve(capacitorRoot);
+  const relativeFromRoot = rawValue.replace(/^\/+/, '');
+  const src = path.resolve(projectRoot, relativeFromRoot);
+
+  if (!isInsideDir(projectRoot, src)) {
+    throw new Error(`${configPath} must point inside the project root: ${rawValue}`);
+  }
+
+  if (!fs.existsSync(src)) {
+    throw new Error(`${configPath} points to a missing asset: ${rawValue}`);
+  }
+
+  const stat = fs.statSync(src);
+  if (!stat.isFile()) {
+    throw new Error(`${configPath} must point to a file: ${rawValue}`);
+  }
+
+  const destName = path.basename(src);
+  if (!destName) {
+    throw new Error(`${configPath} must include a filename: ${rawValue}`);
+  }
+
+  const assetsDir = path.join(electronDir, 'assets');
+  const dest = path.join(assetsDir, destName);
+  fs.mkdirSync(assetsDir, { recursive: true });
+
+  if (path.resolve(src) !== path.resolve(dest)) {
+    fs.copyFileSync(src, dest);
+  }
+
+  console.log(`  Asset copied: ${configPath} ${rawValue} → electron/assets/${destName}`);
+  return destName;
+}
+
+function normalizeElectronAssetPaths(electronPlugin: unknown): unknown {
+  const normalized = cloneJsonObject(electronPlugin);
+  if (!isRecord(normalized)) return normalized;
+
+  if (typeof normalized['icon'] === 'string') {
+    normalized['icon'] = copyProjectAssetToElectronAssets(normalized['icon'], 'plugins.Electron.icon');
+  }
+
+  const tray = normalized['tray'];
+  if (isRecord(tray) && typeof tray['icon'] === 'string') {
+    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.tray.icon');
+  }
+
+  const splashScreen = normalized['splashScreen'];
+  if (isRecord(splashScreen) && typeof splashScreen['image'] === 'string') {
+    splashScreen['image'] = copyProjectAssetToElectronAssets(splashScreen['image'], 'plugins.Electron.splashScreen.image');
+  }
+
+  return normalized;
 }
 
 
@@ -228,7 +301,7 @@ async function main(): Promise<void> {
     }
 
     const pluginsOut: Record<string, unknown> = {};
-    if (electronPlugin) pluginsOut['Electron'] = electronPlugin;
+    if (electronPlugin) pluginsOut['Electron'] = normalizeElectronAssetPaths(electronPlugin);
     for (const section of extraSections) {
       if (allPluginsCfg?.[section] !== undefined) pluginsOut[section] = allPluginsCfg[section];
     }

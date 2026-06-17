@@ -12,7 +12,8 @@ There are two separate icon concepts in a packaged Electron app:
 
 ## Window icon (`plugins.Electron.icon`)
 
-Set in `capacitor.config.json` — use just the **filename**, `assets/` is always the base directory:
+Set in `capacitor.config.json`. Use just the **filename** when the file already lives in
+`electron/assets/`:
 
 ```json
 {
@@ -23,6 +24,23 @@ Set in `capacitor.config.json` — use just the **filename**, `assets/` is alway
   }
 }
 ```
+
+You can also use a leading slash to reference a file from the project root. During
+`cap-electron sync`, the file is copied into `electron/assets/` and the generated
+`electron/capacitor.config.json` is rewritten to the copied filename:
+
+```json
+{
+  "plugins": {
+    "Electron": {
+      "icon": "/public/assets/icon.png"
+    }
+  }
+}
+```
+
+This copies `public/assets/icon.png` to `electron/assets/icon.png` and writes
+`"icon": "icon.png"` in the Electron config.
 
 **Platform behavior:**
 - **Windows** — shown in the window title bar and taskbar button
