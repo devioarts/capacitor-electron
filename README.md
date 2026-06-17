@@ -82,13 +82,18 @@ Starts your Vite dev server (if not already running), builds the Electron app, a
 
 | Command | Description |
 |---|---|
-| `npx cap-electron add` | Add Electron to the project — installs template, runs sync + copy |
-| `npx cap-electron sync` | Scan installed plugins, generate IPC bridges, sync `capacitor.config` |
-| `npx cap-electron copy` | Copy web build output to `electron/app/` |
-| `npx cap-electron open` | Launch dev mode — starts dev server + Electron in watch mode |
-| `npx cap-electron kill` | Kill all Electron/Node processes tied to this project |
-| `npx cap-electron scripts` | Add `electron:*` helper scripts to root `package.json` |
-| `npx cap-electron upgrade` / `restore` | Update system files from the installed package version — user files are never touched. Pass `--all` to also update `electron-builder.js` |
+| `npx cap-electron add` | Add Electron to the project — installs the template, then runs `update` and `copy` |
+| `npx cap-electron scripts` | Add `electron:sync`, `electron:copy`, and `electron:open` helper scripts to root `package.json` |
+| `npx cap-electron copy` | Copy the configured web build output (`webDir`) to `electron/app/` |
+| `npx cap-electron update` | Regenerate Electron plugin bridges, inject global types, and write `electron/capacitor.config.json` |
+| `npx cap-electron sync` | Run `copy`, then `update`; if `copy` fails, `update` still runs |
+| `npx cap-electron run` | Launch dev mode — starts the web dev server when needed, builds/watches Electron, and hot-reloads |
+| `npx cap-electron open` | Alias for `run` |
+| `npx cap-electron build [mac\|win\|linux]` | Compile Electron sources and package with electron-builder. Defaults to the current OS when no platform is passed |
+| `npx cap-electron kill` | Kill Electron/Node processes tied to this project |
+| `npx cap-electron upgrade` | Update system files from the installed package version and run `update`; user files are not overwritten |
+| `npx cap-electron restore` | Alias for `upgrade` |
+| `npx cap-electron upgrade --all` | Also update `electron-builder.js`, `tsconfig.json`, and merge template `package.json` dependencies/scripts |
 
 ---
 
