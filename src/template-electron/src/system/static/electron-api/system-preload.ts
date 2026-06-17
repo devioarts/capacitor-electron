@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, ScreenEventPayload } from '../../shared/types';
+import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload } from '../../shared/types';
 
 const bridge: ElectronBridge = {
   quit:           ()                  => ipcRenderer.invoke('system:quit'),
@@ -63,6 +63,14 @@ const bridge: ElectronBridge = {
     ipcRenderer.invoke('powerMonitor:getSystemIdleState', idleThreshold),
   getPowerMonitorIdleTime: () =>
     ipcRenderer.invoke('powerMonitor:getSystemIdleTime'),
+
+  // ── Power Save Blocker ─────────────────────────────────────────────────────
+  startPowerSaveBlocker: (type: PowerSaveBlockerType): Promise<number> =>
+    ipcRenderer.invoke('powerSaveBlocker:start', type),
+  stopPowerSaveBlocker: (id: number): Promise<boolean> =>
+    ipcRenderer.invoke('powerSaveBlocker:stop', id),
+  isPowerSaveBlockerStarted: (id: number): Promise<boolean> =>
+    ipcRenderer.invoke('powerSaveBlocker:isStarted', id),
 
   // ── Screen / Display ────────────────────────────────────────────────────────
   getAllDisplays:      () => ipcRenderer.invoke('screen:getAllDisplays'),

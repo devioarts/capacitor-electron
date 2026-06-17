@@ -11,6 +11,10 @@ export type PowerMonitorEventName =
 
 export type IdleState = 'active' | 'idle' | 'locked' | 'unknown';
 
+// ── Power Save Blocker ───────────────────────────────────────────────────────
+
+export type PowerSaveBlockerType = 'prevent-app-suspension' | 'prevent-display-sleep';
+
 // ── Screen / Display ──────────────────────────────────────────────────────────
 
 export interface Rect {
@@ -145,6 +149,14 @@ export interface ElectronBridge {
   getPowerMonitorIdleState(idleThreshold: number): Promise<IdleState>;
   /** Returns the time in seconds since the last user input. */
   getPowerMonitorIdleTime(): Promise<number>;
+
+  // ── Power Save Blocker ─────────────────────────────────────────────────────
+  /** Prevent the app or display from entering lower-power mode. Returns the blocker id. */
+  startPowerSaveBlocker(type: PowerSaveBlockerType): Promise<number>;
+  /** Stop a previously started power save blocker. Returns false when the id is not active. */
+  stopPowerSaveBlocker(id: number): Promise<boolean>;
+  /** Returns whether the given power save blocker id is currently active. */
+  isPowerSaveBlockerStarted(id: number): Promise<boolean>;
 
   // ── Screen / Display ────────────────────────────────────────────────────────
   getAllDisplays(): Promise<ElectronDisplay[]>;

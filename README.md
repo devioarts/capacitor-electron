@@ -298,6 +298,9 @@ If you ever need to add it manually:
 | `openDevTools()` | `Promise<void>` | Open DevTools |
 | `closeDevTools()` | `Promise<void>` | Close DevTools |
 | `getAppVersion()` | `Promise<string>` | Returns `app.getVersion()` |
+| `startPowerSaveBlocker(type)` | `Promise<number>` | Prevent app suspension or display sleep |
+| `stopPowerSaveBlocker(id)` | `Promise<boolean>` | Stop a previously started power save blocker |
+| `isPowerSaveBlockerStarted(id)` | `Promise<boolean>` | Check whether a blocker id is active |
 
 Usage example:
 
@@ -305,6 +308,17 @@ Usage example:
 await window.Electron.minimize();
 const version = await window.Electron.getAppVersion();
 ```
+
+Power save blocker example:
+
+```typescript
+const id = await window.Electron.startPowerSaveBlocker('prevent-display-sleep');
+
+// Later, when the long-running task or presentation ends:
+await window.Electron.stopPowerSaveBlocker(id);
+```
+
+See [docs/power-save-blocker.md](docs/power-save-blocker.md) for details.
 
 ---
 

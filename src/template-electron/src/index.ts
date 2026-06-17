@@ -14,6 +14,7 @@ export { startLocalServer } from './system/static/electron-api/server-main';
 export type { TrayMenuItemDef, TrayMenuAction } from './system/static/electron-api/tray-main';
 import './system/static/electron-api/system-main';
 import './system/static/electron-api/power-monitor-main';
+import './system/static/electron-api/power-save-blocker-main';
 import './system/static/electron-api/screen-main';
 import './system/static/capacitor-api/config-main';
 import './system/static/capacitor-api/local-notifications-main';

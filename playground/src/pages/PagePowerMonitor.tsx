@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import type { PowerSaveBlockerType } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -8,6 +9,8 @@ export const PagePowerMonitor: React.FC = () => {
   const { info } = log;
   const [listening, setListening] = useState(false);
   const [idleThreshold, setIdleThreshold] = useState("30");
+  const [blockerType, setBlockerType] = useState<PowerSaveBlockerType>("prevent-display-sleep");
+  const [blockerId, setBlockerId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!listening) return;
@@ -75,6 +78,58 @@ export const PagePowerMonitor: React.FC = () => {
         }}>
           getSystemIdleTime()
         </Button>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">powerSaveBlocker</p>
+        <p className="text-xs text-slate-500">
+          <code>prevent-app-suspension</code> drží aplikaci aktivní,{" "}
+          <code>prevent-display-sleep</code> navíc brání uspání displeje.
+        </p>
+        <Label label="Blocker type">
+          <select
+            value={blockerType}
+            onChange={(e) => setBlockerType(e.target.value as PowerSaveBlockerType)}
+            className="bg-white border border-slate-300 rounded px-2 py-1 text-sm w-full"
+          >
+            <option value="prevent-display-sleep">prevent-display-sleep</option>
+            <option value="prevent-app-suspension">prevent-app-suspension</option>
+          </select>
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          <Button type="green" onClick={async () => {
+            try {
+              const id = await window.Electron.startPowerSaveBlocker(blockerType);
+              setBlockerId(id);
+              log.info("PowerSaveBlocker", `start(${blockerType})`, { id });
+            } catch (e) { log.error("PowerSaveBlocker", "start", e); }
+          }}>
+            Start
+          </Button>
+          <Button type="primary" disabled={blockerId === null} onClick={async () => {
+            if (blockerId === null) return;
+            try {
+              const started = await window.Electron.isPowerSaveBlockerStarted(blockerId);
+              log.info("PowerSaveBlocker", `isStarted(${blockerId})`, started);
+            } catch (e) { log.error("PowerSaveBlocker", "isStarted", e); }
+          }}>
+            isStarted()
+          </Button>
+          <Button type="red" disabled={blockerId === null} onClick={async () => {
+            if (blockerId === null) return;
+            try {
+              const id = blockerId;
+              const stopped = await window.Electron.stopPowerSaveBlocker(id);
+              if (stopped) setBlockerId(null);
+              log.info("PowerSaveBlocker", `stop(${id})`, stopped);
+            } catch (e) { log.error("PowerSaveBlocker", "stop", e); }
+          }}>
+            Stop
+          </Button>
+        </div>
+        <p className="text-xs text-slate-500">
+          Aktivní blocker id: <code>{blockerId ?? "none"}</code>
+        </p>
       </section>
     </div>
   );
