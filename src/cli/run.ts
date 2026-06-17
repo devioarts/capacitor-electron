@@ -46,8 +46,8 @@ process.on('SIGINT',  () => { cleanup(); process.exit(0); });
 process.on('SIGTERM', () => { cleanup(); process.exit(0); });
 
 // Spawn in its own process group so we can kill the whole tree later.
-function spawnGroup(cmd: string, args: string[], cwd: string): ChildProcess {
-  const child = spawn(cmd, args, { cwd, stdio: 'inherit', detached: true });
+function spawnGroup(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env): ChildProcess {
+  const child = spawn(cmd, args, { cwd, stdio: 'inherit', detached: true, env });
   child.on('error', (err) => {
     console.error(`[cap-electron] Failed to start "${cmd}": ${err.message}`);
     cleanup();
@@ -64,7 +64,7 @@ const devRunning = await isPortOpen(host, port);
 
 if (!devRunning) {
   console.log(`[cap-electron] Starting dev server (${devUrl})...`);
-  spawnGroup(pm, ['run', 'dev'], capacitorRoot);
+  spawnGroup(pm, ['run', 'dev'], capacitorRoot, { ...process.env, APP_PLATFORM: 'electron' });
 } else {
   console.log(`[cap-electron] Dev server already running on ${devUrl}.`);
 }
