@@ -2,12 +2,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId:   'com.devioarts.example.electron',
-  appName: 'cap-electron-playground',
+  appName: 'CapacitorJS Playground',
   webDir:  'dist',
   plugins: {
     Electron: {
       splashScreen: {
-        image:           'splash.svg',
+        image:           '/public/assets/splash.svg',
         width:           400,
         height:          280,
         backgroundColor: 'transparent',
@@ -19,7 +19,7 @@ const config: CapacitorConfig = {
       },
       tray: {
         enabled:        true,
-        icon:           'tray.png',
+        icon:           '/public/assets/tray.png',
         tooltip:        'cap-electron playground',
         minimizeToTray: false,
       },
@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
       width:  1200,
       height: 800,
       center: true,
-      icon:   'icon.png',
+      icon:   '/public/assets/icon.png',
     },
   },
 };
