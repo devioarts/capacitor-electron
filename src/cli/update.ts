@@ -23,6 +23,11 @@ const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
   ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
+if (!fs.existsSync(electronDir)) {
+  console.error('[cap-electron] electron/ not found — run: cap-electron add');
+  process.exit(1);
+}
+
 const depRequire = createRequire(import.meta.url);
 
 interface PluginEntry extends PluginSettings {

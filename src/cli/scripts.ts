@@ -9,7 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd();
+const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
+  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const electronDir = path.join(capacitorRoot, 'electron');
+
+if (!fs.existsSync(electronDir)) {
+  console.error('[cap-electron] electron/ not found — run: cap-electron add');
+  process.exit(1);
+}
 
 const SCRIPTS: Record<string, string> = {
   'electron:sync': 'cap-electron sync',

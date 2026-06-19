@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // cap-electron kill — terminates all Node/Electron processes tied to this project root
 
+import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';
@@ -9,7 +10,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd();
+const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
+  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const electronDir = path.join(capacitorRoot, 'electron');
+
+if (!fs.existsSync(electronDir)) {
+  console.error('[cap-electron] electron/ not found — run: cap-electron add');
+  process.exit(1);
+}
 
 const selfPid = process.pid;
 
