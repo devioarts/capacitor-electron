@@ -99,7 +99,7 @@ Starts your Vite dev server (if not already running), builds the Electron app, a
 
 ## Configuration
 
-Add an `Electron` block under `plugins` in `capacitor.config.ts`:
+Electron configuration lives in the standard Capacitor plugin section:
 
 ```typescript
 import { CapacitorConfig } from '@capacitor/cli';
@@ -113,10 +113,48 @@ const config: CapacitorConfig = {
     Electron: {
       dev: {
         url: 'http://localhost:5173',
+        openDevTools: true,
+      },
+      app: {
+        serveMode: 'file',
+        singleInstance: true,
+        persistWindowState: true,
       },
       browserWindow: {
         width: 1400,
         height: 900,
+        center: true,
+        icon: '/public/assets/icon.png',
+        webPreferences: {
+          sandbox: true,
+        },
+      },
+      security: {
+        csp: {
+          'default-src': "'self'",
+          'connect-src': ["'self'", 'https://api.example.com'],
+        },
+      },
+      ui: {
+        menu: { editMenu: true, viewMenu: false },
+        tray: {
+          enabled: true,
+          icon: '/public/assets/tray.png',
+          tooltip: 'MyApp',
+        },
+        splashScreen: {
+          image: '/public/assets/splash.png',
+          width: 600,
+          height: 400,
+        },
+      },
+      capacitorPlugins: {
+        preferences: true,
+      },
+      builder: {
+        win: {
+          signExecutable: false,
+        },
       },
     } satisfies ElectronConfig,
   },
@@ -125,29 +163,129 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-### All options
+`cap-electron sync` writes a filtered runtime copy to `electron/capacitor.config.json`.
+Project-root asset paths that start with `/` are copied into `electron/assets/` and rewritten to filenames in the generated config.
+
+### Sections
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `dev.url` | `string` | `http://localhost:5173` | Dev server URL (`cap-electron run` uses this too) |
-| `dev.openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
+| `dev` | object | — | Development workflow settings |
+| `app` | object | — | Application lifecycle, serving mode, protocols, window state, and updater |
+| `browserWindow` | object | — | Pass-through to Electron `BrowserWindowConstructorOptions` |
+| `security` | object | — | Platform-managed security policy |
+| `ui` | object | — | Native menu, tray, and splash screen helpers |
+| `capacitorPlugins` | object | — | Switches for built-in Capacitor plugin implementations |
+| `builder` | object | — | Deep-merged into the default `electron-builder` configuration |
+
+### `dev`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `dev.url` | `string` | `http://localhost:5173` | Dev server URL used by `cap-electron run` |
+| `dev.openDevTools` | `boolean` | `true` in dev, `false` in prod | Open DevTools when the main window launches |
+
+### `app`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
 | `app.serveMode` | `'file' \| 'server'` | `'file'` | Production serving mode. Use `'server'` for Web APIs that require an HTTP origin |
 | `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
-| `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches — see [docs/window-state-persistence.md](docs/window-state-persistence.md) |
-| `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking (e.g. `'myapp'` enables `myapp://`) — see [docs/deep-linking.md](docs/deep-linking.md) |
+| `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches |
+| `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |
 | `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
-| `app.autoUpdater` | `object` | — | Auto-updater settings — see [docs/auto-updater.md](docs/auto-updater.md) |
-| `browserWindow` | `object` | — | Pass-through to Electron `BrowserWindowConstructorOptions` |
-| `browserWindow.width` | `number` | `1200` | Initial window width in px |
-| `browserWindow.height` | `number` | `800` | Initial window height in px |
-| `browserWindow.icon` | `string` | — | Window icon asset. Use `icon.png` for `electron/assets/icon.png`, or `/public/assets/icon.png` to copy from the project root during sync — see [docs/icons.md](docs/icons.md) |
-| `browserWindow.webPreferences.sandbox` | `boolean` | Electron default | Renderer process sandbox |
-| `security.csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
-| `ui.menu` | `false \| object` | Electron default | Native app menu — see [docs/app-menu.md](docs/app-menu.md) |
-| `ui.tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
-| `ui.splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
+| `app.autoUpdater` | object | — | `electron-updater` settings |
+
+See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), and [auto-updater](docs/auto-updater.md).
+
+### `browserWindow`
+
+`browserWindow` is passed to `new BrowserWindow(...)`, so Electron's normal window options are supported:
+
+```typescript
+plugins: {
+  Electron: {
+    browserWindow: {
+      width: 1200,
+      height: 800,
+      minWidth: 900,
+      minHeight: 600,
+      center: true,
+      titleBarStyle: 'hiddenInset',
+      autoHideMenuBar: true,
+      icon: '/public/assets/icon.png',
+      webPreferences: {
+        sandbox: true,
+      },
+    },
+  },
+},
+```
+
+The platform always enforces these values for the main window:
+
+```typescript
+webPreferences: {
+  preload: '<managed by capacitor-electron>',
+  contextIsolation: true,
+  nodeIntegration: false,
+}
+```
+
+They are intentionally not configurable, because the preload bridge and security model depend on them.
+
+### `security`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `security.csp` | `string \| Record<string, string \| string[]> \| false` | environment default | Content Security Policy injected via response headers |
+
+See [content security policy](docs/content-security-policy.md).
+
+### `ui`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `ui.menu` | `false \| object` | Electron default | Native app menu |
+| `ui.tray` | object | disabled | System tray icon and close-to-tray behavior |
+| `ui.splashScreen` | object | disabled | Splash screen shown while the app loads |
+
+See [app menu](docs/app-menu.md), [tray menu](docs/tray-menu.md), and [splash screen](docs/splash-screen.md).
+
+### `capacitorPlugins`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
 | `capacitorPlugins.preferences` | `boolean` | `true` | Native `@capacitor/preferences` bridge. Set `false` to use the plugin's web/localStorage fallback |
-| `builder` | `object` | — | Deep-merged into the default `electron-builder` configuration |
+
+### `builder`
+
+`builder` is deep-merged into the template's default `electron-builder` configuration. This lets you keep the default packaging behavior while overriding any builder option:
+
+```typescript
+plugins: {
+  Electron: {
+    builder: {
+      appId: 'com.example.myapp.desktop',
+      productName: 'MyApp',
+      publish: {
+        provider: 'github',
+        owner: 'your-org',
+        repo: 'your-repo',
+      },
+      mac: {
+        category: 'public.app-category.productivity',
+      },
+      win: {
+        target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
+      },
+      nsis: {
+        oneClick: false,
+      },
+    },
+  },
+},
+```
 
 ---
 
@@ -317,7 +455,7 @@ Prefer the web/localStorage fallback instead:
 ```typescript
 plugins: {
   Electron: {
-    capacitor: {
+    capacitorPlugins: {
       preferences: false,
     },
   },
@@ -446,7 +584,7 @@ const unsub = window.Electron.onDeepLink?.(({ url }) => {
 });
 ```
 
-See [docs/deep-linking.md](docs/deep-linking.md) for per-platform behaviour and macOS `electron-builder.js` setup.
+See [docs/deep-linking.md](docs/deep-linking.md) for per-platform behaviour and macOS `builder` setup.
 
 ---
 
@@ -599,6 +737,8 @@ npm run dist:linux  # Linux — x64 AppImage
 Place `assets/icon.png` (**1024×1024** recommended) in `electron/assets/`.
 electron-builder auto-converts it to `.icns` (macOS) and `.ico` (Windows).
 For pre-built overrides add `assets/icon.icns` or `assets/icon.ico` — they take priority.
+
+Use `plugins.Electron.builder` when you need to override electron-builder settings such as targets, signing, publish providers, artifact names, or platform metadata.
 
 See [docs/icons.md](docs/icons.md) for details on window icon vs. bundle icon, platform behavior, and the Windows icon cache.
 
