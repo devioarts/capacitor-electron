@@ -122,7 +122,7 @@ await App.addListener('pause', () => {
 
 ### `appUrlOpen`
 
-Fires when the app is opened via a deep-link URL. Requires `deepLinkingScheme` to be configured — see [deep-linking.md](deep-linking.md).
+Fires when the app is opened via a deep-link URL. Requires `app.deepLinkingScheme` to be configured — see [deep-linking.md](deep-linking.md).
 
 ```typescript
 await App.addListener('appUrlOpen', ({ url }) => {

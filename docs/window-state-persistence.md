@@ -12,7 +12,9 @@ Remember window size, position, and maximized state between application launches
 // capacitor.config.ts
 plugins: {
   Electron: {
-    persistWindowState: true,
+    app: {
+      persistWindowState: true,
+    },
   },
 },
 ```
@@ -59,14 +61,18 @@ If the saved position falls outside all currently connected monitors (e.g. a mon
 
 ## Interaction with other config
 
-`persistWindowState: true` takes over the initial window size. The `width` and `height` config fields serve as **defaults for the first launch** or when no saved state exists:
+`app.persistWindowState: true` takes over the initial window size. The `browserWindow.width` and `browserWindow.height` config fields serve as **defaults for the first launch** or when no saved state exists:
 
 ```typescript
 plugins: {
   Electron: {
-    persistWindowState: true,
-    width: 1400,   // used only on first launch
-    height: 900,   // or after window-state.json is deleted
+    app: {
+      persistWindowState: true,
+    },
+    browserWindow: {
+      width: 1400,   // used only on first launch
+      height: 900,   // or after window-state.json is deleted
+    },
   },
 },
 ```

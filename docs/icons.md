@@ -5,21 +5,23 @@ There are two separate icon concepts in a packaged Electron app:
 | | **Window icon** | **App bundle icon** |
 |---|---|---|
 | Where it appears | Title bar, taskbar (Windows/Linux), macOS Dock at runtime | OS file explorer, installer, Start Menu, Finder, `.exe`/`.app` file |
-| How to configure | `plugins.Electron.icon` in `capacitor.config.json` | `assets/icon.png` picked up by `electron-builder.js` |
+| How to configure | `plugins.Electron.browserWindow.icon` in `capacitor.config.ts` | `assets/icon.png` picked up by the default builder config, or `plugins.Electron.builder` overrides |
 | Format | Any image (PNG recommended) | PNG 512×512 minimum, 1024×1024 recommended; optional `.icns`/`.ico` overrides |
 
 ---
 
-## Window icon (`plugins.Electron.icon`)
+## Window icon (`plugins.Electron.browserWindow.icon`)
 
-Set in `capacitor.config.json`. Use just the **filename** when the file already lives in
+Set in `capacitor.config.ts`. Use just the **filename** when the file already lives in
 `electron/assets/`:
 
 ```json
 {
   "plugins": {
     "Electron": {
-      "icon": "icon.png"
+      "browserWindow": {
+        "icon": "icon.png"
+      }
     }
   }
 }
@@ -33,14 +35,16 @@ You can also use a leading slash to reference a file from the project root. Duri
 {
   "plugins": {
     "Electron": {
-      "icon": "/public/assets/icon.png"
+      "browserWindow": {
+        "icon": "/public/assets/icon.png"
+      }
     }
   }
 }
 ```
 
 This copies `public/assets/icon.png` to `electron/assets/icon.png` and writes
-`"icon": "icon.png"` in the Electron config.
+`"browserWindow": { "icon": "icon.png" }` in the Electron config.
 
 **Platform behavior:**
 - **Windows** — shown in the window title bar and taskbar button
@@ -49,10 +53,11 @@ This copies `public/assets/icon.png` to `electron/assets/icon.png` and writes
 
 ---
 
-## App bundle icon (`electron-builder.js`)
+## App bundle icon (`plugins.Electron.builder`)
 
 The bundle icon (shown in Finder, Explorer, the installer, and the `.exe`/`.app` file itself)
-is configured via electron-builder — not at runtime.
+is configured via electron-builder — not at runtime. The template provides defaults, and
+`plugins.Electron.builder` can override any electron-builder option.
 
 Place `assets/icon.png` (minimum 512×512, recommended **1024×1024**) in `electron/assets/`.
 electron-builder can convert it to the required platform formats:

@@ -34,7 +34,7 @@ let isQuitting = false;
  * `minimizeToTray` is enabled — pass it the newly created `BrowserWindow`
  * inside `createWindow()` to wire up the close-to-tray behaviour.
  *
- * @param cfg        Electron config (reads `cfg.tray.*` and `cfg.icon` as fallback).
+ * @param cfg        Electron config (reads `cfg.ui.tray.*` and `cfg.browserWindow.icon` as fallback).
  * @param getWin     Getter that returns the current main BrowserWindow (or null).
  * @param menuItems  Menu item definitions from `src/user/tray.ts`.
  * @returns          A `hookWindow(win)` function, or `null` if minimizeToTray is off.
@@ -44,9 +44,10 @@ export function setupTray(
   getWin: GetWin,
   menuItems: TrayMenuItemDef[],
 ): ((win: BrowserWindow) => void) | null {
-  if (!cfg.tray?.enabled) return null;
+  const trayConfig = cfg.ui?.tray;
+  if (!trayConfig?.enabled) return null;
 
-  const iconSrc = cfg.tray.icon ?? cfg.icon;
+  const iconSrc = trayConfig.icon ?? cfg.browserWindow?.icon;
   let image = nativeImage.createEmpty();
   if (iconSrc) {
     const abs = path.join(__dirname, '..', 'assets', iconSrc as string);
@@ -54,7 +55,7 @@ export function setupTray(
   }
 
   const tray = new Tray(image);
-  if (cfg.tray.tooltip) tray.setToolTip(cfg.tray.tooltip);
+  if (trayConfig.tooltip) tray.setToolTip(trayConfig.tooltip);
 
   type MenuItem = Parameters<typeof Menu.buildFromTemplate>[0][number];
   const template: MenuItem[] = menuItems.map(item => {
@@ -79,7 +80,7 @@ export function setupTray(
     else { win.show(); win.focus(); }
   });
 
-  if (!cfg.tray.minimizeToTray) return null;
+  if (!trayConfig.minimizeToTray) return null;
 
   app.on('before-quit', () => { isQuitting = true; });
 

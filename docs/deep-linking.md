@@ -11,7 +11,9 @@ Register a custom URL protocol (`myapp://`) so the operating system opens your a
 ```typescript
 plugins: {
   Electron: {
-    deepLinkingScheme: 'myapp',
+    app: {
+      deepLinkingScheme: 'myapp',
+    },
   },
 },
 ```
@@ -22,21 +24,25 @@ The scheme is the part before `://`. Use lowercase letters and hyphens only (`my
 
 The app registers itself as the default handler automatically via `app.setAsDefaultProtocolClient`. In **production** this happens at launch. In **development** it also registers but prints a warning to the console.
 
-On **macOS** you additionally need to declare the scheme in `electron-builder.js`:
+On **macOS** you additionally need to declare the scheme in `plugins.Electron.builder`:
 
-```js
-module.exports = {
-  mac: {
-    extendInfo: {
-      CFBundleURLTypes: [
-        {
-          CFBundleURLSchemes: ['myapp'],
-          CFBundleURLName: 'com.example.myapp',
+```typescript
+plugins: {
+  Electron: {
+    builder: {
+      mac: {
+        extendInfo: {
+          CFBundleURLTypes: [
+            {
+              CFBundleURLSchemes: ['myapp'],
+              CFBundleURLName: 'com.example.myapp',
+            },
+          ],
         },
-      ],
+      },
     },
   },
-};
+},
 ```
 
 On **Windows** and **Linux** no extra build config is needed — `setAsDefaultProtocolClient` handles registration.
@@ -59,7 +65,7 @@ unsub?.();
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `deepLinkingScheme` | `string` | `undefined` (disabled) | URL scheme to register, e.g. `'myapp'` |
+| `app.deepLinkingScheme` | `string` | `undefined` (disabled) | URL scheme to register, e.g. `'myapp'` |
 
 ---
 
@@ -73,7 +79,7 @@ Subscribe to incoming deep link URLs. Returns an unsubscribe function.
 onDeepLink?(callback: (data: { url: string }) => void): () => void;
 ```
 
-The method is only present when `deepLinkingScheme` is configured — guard with optional chaining (`?.`).
+The method is only present when `app.deepLinkingScheme` is configured — guard with optional chaining (`?.`).
 
 ---
 

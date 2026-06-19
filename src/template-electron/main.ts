@@ -1,5 +1,5 @@
 import './src/system/static/electron-api/process-guardian';
-import { app, BrowserWindow, nativeImage } from 'electron';
+import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck } from './src';
@@ -10,6 +10,9 @@ import { onReady } from './src/user/main-user';
 const isDev = !app.isPackaged;
 
 const { appCfg, cfg } = loadConfig();
+const appConfig = cfg.app ?? {};
+const devConfig = cfg.dev ?? {};
+const browserWindowConfig = cfg.browserWindow ?? {};
 
 // Set app identity before app.ready so Windows Action Center and macOS dock
 // show the correct name. On Windows, AUMID must also be set before ready.
@@ -17,15 +20,15 @@ if (appCfg.appName) app.setName(appCfg.appName);
 if (process.platform === 'win32' && appCfg.appId) app.setAppUserModelId(appCfg.appId);
 
 const iconImage = (() => {
-  if (!cfg.icon) return undefined;
-  const p = path.join(__dirname, '..', 'assets', cfg.icon);
+  if (typeof browserWindowConfig.icon !== 'string') return undefined;
+  const p = path.join(__dirname, '..', 'assets', browserWindowConfig.icon);
   if (!fs.existsSync(p)) return undefined;
   const img = nativeImage.createFromPath(p);
   return img.isEmpty() ? undefined : img;
 })();
 
 // Single instance lock — default on, opt-out with singleInstance: false
-if (cfg.singleInstance !== false && !app.requestSingleInstanceLock()) {
+if (appConfig.singleInstance !== false && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   setup();
@@ -35,8 +38,8 @@ function setup(): void {
   let win: BrowserWindow | null = null;
   const getWin = () => win;
 
-  if (cfg.deepLinkingScheme) {
-    setupDeepLinking(cfg.deepLinkingScheme, getWin);
+  if (appConfig.deepLinkingScheme) {
+    setupDeepLinking(appConfig.deepLinkingScheme, getWin);
   }
 
   /**
@@ -49,60 +52,64 @@ function setup(): void {
    */
   function createWindow(hideSplash?: ((onClosed?: () => void) => void) | null, hookTrayWindow?: ((win: BrowserWindow) => void) | null): void {
     const windowState = loadWindowState(cfg);
+    const configuredWebPreferences = browserWindowConfig.webPreferences ?? {};
 
-    win = new BrowserWindow({
+    const windowOptions: BrowserWindowConstructorOptions = {
+      ...browserWindowConfig,
       width:          windowState.width,
       height:         windowState.height,
       x:              windowState.x,
       y:              windowState.y,
-      minWidth:       cfg.minWidth,
-      minHeight:      cfg.minHeight,
-      fullscreen:     cfg.fullscreen      ?? false,
-      fullscreenable: cfg.fullscreenable  !== false,
-      resizable:      cfg.resizable       !== false,
-      center:         windowState.x == null && cfg.center !== false,
-      alwaysOnTop:    cfg.alwaysOnTop    ?? false,
-      kiosk:          cfg.kiosk          ?? false,
-      frame:            cfg.frame          !== false,
-      titleBarStyle:    cfg.titleBarStyle,
-      autoHideMenuBar:  cfg.autoHideMenuBar ?? false,
+      minWidth:       browserWindowConfig.minWidth as number | undefined,
+      minHeight:      browserWindowConfig.minHeight as number | undefined,
+      fullscreen:     (browserWindowConfig.fullscreen as boolean | undefined) ?? false,
+      fullscreenable: (browserWindowConfig.fullscreenable as boolean | undefined) !== false,
+      resizable:      (browserWindowConfig.resizable as boolean | undefined) !== false,
+      center:         windowState.x == null && browserWindowConfig.center !== false,
+      alwaysOnTop:    (browserWindowConfig.alwaysOnTop as boolean | undefined) ?? false,
+      kiosk:          (browserWindowConfig.kiosk as boolean | undefined) ?? false,
+      frame:            browserWindowConfig.frame !== false,
+      titleBarStyle:    browserWindowConfig.titleBarStyle as BrowserWindowConstructorOptions['titleBarStyle'],
+      autoHideMenuBar:  (browserWindowConfig.autoHideMenuBar as boolean | undefined) ?? false,
       backgroundColor:  appCfg.backgroundColor,
       title:            appCfg.appName,
       icon:             iconImage,
       show:             !hideSplash,
       webPreferences: {
+        ...configuredWebPreferences,
         contextIsolation: true,
         nodeIntegration:  false,
-        sandbox:          cfg.sandbox,
         preload:          path.join(__dirname, 'preload.cjs'),
       },
-    });
+    };
+
+    win = new BrowserWindow(windowOptions);
 
     if (isDev) {
-      const devUrl = cfg.devUrl ?? 'http://localhost:5173';
+      const devUrl = devConfig.url ?? 'http://localhost:5173';
       const devOrigin = (() => { try { return new URL(devUrl).origin; } catch { return devUrl; } })();
       setIpcSenderCheck(url => { try { return new URL(url).origin === devOrigin; } catch { return false; } });
       win.loadURL(devUrl);
-      if (cfg.openDevTools !== false) win.webContents.openDevTools();
+      if (devConfig.openDevTools !== false) win.webContents.openDevTools();
       watchPreloadSignal(win);
-    } else if (cfg.serveMode === 'server') {
+    } else if (appConfig.serveMode === 'server') {
       const w = win;
       startLocalServer(path.join(process.resourcesPath, 'app')).then((port) => {
         const serverOrigin = `http://127.0.0.1:${port}`;
         setIpcSenderCheck(url => { try { return new URL(url).origin === serverOrigin; } catch { return false; } });
         if (!w.isDestroyed()) w.loadURL(`${serverOrigin}/index.html`);
       });
-      if (cfg.openDevTools === true) win.webContents.openDevTools();
+      if (devConfig.openDevTools === true) win.webContents.openDevTools();
     } else {
       setIpcSenderCheck(url => url.startsWith('file:'));
       win.loadFile(path.join(process.resourcesPath, 'app', 'index.html'));
-      if (cfg.openDevTools === true) win.webContents.openDevTools();
+      if (devConfig.openDevTools === true) win.webContents.openDevTools();
     }
 
     applySecurityHardening(win, isDev);
 
     if (windowState.isMaximized) win.maximize();
-    if (cfg.persistWindowState) trackWindowState(win);
+    if (appConfig.persistWindowState) trackWindowState(win);
 
     if (hideSplash) {
       const hide = hideSplash;
@@ -129,7 +136,7 @@ function setup(): void {
     const hideSplash = setupSplash(cfg);
     createWindow(hideSplash, hookTrayWindow);
     onReady(getWin);
-    if (cfg.deepLinkingScheme) flushDeepLink(cfg.deepLinkingScheme, getWin);
+    if (appConfig.deepLinkingScheme) flushDeepLink(appConfig.deepLinkingScheme, getWin);
     setupUpdater(cfg);
 
     // macOS: reopen window when clicking dock icon
@@ -140,7 +147,7 @@ function setup(): void {
 
     // Bring window to front when second instance is launched
     // (skipped when deep linking is active — deep-link-main.ts handles focus there)
-    if (!cfg.deepLinkingScheme) {
+    if (!appConfig.deepLinkingScheme) {
       app.on('second-instance', () => {
         if (win) {
           if (win.isMinimized()) win.restore();
@@ -214,4 +221,3 @@ function watchPreloadSignal(win: BrowserWindow): void {
     // Signal file absent means we're not running under cap-electron open — fine.
   }
 }
-

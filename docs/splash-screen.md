@@ -20,7 +20,7 @@ electron/
 Supported formats: PNG, JPEG, WebP, GIF, SVG. The image is loaded directly from disk —
 no base64 encoding — so even a multi-megabyte file displays instantly.
 
-### 2. Configure in `capacitor.config.json`
+### 2. Configure in `capacitor.config.ts`
 
 Use just the **filename** — `assets/` is always the base directory:
 
@@ -28,12 +28,14 @@ Use just the **filename** — `assets/` is always the base directory:
 {
   "plugins": {
     "Electron": {
-      "splashScreen": {
-        "image": "splash.png",
-        "width": 600,
-        "height": 400,
-        "backgroundColor": "#1a1a2e",
-        "minDisplayTime": 1500
+      "ui": {
+        "splashScreen": {
+          "image": "splash.png",
+          "width": 600,
+          "height": 400,
+          "backgroundColor": "#1a1a2e",
+          "minDisplayTime": 1500
+        }
       }
     }
   }
@@ -46,15 +48,15 @@ That's it — no code changes required in `main.ts` or the renderer.
 
 ## Configuration options
 
-All options live under `plugins.Electron.splashScreen` in `capacitor.config.json`.
+All options live under `plugins.Electron.ui.splashScreen` in `capacitor.config.ts`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `image` | `string` | — | **Required.** Splash image asset. Use `splash.png` for `electron/assets/splash.png`, or `/public/assets/splash.png` to copy from the project root during sync. Omitting this disables the splash screen entirely. |
-| `width` | `number` | `400` | Width of the splash window in px |
-| `height` | `number` | `300` | Height of the splash window in px |
-| `backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |
-| `minDisplayTime` | `number` | `0` | Minimum time to show the splash in ms — prevents a flash when the app loads quickly |
+| `ui.splashScreen.image` | `string` | — | **Required.** Splash image asset. Use `splash.png` for `electron/assets/splash.png`, or `/public/assets/splash.png` to copy from the project root during sync. Omitting this disables the splash screen entirely. |
+| `ui.splashScreen.width` | `number` | `400` | Width of the splash window in px |
+| `ui.splashScreen.height` | `number` | `300` | Height of the splash window in px |
+| `ui.splashScreen.backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |
+| `ui.splashScreen.minDisplayTime` | `number` | `0` | Minimum time to show the splash in ms — prevents a flash when the app loads quickly |
 
 ---
 
@@ -78,7 +80,7 @@ The main window never shows before the splash closes, so there is no visible ove
   splash stays until loading completes, even if that exceeds `minDisplayTime`.
 - `backgroundColor: 'transparent'` enables a transparent window — works best with a PNG
   that has an alpha channel.
-- The splash is shown in both development and production. Configure `splashScreen` only
+- The splash is shown in both development and production. Configure `ui.splashScreen` only
   in environments where you want it, or conditionally in `capacitor.config.ts`:
 
   ```ts
@@ -86,9 +88,11 @@ The main window never shows before the splash closes, so there is no visible ove
   export default defineConfig({
     plugins: {
       Electron: {
-        splashScreen: isDev ? undefined : {
-          image: 'splash.png',
-          minDisplayTime: 2000,
+        ui: {
+          splashScreen: isDev ? undefined : {
+            image: 'splash.png',
+            minDisplayTime: 2000,
+          },
         },
       },
     },

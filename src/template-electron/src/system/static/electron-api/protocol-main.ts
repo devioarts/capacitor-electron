@@ -12,8 +12,8 @@ function cleanScheme(raw: string): string {
 function configuredSchemes(): string[] {
   const { cfg } = loadConfig();
   return [
-    cfg.deepLinkingScheme,
-    ...(Array.isArray(cfg.appLauncherSchemes) ? cfg.appLauncherSchemes : []),
+    cfg.app?.deepLinkingScheme,
+    ...(Array.isArray(cfg.app?.appLauncherSchemes) ? cfg.app.appLauncherSchemes : []),
   ].filter((value): value is string => typeof value === 'string' && value.length > 0)
     .map(cleanScheme);
 }

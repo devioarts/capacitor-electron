@@ -4,10 +4,10 @@ import type { ElectronConfig } from '../../shared/types';
 /**
  * Configure the native application menu (menu bar).
  *
- * - `cfg.menu === undefined` — keeps Electron's default menu unchanged.
- * - `cfg.menu === false` — removes the menu entirely on Windows/Linux; on macOS keeps a
+ * - `cfg.ui.menu === undefined` — keeps Electron's default menu unchanged.
+ * - `cfg.ui.menu === false` — removes the menu entirely on Windows/Linux; on macOS keeps a
  *   minimal App menu (Quit only) because Cmd+Q must always work.
- * - `cfg.menu` is an object — builds a custom menu from the provided sub-options.
+ * - `cfg.ui.menu` is an object — builds a custom menu from the provided sub-options.
  *
  * Must be called inside `app.whenReady()`.
  *
@@ -15,9 +15,11 @@ import type { ElectronConfig } from '../../shared/types';
  * @param isDev  `true` when the app is not packaged (forces `viewMenu` visible in dev).
  */
 export function setupMenu(cfg: ElectronConfig, isDev: boolean): void {
-  if (cfg.menu === undefined) return;
+  const menu = cfg.ui?.menu;
 
-  if (cfg.menu === false) {
+  if (menu === undefined) return;
+
+  if (menu === false) {
     if (process.platform === 'darwin') {
       // macOS requires at least the App menu for Cmd+Q to work
       Menu.setApplicationMenu(Menu.buildFromTemplate([
@@ -29,7 +31,7 @@ export function setupMenu(cfg: ElectronConfig, isDev: boolean): void {
     return;
   }
 
-  const { editMenu = true, viewMenu } = cfg.menu;
+  const { editMenu = true, viewMenu } = menu;
   const showView = isDev || viewMenu === true;
 
   const template: MenuItemConstructorOptions[] = [];

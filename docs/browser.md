@@ -3,7 +3,7 @@
 Built-in Electron implementations of `@capacitor/browser` and `@capacitor/app-launcher`. The goal is to keep the same API semantics as the official Capacitor plugins while mapping them onto Electron's `shell.openExternal` primitive:
 
 - `Browser.open()` accepts only `http://` and `https://`.
-- `AppLauncher.openUrl()` accepts `http://`, `https://`, and custom schemes explicitly listed in `plugins.Electron.appLauncherSchemes`.
+- `AppLauncher.openUrl()` accepts `http://`, `https://`, and custom schemes explicitly listed in `plugins.Electron.app.appLauncherSchemes`.
 
 No extra configuration required for Browser or for AppLauncher web URLs — install either plugin and it works on Electron out of the box.
 
@@ -19,7 +19,9 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     Electron: {
-      appLauncherSchemes: ['myotherapp', 'slack'],
+      app: {
+        appLauncherSchemes: ['myotherapp', 'slack'],
+      },
     },
   },
 };
@@ -96,7 +98,7 @@ Opens a URL or deep-link URI in the appropriate app. Electron delegates the hand
 import { AppLauncher } from '@capacitor/app-launcher';
 
 const { completed } = await AppLauncher.openUrl({ url: 'https://example.com' });
-// or a custom scheme listed in plugins.Electron.appLauncherSchemes:
+// or a custom scheme listed in plugins.Electron.app.appLauncherSchemes:
 const { completed } = await AppLauncher.openUrl({ url: 'myotherapp://action/open' });
 ```
 
@@ -104,7 +106,7 @@ const { completed } = await AppLauncher.openUrl({ url: 'myotherapp://action/open
 
 #### `canOpenUrl(options)`
 
-Returns `{ value: false }` when the URL scheme is rejected by the local policy. Returns `{ value: true }` for `http://`, `https://`, or a custom scheme listed in `plugins.Electron.appLauncherSchemes`.
+Returns `{ value: false }` when the URL scheme is rejected by the local policy. Returns `{ value: true }` for `http://`, `https://`, or a custom scheme listed in `plugins.Electron.app.appLauncherSchemes`.
 
 Electron has no reliable API to check whether a URL scheme is actually registered on the system, so `{ value: true }` means "allowed by config", not "installed".
 
@@ -112,7 +114,7 @@ The Android-only package-name form such as `com.twitter.android` is not supporte
 
 ```typescript
 const { value } = await AppLauncher.canOpenUrl({ url: 'myapp://...' });
-// value is true only if 'myapp' is listed in plugins.Electron.appLauncherSchemes
+// value is true only if 'myapp' is listed in plugins.Electron.app.appLauncherSchemes
 ```
 
 #### `openUrl(options)`

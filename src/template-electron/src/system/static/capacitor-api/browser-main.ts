@@ -3,13 +3,13 @@ import { shell } from 'electron';
 import { loadConfig, registerPlugin, type AnyRecord } from '../../shared/functions';
 
 // Browser is intentionally web-only. AppLauncher may opt custom schemes in via
-// plugins.Electron.appLauncherSchemes.
+// plugins.Electron.app.appLauncherSchemes.
 const WEB_SCHEMES = new Set(['http:', 'https:']);
 const BLOCKED_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:']);
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 
 const { cfg } = loadConfig();
-const appLauncherSchemes = normalizeSchemes(cfg.appLauncherSchemes);
+const appLauncherSchemes = normalizeSchemes(cfg.app?.appLauncherSchemes);
 
 function normalizeSchemes(value: unknown): Set<string> {
   if (!Array.isArray(value)) return new Set();

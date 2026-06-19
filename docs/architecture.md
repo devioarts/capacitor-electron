@@ -160,6 +160,6 @@ When `CAPACITOR_CONFIG` is not provided, `cap-electron sync` loads `capacitor.co
 ## Security considerations
 
 - `contextIsolation: true` and `nodeIntegration: false` are enforced in all BrowserWindow instances — these are not configurable by the user.
-- The `sandbox` option is passed through to `webPreferences.sandbox`. Leave it unset (Electron default `true`) unless a plugin's preload code specifically requires Node.js access.
+- The `browserWindow.webPreferences.sandbox` option is passed through to Electron. Leave it unset (Electron default `true`) unless a plugin's preload code specifically requires Node.js access.
 - CSP is injected via response headers before the first window loads. In production, the default policy allows no external sources, no `eval`, and no inline scripts beyond styles.
 - The single-instance lock is on by default — a second launch focuses the existing window instead of creating a new process, which prevents UI state duplication.

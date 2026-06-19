@@ -26,7 +26,7 @@ const schemes = await window.Electron.protocols.getConfiguredSchemes();
 await window.Electron.protocols.setAsDefaultProtocolClient('myapp');
 ```
 
-Renderer code may only register schemes already present in Capacitor Electron config, such as `deepLinkingScheme` or `appLauncherSchemes`.
+Renderer code may only register schemes already present in Capacitor Electron config, such as `app.deepLinkingScheme` or `app.appLauncherSchemes`.
 
 ## Session
 

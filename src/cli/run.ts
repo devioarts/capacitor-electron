@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // cap-electron run — full dev workflow with hot-reload:
-//   • reads devUrl from electron/capacitor.config.json → plugins.Electron.devUrl (fallback localhost:5173)
+//   • reads dev URL from electron/capacitor.config.json → plugins.Electron.dev.url (fallback localhost:5173)
 //   • starts npm run dev in project root if dev server isn't running yet
 //   • builds + watches electron sources via esbuild
 //   • waits for dev server, then launches Electron
@@ -193,7 +193,8 @@ function readDevUrl(): { url: string; host: string; port: number } {
     const cfgPath = path.join(electronDir, 'capacitor.config.json');
     const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8')) as Record<string, unknown>;
     const electronPlugin = (cfg['plugins'] as Record<string, unknown> | undefined)?.['Electron'] as Record<string, unknown> | undefined;
-    const url = electronPlugin?.['devUrl'] as string | undefined;
+    const dev = electronPlugin?.['dev'] as Record<string, unknown> | undefined;
+    const url = dev?.['url'] as string | undefined;
     if (url) {
       const parsed = new URL(url);
       const port = parseInt(parsed.port) || (parsed.protocol === 'https:' ? 443 : 80);

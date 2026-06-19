@@ -59,7 +59,7 @@ Detailed manual test steps live in [TESTING_PLAN.md](TESTING_PLAN.md).
 | Splash Screen<br><sub>Splash window shown before the main app loads; minDisplayTime, backgroundColor, dimensions</sub> | [splash-screen.md](docs/splash-screen.md) | ✅ | ✅ | 🧪 | |
 | Toast<br><sub>show() — short overlay message in the window; position top/center/bottom, duration short/long</sub> | [toast.md](docs/toast.md) | 🧪 | ✅ | 🧪 | |
 | Tray Menu<br><sub>System tray icon; context menu; minimizeToTray — hide window to tray instead of quitting on close</sub> | [tray-menu.md](docs/tray-menu.md) | 🧪 | ⚠️ | 🧪 | On Windows no icon |
-| Window State Persistence<br><sub>Save and restore window position and size between launches; persistWindowState in config</sub> | [window-state-persistence.md](docs/window-state-persistence.md) | ✅ | ❌ | 🧪 | Windows not working |
+| Window State Persistence<br><sub>Save and restore window position and size between launches; app.persistWindowState in config</sub> | [window-state-persistence.md](docs/window-state-persistence.md) | ✅ | ❌ | 🧪 | Windows not working |
 
 ---
 
@@ -93,14 +93,14 @@ Detailed manual test steps live in [TESTING_PLAN.md](TESTING_PLAN.md).
 
 | Feature | Docs | arm | win | lin | Notes |
 |---------|------|-----|-----|-----|-------|
-| Deep Linking<br><sub>Register a URL scheme (myapp://) via deepLinkingScheme; cold start + running instance + window.Electron.onDeepLink</sub> | [deep-linking.md](docs/deep-linking.md) | ✅ | ✅ | 🧪 | |
+| Deep Linking<br><sub>Register a URL scheme (myapp://) via app.deepLinkingScheme; cold start + running instance + window.Electron.onDeepLink</sub> | [deep-linking.md](docs/deep-linking.md) | ✅ | ✅ | 🧪 | |
 | Content Security Policy<br><sub>CSP headers for BrowserWindow; string / object / false via `csp` in config; sensible defaults in prod</sub> | [content-security-policy.md](docs/content-security-policy.md) | ✅ | ✅ | 🧪 | |
 | Icons & Assets<br><sub>icon.png → .icns/.ico via electron-builder; runtime window and Dock icon via `icon` in config</sub> | [icons.md](docs/icons.md) | 🧪 | 🧪 | 🧪 | |
-| Project-root asset paths<br><sub>Leading-slash config paths for `icon`, `tray.icon`, and `splashScreen.image` copy from project root into `electron/assets/` and rewrite generated config</sub> | [icons.md](docs/icons.md) | ✅ | 🧪 | 🧪 | Tested via isolated CLI update run on macOS |
+| Project-root asset paths<br><sub>Leading-slash config paths for `browserWindow.icon`, `ui.tray.icon`, and `ui.splashScreen.image` copy from project root into `electron/assets/` and rewrite generated config</sub> | [icons.md](docs/icons.md) | ✅ | 🧪 | 🧪 | Tested via isolated CLI update run on macOS |
 | Plugin Settings (shared)<br><sub>Plugin configuration via plugins.Electron in capacitor.config.ts; read via getElectronConfig() in main</sub> | — | ✅ | ✅ | 🧪 | |
 | serveMode: 'server'<br><sub>Embedded HTTP server on 127.0.0.1 (random port) instead of file://; required for WebUSB / WebBluetooth</sub> | — | 🧪 | 🧪 | 🧪 | |
 | singleInstance<br><sub>Single instance lock — second launch focuses the existing window; required for Windows deep linking</sub> | — | ✅ | ✅ | 🧪 | |
-| Vite build integration<br><sub>devUrl from capacitor.config; Electron hot-restart on main.cjs change, renderer reload on preload.cjs change</sub> | — | ✅ | ✅ | 🧪 | |
+| Vite build integration<br><sub>dev.url from capacitor.config; Electron hot-restart on main.cjs change, renderer reload on preload.cjs change</sub> | — | ✅ | ✅ | 🧪 | |
 | electron-builder configuration<br><sub>Build installers: .dmg (macOS), .exe NSIS (Windows), .AppImage (Linux); code signing</sub> | — | 🧪 | 🧪 | 🧪 | |
 | Preload script<br><sub>contextBridge exposes window.Electron and window._CapElectron to the renderer; sandbox compatibility</sub> | — | ✅ | ✅ | 🧪 | |
 | IPC bridge (main ↔ renderer)<br><sub>ipcMain.handle + ipcRenderer.invoke for plugin calls; nativeCallback for event streaming</sub> | — | ✅ | ✅ | 🧪 | |

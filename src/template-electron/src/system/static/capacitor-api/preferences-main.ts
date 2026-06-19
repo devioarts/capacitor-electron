@@ -10,7 +10,7 @@ import { registerPlugin, loadConfig, type AnyRecord } from '../../shared/functio
 // In production each app already has its own userData; this also protects dev.
 const { appCfg, cfg } = loadConfig();
 
-if (cfg.capacitor?.preferences !== false) {
+if (cfg.capacitorPlugins?.preferences !== false) {
   const appId      = appCfg.appId ?? app.getName();
   const store      = new Map<string, string>();
   const storeDir   = path.join(app.getPath('userData'), 'CapacitorStorage', appId);

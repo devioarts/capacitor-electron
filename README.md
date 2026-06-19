@@ -111,9 +111,13 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     Electron: {
-      devUrl: 'http://localhost:5173',
-      width: 1400,
-      height: 900,
+      dev: {
+        url: 'http://localhost:5173',
+      },
+      browserWindow: {
+        width: 1400,
+        height: 900,
+      },
     } satisfies ElectronConfig,
   },
 };
@@ -125,34 +129,25 @@ export default config;
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `devUrl` | `string` | `http://localhost:5173` | Dev server URL (`cap-electron open` uses this too) |
-| `serveMode` | `'file' \| 'server'` | `'file'` | Production serving mode. Use `'server'` for Web APIs that require an HTTP origin |
-| `width` | `number` | `1200` | Initial window width in px |
-| `height` | `number` | `800` | Initial window height in px |
-| `minWidth` | `number` | — | Minimum window width |
-| `minHeight` | `number` | — | Minimum window height |
-| `fullscreen` | `boolean` | `false` | Start in fullscreen |
-| `fullscreenable` | `boolean` | `true` | Allow fullscreen — enables the green button on macOS |
-| `center` | `boolean` | `true` | Center window on startup |
-| `resizable` | `boolean` | `true` | Allow window resizing |
-| `alwaysOnTop` | `boolean` | `false` | Keep window above all others |
-| `kiosk` | `boolean` | `false` | Kiosk mode — fullscreen, no system UI (ideal for POS/display apps) |
-| `singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
-| `frame` | `boolean` | `true` | Show native window frame and title bar (`false` = frameless) |
-| `titleBarStyle` | `string` | — | macOS title bar style: `default`, `hidden`, `hiddenInset`, `customButtonsOnHover` |
-| `autoHideMenuBar` | `boolean` | `false` | Auto-hide menu bar on Windows/Linux (press Alt to show) |
-| `icon` | `string` | — | Window icon asset. Use `icon.png` for `electron/assets/icon.png`, or `/public/assets/icon.png` to copy from the project root during sync — see [docs/icons.md](docs/icons.md) |
-| `openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
-| `sandbox` | `boolean` | Electron default | Renderer process sandbox — leave unset unless a plugin requires Node.js access in the preload |
-| `csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
-| `persistWindowState` | `boolean` | `false` | Remember window size and position between launches — see [docs/window-state-persistence.md](docs/window-state-persistence.md) |
-| `deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking (e.g. `'myapp'` enables `myapp://`) — see [docs/deep-linking.md](docs/deep-linking.md) |
-| `appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
-| `menu` | `false \| object` | Electron default | Native app menu — see [docs/app-menu.md](docs/app-menu.md) |
-| `tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
-| `splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
-| `autoUpdater` | `object` | — | Auto-updater settings — see [docs/auto-updater.md](docs/auto-updater.md) |
-| `capacitor.preferences` | `boolean` | `true` | Native `@capacitor/preferences` bridge. Set `false` to use the plugin's web/localStorage fallback |
+| `dev.url` | `string` | `http://localhost:5173` | Dev server URL (`cap-electron run` uses this too) |
+| `dev.openDevTools` | `boolean` | `true` in dev | Open DevTools on launch |
+| `app.serveMode` | `'file' \| 'server'` | `'file'` | Production serving mode. Use `'server'` for Web APIs that require an HTTP origin |
+| `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
+| `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches — see [docs/window-state-persistence.md](docs/window-state-persistence.md) |
+| `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking (e.g. `'myapp'` enables `myapp://`) — see [docs/deep-linking.md](docs/deep-linking.md) |
+| `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
+| `app.autoUpdater` | `object` | — | Auto-updater settings — see [docs/auto-updater.md](docs/auto-updater.md) |
+| `browserWindow` | `object` | — | Pass-through to Electron `BrowserWindowConstructorOptions` |
+| `browserWindow.width` | `number` | `1200` | Initial window width in px |
+| `browserWindow.height` | `number` | `800` | Initial window height in px |
+| `browserWindow.icon` | `string` | — | Window icon asset. Use `icon.png` for `electron/assets/icon.png`, or `/public/assets/icon.png` to copy from the project root during sync — see [docs/icons.md](docs/icons.md) |
+| `browserWindow.webPreferences.sandbox` | `boolean` | Electron default | Renderer process sandbox |
+| `security.csp` | `string \| object \| false` | env default | Content Security Policy — see [docs/content-security-policy.md](docs/content-security-policy.md) |
+| `ui.menu` | `false \| object` | Electron default | Native app menu — see [docs/app-menu.md](docs/app-menu.md) |
+| `ui.tray` | `object` | — | System tray icon and context menu — see [docs/tray-menu.md](docs/tray-menu.md) |
+| `ui.splashScreen` | `object` | — | Splash screen shown on startup — see [docs/splash-screen.md](docs/splash-screen.md) |
+| `capacitorPlugins.preferences` | `boolean` | `true` | Native `@capacitor/preferences` bridge. Set `false` to use the plugin's web/localStorage fallback |
+| `builder` | `object` | — | Deep-merged into the default `electron-builder` configuration |
 
 ---
 
@@ -417,7 +412,9 @@ Remember window size, position, and maximized state between launches:
 ```typescript
 plugins: {
   Electron: {
-    persistWindowState: true,
+    app: {
+      persistWindowState: true,
+    },
   },
 },
 ```
@@ -435,7 +432,9 @@ Register a custom URL protocol (`myapp://`) so the OS opens your app when the us
 ```typescript
 plugins: {
   Electron: {
-    deepLinkingScheme: 'myapp',
+    app: {
+      deepLinkingScheme: 'myapp',
+    },
   },
 },
 ```
@@ -475,11 +474,13 @@ Show a system-tray icon. Enable in `capacitor.config.ts` and customise the conte
 ```typescript
 plugins: {
   Electron: {
-    tray: {
-      enabled: true,
-      icon: 'tray.png',
-      tooltip: 'My App',
-      minimizeToTray: true,  // hide to tray on close instead of quitting
+    ui: {
+      tray: {
+        enabled: true,
+        icon: 'tray.png',
+        tooltip: 'My App',
+        minimizeToTray: true,  // hide to tray on close instead of quitting
+      },
     },
   },
 },
@@ -496,9 +497,11 @@ Configure the native menu bar:
 ```typescript
 plugins: {
   Electron: {
-    menu: false,           // hide the menu bar
-    // or:
-    menu: { editMenu: true, viewMenu: false },  // custom menu
+    ui: {
+      menu: false,           // hide the menu bar
+      // or:
+      menu: { editMenu: true, viewMenu: false },  // custom menu
+    },
   },
 },
 ```
@@ -514,9 +517,11 @@ CSP is applied automatically via response headers. In development a permissive p
 ```typescript
 plugins: {
   Electron: {
-    csp: {
-      'default-src': "'self'",
-      'connect-src': ["'self'", 'https://api.example.com'],
+    security: {
+      csp: {
+        'default-src': "'self'",
+        'connect-src': ["'self'", 'https://api.example.com'],
+      },
     },
   },
 },
@@ -533,11 +538,13 @@ Automatic updates via `electron-updater`. Only runs in production builds.
 ```typescript
 plugins: {
   Electron: {
-    autoUpdater: {
-      enabled: true,
-      channel: 'latest',
-      autoDownload: true,
-      autoInstallOnQuit: true,
+    app: {
+      autoUpdater: {
+        enabled: true,
+        channel: 'latest',
+        autoDownload: true,
+        autoInstallOnQuit: true,
+      },
     },
   },
 },
@@ -562,12 +569,14 @@ A frameless window shown while the app is loading. Closes automatically when the
 ```typescript
 plugins: {
   Electron: {
-    splashScreen: {
-      image: 'splash.png',
-      width: 600,
-      height: 400,
-      backgroundColor: '#1a1a2e',
-      minDisplayTime: 1500,
+    ui: {
+      splashScreen: {
+        image: 'splash.png',
+        width: 600,
+        height: 400,
+        backgroundColor: '#1a1a2e',
+        minDisplayTime: 1500,
+      },
     },
   },
 },

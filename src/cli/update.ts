@@ -153,18 +153,20 @@ function normalizeElectronAssetPaths(electronPlugin: unknown): unknown {
   const normalized = cloneJsonObject(electronPlugin);
   if (!isRecord(normalized)) return normalized;
 
-  if (typeof normalized['icon'] === 'string') {
-    normalized['icon'] = copyProjectAssetToElectronAssets(normalized['icon'], 'plugins.Electron.icon');
+  const browserWindow = normalized['browserWindow'];
+  if (isRecord(browserWindow) && typeof browserWindow['icon'] === 'string') {
+    browserWindow['icon'] = copyProjectAssetToElectronAssets(browserWindow['icon'], 'plugins.Electron.browserWindow.icon');
   }
 
-  const tray = normalized['tray'];
+  const ui = normalized['ui'];
+  const tray = isRecord(ui) ? ui['tray'] : undefined;
   if (isRecord(tray) && typeof tray['icon'] === 'string') {
-    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.tray.icon');
+    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.ui.tray.icon');
   }
 
-  const splashScreen = normalized['splashScreen'];
+  const splashScreen = isRecord(ui) ? ui['splashScreen'] : undefined;
   if (isRecord(splashScreen) && typeof splashScreen['image'] === 'string') {
-    splashScreen['image'] = copyProjectAssetToElectronAssets(splashScreen['image'], 'plugins.Electron.splashScreen.image');
+    splashScreen['image'] = copyProjectAssetToElectronAssets(splashScreen['image'], 'plugins.Electron.ui.splashScreen.image');
   }
 
   return normalized;

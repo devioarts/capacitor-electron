@@ -11,7 +11,7 @@ import type { ElectronConfig } from '../../shared/types';
  * Configure `electron-updater` and wire up the IPC bridge for `window.Electron.updater`.
  *
  * Only active in packaged builds (`app.isPackaged === true`) when
- * `cfg.autoUpdater.enabled === true`. In all other cases, no-op IPC handlers
+ * `cfg.app.autoUpdater.enabled === true`. In all other cases, no-op IPC handlers
  * are registered so renderer calls (`checkForUpdate`, etc.) silently succeed
  * instead of rejecting with "no handler" errors.
  *
@@ -20,7 +20,8 @@ import type { ElectronConfig } from '../../shared/types';
  * @param cfg  Electron platform config.
  */
 export function setupUpdater(cfg: ElectronConfig): void {
-  const active = app.isPackaged && cfg.autoUpdater?.enabled === true;
+  const updaterConfig = cfg.app?.autoUpdater;
+  const active = app.isPackaged && updaterConfig?.enabled === true;
 
   if (!active) {
     // Register no-op handlers so renderer calls don't reject with "no handler" error
@@ -30,7 +31,7 @@ export function setupUpdater(cfg: ElectronConfig): void {
     return;
   }
 
-  const uc = cfg.autoUpdater!;
+  const uc = updaterConfig!;
 
   try {
     autoUpdater.channel              = uc.channel          ?? 'latest';

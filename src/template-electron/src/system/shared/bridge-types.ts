@@ -218,7 +218,7 @@ export interface ElectronBridge {
   openDevTools():               Promise<void>;
   closeDevTools():              Promise<void>;
   getAppVersion():              Promise<string>;
-  /** Auto-updater bridge. No-op handlers when autoUpdater.enabled is false. */
+  /** Auto-updater bridge. No-op handlers when app.autoUpdater.enabled is false. */
   updater?: UpdaterBridge;
   dialogs: ElectronDialogsBridge;
   secureStorage: SecureStorageBridge;
@@ -232,7 +232,7 @@ export interface ElectronBridge {
   windows: WindowsBridge;
   /**
    * Subscribe to incoming deep link URLs. Returns an unsubscribe function.
-   * No-op handler when deepLinkingScheme is not set in capacitor.config.
+   * No-op handler when app.deepLinkingScheme is not set in capacitor.config.
    */
   onDeepLink?(callback: (data: { url: string }) => void): () => void;
   /**

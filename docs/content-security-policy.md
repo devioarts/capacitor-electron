@@ -6,7 +6,7 @@ Electron does not apply a CSP automatically — without configuration the render
 
 ## Default behaviour
 
-If `csp` is not set in `capacitor.config.ts`, the plugin picks an environment-appropriate default:
+If `security.csp` is not set in `capacitor.config.ts`, the plugin picks an environment-appropriate default:
 
 **Dev** (`app.isPackaged === false`):
 ```
@@ -28,14 +28,16 @@ connect-src 'self'
 
 ## Configuration
 
-Set `csp` under `plugins.Electron` in `capacitor.config.ts`.
+Set `security.csp` under `plugins.Electron` in `capacitor.config.ts`.
 
 ### Disable CSP entirely
 
 ```typescript
 plugins: {
   Electron: {
-    csp: false,
+    security: {
+      csp: false,
+    },
   },
 },
 ```
@@ -47,7 +49,9 @@ plugins: {
 ```typescript
 plugins: {
   Electron: {
-    csp: "default-src 'self'; script-src 'self'; connect-src 'self' https://api.example.com",
+    security: {
+      csp: "default-src 'self'; script-src 'self'; connect-src 'self' https://api.example.com",
+    },
   },
 },
 ```
@@ -57,13 +61,15 @@ plugins: {
 ```typescript
 plugins: {
   Electron: {
-    csp: {
-      'default-src': "'self'",
-      'script-src':  "'self'",
-      'style-src':   ["'self'", "'unsafe-inline'"],
-      'img-src':     ["'self'", 'data:', 'https://cdn.example.com'],
-      'connect-src': ["'self'", 'https://api.example.com'],
-      'font-src':    ["'self'", 'data:'],
+    security: {
+      csp: {
+        'default-src': "'self'",
+        'script-src':  "'self'",
+        'style-src':   ["'self'", "'unsafe-inline'"],
+        'img-src':     ["'self'", 'data:', 'https://cdn.example.com'],
+        'connect-src': ["'self'", 'https://api.example.com'],
+        'font-src':    ["'self'", 'data:'],
+      },
     },
   },
 },

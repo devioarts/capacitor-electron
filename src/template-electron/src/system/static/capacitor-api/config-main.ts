@@ -9,7 +9,7 @@ function getBuiltinCapacitorConfig(): BuiltinCapacitorConfig {
   const { cfg } = loadConfig();
 
   return {
-    preferences: cfg.capacitor?.preferences !== false,
+    preferences: cfg.capacitorPlugins?.preferences !== false,
   };
 }
 

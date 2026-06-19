@@ -8,18 +8,22 @@ Automatic application updates via `electron-updater` from the `electron-builder`
 
 ## Setup
 
-### 1. Configure `electron-builder`
+### 1. Configure electron-builder
 
-Your `electron/electron-builder.js` must point to a publish provider so `electron-updater` knows where to check for updates. Example using GitHub Releases:
+Set `plugins.Electron.builder.publish` so `electron-updater` knows where to check for updates. Example using GitHub Releases:
 
-```js
-module.exports = {
-  publish: {
-    provider: 'github',
-    owner: 'your-org',
-    repo: 'your-repo',
+```typescript
+plugins: {
+  Electron: {
+    builder: {
+      publish: {
+        provider: 'github',
+        owner: 'your-org',
+        repo: 'your-repo',
+      },
+    },
   },
-};
+},
 ```
 
 See the [electron-builder publish docs](https://www.electron.build/configuration/publish) for S3, generic HTTP server, and other providers.
@@ -29,11 +33,13 @@ See the [electron-builder publish docs](https://www.electron.build/configuration
 ```typescript
 plugins: {
   Electron: {
-    autoUpdater: {
-      enabled: true,
-      channel: 'latest',
-      autoDownload: true,
-      autoInstallOnQuit: true,
+    app: {
+      autoUpdater: {
+        enabled: true,
+        channel: 'latest',
+        autoDownload: true,
+        autoInstallOnQuit: true,
+      },
     },
   },
 },
@@ -58,16 +64,16 @@ unsub();
 
 ## Configuration options
 
-All options live under `plugins.Electron.autoUpdater` in `capacitor.config.ts`.
+All options live under `plugins.Electron.app.autoUpdater` in `capacitor.config.ts`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | `boolean` | `false` | Enable the auto-updater. Must be `true` for anything to run. |
-| `channel` | `'latest' \| 'beta' \| 'alpha'` | `'latest'` | Update channel to follow |
-| `autoDownload` | `boolean` | `false` | Automatically download update when one is found |
-| `autoInstallOnQuit` | `boolean` | `true` | Install downloaded update when the app quits |
-| `allowPrerelease` | `boolean` | `false` | Include pre-release versions |
-| `allowDowngrade` | `boolean` | `false` | Allow installing an older version |
+| `app.autoUpdater.enabled` | `boolean` | `false` | Enable the auto-updater. Must be `true` for anything to run. |
+| `app.autoUpdater.channel` | `'latest' \| 'beta' \| 'alpha'` | `'latest'` | Update channel to follow |
+| `app.autoUpdater.autoDownload` | `boolean` | `false` | Automatically download update when one is found |
+| `app.autoUpdater.autoInstallOnQuit` | `boolean` | `true` | Install downloaded update when the app quits |
+| `app.autoUpdater.allowPrerelease` | `boolean` | `false` | Include pre-release versions |
+| `app.autoUpdater.allowDowngrade` | `boolean` | `false` | Allow installing an older version |
 
 ---
 

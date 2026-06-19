@@ -47,16 +47,18 @@ function isOnAnyScreen(x: number, y: number): boolean {
 
 /**
  * Load saved window bounds. Call before new BrowserWindow().
- * Returns config defaults when persistWindowState is disabled or no state is saved.
+ * Returns config defaults when app.persistWindowState is disabled or no state is saved.
  */
 export function loadWindowState(cfg: ElectronConfig): WindowBounds {
+  const browserWindow = cfg.browserWindow ?? {};
+
   const defaults: WindowBounds = {
-    width: cfg.width ?? 1200,
-    height: cfg.height ?? 800,
+    width: browserWindow.width ?? 1200,
+    height: browserWindow.height ?? 800,
     isMaximized: false,
   };
 
-  if (!cfg.persistWindowState) return defaults;
+  if (!cfg.app?.persistWindowState) return defaults;
 
   const saved = readState();
   if (!saved) return defaults;
@@ -77,7 +79,7 @@ export function loadWindowState(cfg: ElectronConfig): WindowBounds {
 
 /**
  * Attach resize/move/close listeners that debounce-persist window state.
- * Call after new BrowserWindow() when persistWindowState is enabled.
+ * Call after new BrowserWindow() when app.persistWindowState is enabled.
  */
 export function trackWindowState(win: BrowserWindow): void {
   let timer: ReturnType<typeof setTimeout> | null = null;

@@ -6,7 +6,7 @@
 //   { action: 'separator' }                        → visual divider line
 //   { label: 'Custom', handler: () => { ... } }    → arbitrary main-process code
 //
-// Only used when tray.enabled is true in capacitor.config.ts.
+// Only used when ui.tray.enabled is true in capacitor.config.ts.
 
 import type { TrayMenuItemDef } from '../system/static/electron-api/tray-main';
 

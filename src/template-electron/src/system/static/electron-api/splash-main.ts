@@ -8,17 +8,17 @@ import type { ElectronConfig } from '../../shared/types';
 /**
  * Create a splash-screen window and return a callback that closes it.
  *
- * The splash is a frameless, always-on-top, centered window that displays `cfg.splashScreen.image`.
+ * The splash is a frameless, always-on-top, centered window that displays `cfg.ui.splashScreen.image`.
  * The image is served via a temp HTML file that references it as a file:// URL so Chromium loads
  * it directly from disk — no base64 encoding overhead for large images.
  *
- * Returns `null` when `cfg.splashScreen` is not configured or has no `image` path.
+ * Returns `null` when `cfg.ui.splashScreen` is not configured or has no `image` path.
  *
  * @param cfg  Electron platform config read from `capacitor.config.json`.
  * @returns    A `hideSplash(onClosed?)` function, or `null` if the splash is disabled.
  */
 export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => void) | null {
-  if (!cfg.splashScreen) return null;
+  if (!cfg.ui?.splashScreen) return null;
 
   const {
     width = 400,
@@ -26,7 +26,7 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
     backgroundColor = '#ffffff',
     image,
     minDisplayTime = 0,
-  } = cfg.splashScreen;
+  } = cfg.ui.splashScreen;
 
   if (!image) return null;
 

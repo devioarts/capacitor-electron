@@ -26,13 +26,15 @@ function buildCsp(directives: Record<string, string | string[]>): string {
  * Must be called inside app.whenReady(), before createWindow().
  */
 export function setupCSP(cfg: ElectronConfig, isDev: boolean): void {
-  if (cfg.csp === false) return;
+  const csp = cfg.security?.csp;
+
+  if (csp === false) return;
 
   let headerValue: string;
-  if (typeof cfg.csp === 'string') {
-    headerValue = cfg.csp;
-  } else if (cfg.csp && typeof cfg.csp === 'object') {
-    headerValue = buildCsp(cfg.csp);
+  if (typeof csp === 'string') {
+    headerValue = csp;
+  } else if (csp && typeof csp === 'object') {
+    headerValue = buildCsp(csp);
   } else {
     headerValue = isDev ? DEV_CSP : PROD_CSP;
   }

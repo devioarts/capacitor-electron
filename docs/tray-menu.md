@@ -14,11 +14,13 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   plugins: {
     Electron: {
-      tray: {
-        enabled: true,
-        icon: 'tray.png',
-        tooltip: 'My App',
-        minimizeToTray: true,
+      ui: {
+        tray: {
+          enabled: true,
+          icon: 'tray.png',
+          tooltip: 'My App',
+          minimizeToTray: true,
+        },
       },
     },
   },
@@ -29,10 +31,10 @@ const config: CapacitorConfig = {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | `boolean` | `false` | Enable the tray icon |
-| `icon` | `string` | — | Tray icon asset. Use `'tray.png'` for `electron/assets/tray.png`, or `'/public/assets/tray.png'` to copy from the project root during sync. Falls back to the window icon (`icon` option). |
-| `tooltip` | `string` | — | Tooltip shown on hover |
-| `minimizeToTray` | `boolean` | `false` | Hide the window instead of quitting when the user clicks the close button |
+| `ui.tray.enabled` | `boolean` | `false` | Enable the tray icon |
+| `ui.tray.icon` | `string` | — | Tray icon asset. Use `'tray.png'` for `electron/assets/tray.png`, or `'/public/assets/tray.png'` to copy from the project root during sync. Falls back to the window icon (`browserWindow.icon`). |
+| `ui.tray.tooltip` | `string` | — | Tooltip shown on hover |
+| `ui.tray.minimizeToTray` | `boolean` | `false` | Hide the window instead of quitting when the user clicks the close button |
 
 ---
 

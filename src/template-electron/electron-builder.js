@@ -3,11 +3,18 @@ const path = require('path');
 
 let appId = 'com.example.app';
 let appName = 'App';
+let builderOverrides = {};
 
 try {
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'capacitor.config.json'), 'utf-8'));
   if (cfg.appId)   appId   = cfg.appId;
   if (cfg.appName) appName = cfg.appName;
+  const electronConfig = cfg.plugins && cfg.plugins.Electron && typeof cfg.plugins.Electron === 'object'
+    ? cfg.plugins.Electron
+    : {};
+  builderOverrides = electronConfig.builder && typeof electronConfig.builder === 'object'
+    ? electronConfig.builder
+    : {};
 } catch {
   console.warn('[electron-builder] capacitor.config.json not found — using defaults. Run: cap-electron sync');
 }
@@ -36,6 +43,23 @@ function toSafeFileName(name, fallback) {
   return 'app';
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMerge(base, override) {
+  if (!isPlainObject(base) || !isPlainObject(override)) return override;
+
+  const out = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+    out[key] = isPlainObject(out[key]) && isPlainObject(value)
+      ? deepMerge(out[key], value)
+      : value;
+  }
+  return out;
+}
+
 // App bundle icon (shown in OS file explorer, installer, Start Menu, Dock).
 // electron-builder can convert assets/icon.png for platform package icons.
 // Use assets/icon.icns or assets/icon.ico when you need a hand-crafted platform file.
@@ -44,7 +68,7 @@ const iconIcns = asset('icon.icns') ?? iconPng;
 const iconIco  = asset('icon.ico')  ?? iconPng;
 
 /** @type {import('electron-builder').Configuration} */
-module.exports = {
+const defaultConfig = {
   appId,
   productName: appName,
   directories: {
@@ -56,7 +80,7 @@ module.exports = {
     '!dist/**/*.map',
     'capacitor.config.json',
     // assets/ is included so splash image and window icon are available at runtime.
-    // See: plugins.Electron.icon and plugins.Electron.splashScreen.image in capacitor.config.json
+    // See: plugins.Electron.browserWindow.icon and plugins.Electron.ui.splashScreen.image.
     'assets/**',
   ],
   extraResources: [
@@ -88,3 +112,5 @@ module.exports = {
     shortcutName: appName,
   },
 };
+
+module.exports = deepMerge(defaultConfig, builderOverrides);
