@@ -20,7 +20,6 @@
   ],
   "scripts": {
     "build": "tsx scripts/build.ts",
-    "postinstall": "npm run build",
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run build",
@@ -59,14 +58,14 @@
     "@capacitor/cli": ">=8.0.0"
   },
   "dependencies": {
-    "esbuild": "^0.28.0",
-    "tar": "^7.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.8.0"
+    "tar": "^7.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",
     "@types/node": "^24.0.0",
-    "electron": "^42.4.0"
+    "electron": "^42.4.0",
+    "esbuild": "^0.28.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.8.0"
   }
 }

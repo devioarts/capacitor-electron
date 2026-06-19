@@ -77,7 +77,7 @@ try {
   });
 
   console.log('→ CLI scripts (esbuild ESM)');
-  const cliEntries = ['index', 'add', 'copy', 'update', 'sync', 'run', 'open', 'build', 'scripts', 'kill', 'upgrade'].map(
+  const cliEntries = ['index', 'add', 'copy', 'prepare', 'update', 'sync', 'run', 'open', 'build', 'scripts', 'kill', 'upgrade'].map(
     (n) => join(root, 'src', 'cli', `${n}.ts`),
   );
   await build({
