@@ -10,6 +10,7 @@ const scripts: Record<string, string> = {
   scripts: join(__dirname, 'scripts.js'),
   add:     join(__dirname, 'add.js'),
   copy:    join(__dirname, 'copy.js'),
+  prepare: join(__dirname, 'prepare.js'),
   update:  join(__dirname, 'update.js'),
   sync:    join(__dirname, 'sync.js'),
   run:     join(__dirname, 'run.js'),
@@ -22,8 +23,8 @@ const scripts: Record<string, string> = {
 
 const script = scripts[command ?? ''];
 if (!script) {
-  console.error(`cap-electron: unknown command "${command ?? ''}"`);
-  console.log('Usage: cap-electron <scripts|add|copy|update|sync|run|build|kill|upgrade|restore>');
+  console.error(`npx cap-electron: unknown command "${command ?? ''}"`);
+  console.log('Usage: npx cap-electron <scripts|add|copy|prepare|update|sync|run|build|kill|upgrade|restore>');
   process.exit(1);
 }
 

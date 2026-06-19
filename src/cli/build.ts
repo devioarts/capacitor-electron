@@ -14,7 +14,7 @@ const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
-  console.error('[cap-electron] electron/ not found — run: cap-electron add');
+  console.error('[cap-electron] electron/ not found — run: npx cap-electron add');
   process.exit(1);
 }
 
@@ -35,7 +35,7 @@ const platform = platformArg ?? AUTO_PLATFORM[process.platform];
 
 if (!platform || !PLATFORM_FLAGS[platform]) {
   console.error(`[cap-electron] Unknown platform: "${platformArg ?? process.platform}"`);
-  console.error('Usage: cap-electron build [mac|win|linux]');
+  console.error('Usage: npx cap-electron build [mac|win|linux]');
   process.exit(1);
 }
 
@@ -43,7 +43,7 @@ const flags = PLATFORM_FLAGS[platform];
 
 const appDir = path.join(electronDir, 'app');
 if (!fs.existsSync(appDir)) {
-  console.warn('[cap-electron] electron/app/ not found — run cap-electron copy first (packaging may fail).');
+  console.warn('[cap-electron] electron/app/ not found — run: npx cap-electron copy first (packaging may fail).');
 }
 
 const eb = path.join('node_modules', '.bin', 'electron-builder');

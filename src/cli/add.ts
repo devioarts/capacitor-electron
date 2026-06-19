@@ -80,7 +80,7 @@ console.log('\n[cap-electron] Running copy...');
 try {
   execFileSync(process.execPath, [path.join(__dirname, 'copy.js')], { stdio: 'inherit' });
 } catch {
-  console.warn('[cap-electron] Copy skipped — run: cap-electron copy (after building the web app).');
+  console.warn('[cap-electron] Copy skipped — run: npx cap-electron copy (after building the web app).');
 }
 
 console.log('\n[cap-electron] Done — electron/ added.');

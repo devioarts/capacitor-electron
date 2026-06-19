@@ -21,7 +21,7 @@ const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
-  console.error('[cap-electron] electron/ not found — run: cap-electron add');
+  console.error('[cap-electron] electron/ not found — run: npx cap-electron add');
   process.exit(1);
 }
 

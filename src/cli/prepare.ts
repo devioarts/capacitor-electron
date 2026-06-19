@@ -1,13 +1,12 @@
 #!/usr/bin/env node
-// cap-electron sync — copy + update
+// cap-electron prepare — compiles Electron sources (npm run build inside electron/)
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
 const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
@@ -19,9 +18,12 @@ if (!fs.existsSync(electronDir)) {
   process.exit(1);
 }
 
+console.log('[cap-electron] Building Electron sources...');
 try {
-  execFileSync(process.execPath, [path.join(__dirname, 'copy.js')], { stdio: 'inherit' });
+  execSync('npm run build', { cwd: electronDir, stdio: 'inherit' });
 } catch {
-  console.warn('[cap-electron] copy step failed — continuing with update...');
+  console.error('[cap-electron] Build failed.');
+  process.exit(1);
 }
-execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
+
+console.log('[cap-electron] Prepare done.');

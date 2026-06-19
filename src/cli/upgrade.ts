@@ -40,7 +40,7 @@ const OPTIONAL_FILES = [
 
 async function main(): Promise<void> {
   if (!fs.existsSync(electronDir)) {
-    console.error('[cap-electron] electron/ not found — run cap-electron add first.');
+    console.error('[cap-electron] electron/ not found — run: npx cap-electron add');
     process.exit(1);
   }
 
