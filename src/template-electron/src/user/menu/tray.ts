@@ -1,17 +1,23 @@
-// Tray context menu items — edit freely, never overwritten by cap-electron upgrade.
-//
-// Four variants available:
-//   { label: 'Open', action: 'show' }              -> shows and focuses the main window
-//   { label: 'Quit', action: 'quit' }              -> quits the application
-//   { action: 'separator' }                        -> visual divider line
-//   { label: 'Custom', handler: () => { ... } }    -> arbitrary main-process code
+// Tray menu — edit freely, never overwritten by cap-electron upgrade.
 //
 // Only used when ui.tray.enabled is true in capacitor.config.ts.
+// Return a normal Electron Menu.buildFromTemplate() template.
 
-import type { TrayMenuItemDef } from '../../system/static/electron-api/tray-main';
+import { app, type MenuItemConstructorOptions } from 'electron';
+import type { TrayMenuContext } from '../../system/static/electron-api/tray-main';
 
-export const trayMenu: TrayMenuItemDef[] = [
-  { label: 'Open', action: 'show' },
-  { action: 'separator' },
-  { label: 'Quit', action: 'quit' },
-];
+export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
+  return [
+    {
+      label: 'Open',
+      click: () => {
+        const win = ctx.getWin();
+        if (!win) return;
+        win.show();
+        win.focus();
+      },
+    },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() },
+  ];
+}

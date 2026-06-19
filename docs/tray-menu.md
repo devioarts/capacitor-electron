@@ -43,40 +43,69 @@ const config: CapacitorConfig = {
 Edit `electron/src/user/menu/tray.ts` — this file is never overwritten by `cap-electron sync`.
 
 ```typescript
-import type { TrayMenuItemDef } from '../../system/static/electron-api/tray-main';
+import { app, type MenuItemConstructorOptions } from 'electron';
+import type { TrayMenuContext } from '../../system/static/electron-api/tray-main';
 
-export const trayMenu: TrayMenuItemDef[] = [
-  { label: 'Open', action: 'show' },
-  { action: 'separator' },
-  { label: 'Quit', action: 'quit' },
-];
+export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
+  return [
+    {
+      label: 'Open',
+      click: () => {
+        const win = ctx.getWin();
+        if (!win) return;
+        win.show();
+        win.focus();
+      },
+    },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() },
+  ];
+}
 ```
 
-Four variants are available:
+The function returns a normal Electron `Menu.buildFromTemplate()` template, so roles, accelerators, submenus, checkbox/radio items, icons, and custom `click` handlers are available.
 
-| Variant | Effect |
-|---|---|
-| `action: 'show'` | Show and focus the main window |
-| `action: 'quit'` | Quit the application |
-| `action: 'separator'` | Visual divider line (no `label` needed) |
-| `handler: () => void` | Run arbitrary main-process code |
-
-### Custom handler
+### Advanced menu
 
 ```typescript
-import { shell } from 'electron';
+import { app, nativeImage, type MenuItemConstructorOptions } from 'electron';
+import type { TrayMenuContext } from '../../system/static/electron-api/tray-main';
 
-export const trayMenu: TrayMenuItemDef[] = [
-  { label: 'Open', action: 'show' },
-  { action: 'separator' },
-  { label: 'Open logs', handler: () => shell.openPath('/path/to/logs') },
-  { label: 'Check for updates', handler: () => autoUpdater.checkForUpdates() },
-  { action: 'separator' },
-  { label: 'Quit', action: 'quit' },
-];
+export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
+  const green = nativeImage.createFromDataURL('data:image/png;base64,...');
+
+  return [
+    {
+      label: 'Open App',
+      click: () => {
+        const win = ctx.getWin();
+        if (win) {
+          win.show();
+          win.focus();
+        }
+      },
+    },
+    {
+      label: 'Set Green Icon',
+      type: 'checkbox',
+      click: ({ checked }) => {
+        if (checked) ctx.tray.setImage(green);
+      },
+    },
+    {
+      label: 'Set Title',
+      type: 'checkbox',
+      click: ({ checked }) => {
+        ctx.tray.setTitle(checked ? 'Title' : '');
+      },
+    },
+    { type: 'separator' },
+    { role: 'quit' },
+  ];
+}
 ```
 
-The handler runs in the main process — full Electron API is available.
+The function runs in the main process. `ctx.tray` is the live Electron `Tray` instance, and `ctx.getWin()` returns the current main window.
 
 ---
 

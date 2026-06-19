@@ -12,7 +12,7 @@ export { loadWindowState, trackWindowState } from './system/static/electron-api/
 export type { WindowBounds } from './system/static/electron-api/window-state';
 export { setupTray } from './system/static/electron-api/tray-main';
 export { startLocalServer } from './system/static/electron-api/server-main';
-export type { TrayMenuItemDef, TrayMenuAction } from './system/static/electron-api/tray-main';
+export type { TrayMenuContext, TrayMenuFactory } from './system/static/electron-api/tray-main';
 import './system/static/electron-api/system-main';
 import './system/static/electron-api/power-monitor-main';
 import './system/static/electron-api/power-save-blocker-main';

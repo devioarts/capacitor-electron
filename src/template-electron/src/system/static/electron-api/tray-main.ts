@@ -1,31 +1,21 @@
-import { app, Tray, Menu, BrowserWindow, nativeImage } from 'electron';
+import { app, Tray, Menu, BrowserWindow, nativeImage, type MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import type { ElectronConfig } from '../../shared/types';
 
-export type TrayMenuAction = 'show' | 'quit' | 'separator';
-
-/**
- * A single tray context menu item. Four variants:
- *
- * - `show` — shows and focuses the main window
- * - `quit` — quits the application
- * - `separator` — visual divider line (no label needed)
- * - `handler` — runs arbitrary custom code in the main process
- *
- * @example
- * { label: 'Open', action: 'show' }
- * { action: 'separator' }
- * { label: 'Open Settings', handler: () => { shell.openPath(settingsPath); } }
- * { label: 'Quit', action: 'quit' }
- */
-export type TrayMenuItemDef =
-  | { label?: string; action: TrayMenuAction }
-  | { label: string; handler: () => void };
-
 type GetWin = () => BrowserWindow | null;
 
+export interface TrayMenuContext {
+  appName: string;
+  isDev: boolean;
+  tray: Tray;
+  getWin: GetWin;
+}
+
+export type TrayMenuFactory = (ctx: TrayMenuContext) => MenuItemConstructorOptions[] | null | undefined;
+
 let isQuitting = false;
+let tray: Tray | null = null;
 
 /**
  * Set up the system tray icon and context menu.
@@ -35,14 +25,16 @@ let isQuitting = false;
  * inside `createWindow()` to wire up the close-to-tray behaviour.
  *
  * @param cfg        Electron config (reads `cfg.ui.tray.*` and `cfg.browserWindow.icon` as fallback).
+ * @param isDev      `true` when the app is not packaged.
  * @param getWin     Getter that returns the current main BrowserWindow (or null).
- * @param menuItems  Menu item definitions from `src/user/menu/tray.ts`.
+ * @param userMenu   Menu template factory from `src/user/menu/tray.ts`.
  * @returns          A `hookWindow(win)` function, or `null` if minimizeToTray is off.
  */
 export function setupTray(
   cfg: ElectronConfig,
+  isDev: boolean,
   getWin: GetWin,
-  menuItems: TrayMenuItemDef[],
+  userMenu?: TrayMenuFactory,
 ): ((win: BrowserWindow) => void) | null {
   const trayConfig = cfg.ui?.tray;
   if (!trayConfig?.enabled) return null;
@@ -54,24 +46,14 @@ export function setupTray(
     if (fs.existsSync(abs)) image = nativeImage.createFromPath(abs);
   }
 
-  const tray = new Tray(image);
+  // Keep a module-level reference so Electron does not garbage collect the tray.
+  tray = new Tray(image);
   if (trayConfig.tooltip) tray.setToolTip(trayConfig.tooltip);
 
-  type MenuItem = Parameters<typeof Menu.buildFromTemplate>[0][number];
-  const template: MenuItem[] = menuItems.map(item => {
-    if ('handler' in item) return { label: item.label, click: item.handler };
-    if (item.action === 'separator') return { type: 'separator' as const };
-    if (item.action === 'show') return {
-      label: item.label ?? 'Open',
-      click: () => { const w = getWin(); if (w) { w.show(); w.focus(); } },
-    };
-    return {
-      label: item.label ?? 'Quit',
-      click: () => { isQuitting = true; app.quit(); },
-    };
-  });
-
-  tray.setContextMenu(Menu.buildFromTemplate(template));
+  const template = userMenu?.({ appName: app.name, isDev, tray, getWin });
+  if (Array.isArray(template) && template.length > 0) {
+    tray.setContextMenu(Menu.buildFromTemplate(template));
+  }
 
   tray.on('click', () => {
     const win = getWin();
