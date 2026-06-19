@@ -162,7 +162,7 @@ onShortcut(callback: (data: { event: string }) => void): () => void
 
 ## Accelerator syntax
 
-Accelerators follow the [Electron accelerator format](https://www.electronjs.org/docs/latest/api/accelerator).
+Accelerators follow Electron's [keyboard shortcuts / accelerator syntax](https://www.electronjs.org/docs/latest/tutorial/keyboard-shortcuts).
 
 | Token | Meaning |
 |---|---|

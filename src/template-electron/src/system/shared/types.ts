@@ -1,10 +1,15 @@
 export type CspConfig = string | Record<string, string | string[]> | false;
 
-export type MenuConfig = false | {
+export type MenuConfig = boolean | {
   /** Include standard Edit menu (Undo, Redo, Cut, Copy, Paste, Select All). Default: true */
   editMenu?: boolean;
   /** Include View menu (Reload, Toggle DevTools, Zoom). Default: true in dev, false in production */
   viewMenu?: boolean;
+};
+
+export type ContextMenuConfig = boolean | {
+  /** Enable renderer context menus from `src/user/menu/context.ts`. Default: false */
+  enabled?: boolean;
 };
 
 export interface TrayConfig {
@@ -38,6 +43,13 @@ export interface SplashScreenConfig {
   backgroundColor?: string;
   /** Minimum time the splash stays visible in ms. Default: 0 */
   minDisplayTime?: number;
+}
+
+export interface DockConfig {
+  /** Hide the macOS Dock icon. Useful for pure menu-bar/tray apps. macOS only. */
+  hideIcon?: boolean;
+  /** Enable the macOS Dock menu from `src/user/menu/dock.ts`. macOS only. */
+  menu?: boolean;
 }
 
 export interface AutoUpdaterConfig {
@@ -137,10 +149,14 @@ export interface ElectronUiConfig {
    * - omit — keep Electron's default menu
    */
   menu?: MenuConfig;
+  /** Renderer context menu. Disabled by default. */
+  contextMenu?: ContextMenuConfig;
   /** System tray icon and context menu. Disabled by default. */
   tray?: TrayConfig;
   /** Splash screen shown while the main app window loads in the background. */
   splashScreen?: SplashScreenConfig;
+  /** macOS Dock behavior. */
+  dock?: DockConfig;
 }
 
 export interface CapacitorPluginsConfig {

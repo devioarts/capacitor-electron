@@ -1,5 +1,20 @@
-import { app, Menu, type MenuItemConstructorOptions } from 'electron';
-import type { ElectronConfig } from '../../shared/types';
+import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import type { ElectronConfig, MenuConfig } from '../../shared/types';
+
+export interface MenuContext {
+  appName: string;
+  isDev: boolean;
+  getWin: () => BrowserWindow | null;
+}
+
+export interface ContextMenuContext extends MenuContext {
+  window: BrowserWindow;
+  params: Electron.ContextMenuParams;
+}
+
+export type ApplicationMenuFactory = (ctx: MenuContext) => MenuItemConstructorOptions[] | null | undefined;
+export type ContextMenuFactory = (ctx: ContextMenuContext) => MenuItemConstructorOptions[] | null | undefined;
+export type DockMenuFactory = (ctx: MenuContext) => MenuItemConstructorOptions[] | null | undefined;
 
 /**
  * Configure the native application menu (menu bar).
@@ -7,21 +22,21 @@ import type { ElectronConfig } from '../../shared/types';
  * - `cfg.ui.menu === undefined` — keeps Electron's default menu unchanged.
  * - `cfg.ui.menu === false` — removes the menu entirely on Windows/Linux; on macOS keeps a
  *   minimal App menu (Quit only) because Cmd+Q must always work.
- * - `cfg.ui.menu` is an object — builds a custom menu from the provided sub-options.
- *
- * Must be called inside `app.whenReady()`.
- *
- * @param cfg    Electron platform config.
- * @param isDev  `true` when the app is not packaged (forces `viewMenu` visible in dev).
+ * - `cfg.ui.menu === true` or object — uses `src/user/menu/app.ts` when it returns a
+ *   template, otherwise falls back to the built-in edit/view preset.
  */
-export function setupMenu(cfg: ElectronConfig, isDev: boolean): void {
+export function setupMenu(
+  cfg: ElectronConfig,
+  isDev: boolean,
+  getWin: () => BrowserWindow | null,
+  userMenu?: ApplicationMenuFactory,
+): void {
   const menu = cfg.ui?.menu;
 
   if (menu === undefined) return;
 
   if (menu === false) {
     if (process.platform === 'darwin') {
-      // macOS requires at least the App menu for Cmd+Q to work
       Menu.setApplicationMenu(Menu.buildFromTemplate([
         { label: app.name, submenu: [{ role: 'quit' }] },
       ]));
@@ -31,9 +46,58 @@ export function setupMenu(cfg: ElectronConfig, isDev: boolean): void {
     return;
   }
 
-  const { editMenu = true, viewMenu } = menu;
-  const showView = isDev || viewMenu === true;
+  const ctx = menuContext(isDev, getWin);
+  const customTemplate = userMenu?.(ctx);
+  const template = Array.isArray(customTemplate)
+    ? customTemplate
+    : buildPresetMenu(menu, isDev);
 
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+export function setupContextMenu(
+  win: BrowserWindow,
+  cfg: ElectronConfig,
+  isDev: boolean,
+  getWin: () => BrowserWindow | null,
+  userMenu?: ContextMenuFactory,
+): void {
+  const contextMenu = cfg.ui?.contextMenu;
+  const enabled = contextMenu === true || (typeof contextMenu === 'object' && contextMenu.enabled === true);
+  if (!enabled || !userMenu) return;
+
+  win.webContents.on('context-menu', (_event, params) => {
+    const template = userMenu({ ...menuContext(isDev, getWin), window: win, params });
+    if (!Array.isArray(template) || template.length === 0) return;
+    Menu.buildFromTemplate(template).popup({ window: win });
+  });
+}
+
+export function setupDockMenu(
+  cfg: ElectronConfig,
+  isDev: boolean,
+  getWin: () => BrowserWindow | null,
+  userMenu?: DockMenuFactory,
+): void {
+  if (process.platform !== 'darwin' || cfg.ui?.dock?.menu !== true || !userMenu) return;
+
+  const template = userMenu(menuContext(isDev, getWin));
+  if (!Array.isArray(template) || template.length === 0) return;
+  app.dock?.setMenu(Menu.buildFromTemplate(template));
+}
+
+function menuContext(isDev: boolean, getWin: () => BrowserWindow | null): MenuContext {
+  return {
+    appName: app.name,
+    isDev,
+    getWin,
+  };
+}
+
+function buildPresetMenu(menu: Exclude<MenuConfig, false>, isDev: boolean): MenuItemConstructorOptions[] {
+  const options = typeof menu === 'object' ? menu : {};
+  const { editMenu = true, viewMenu } = options;
+  const showView = isDev || viewMenu === true;
   const template: MenuItemConstructorOptions[] = [];
 
   if (process.platform === 'darwin') {
@@ -56,5 +120,5 @@ export function setupMenu(cfg: ElectronConfig, isDev: boolean): void {
   if (editMenu) template.push({ role: 'editMenu' });
   if (showView) template.push({ role: 'viewMenu' });
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  return template;
 }

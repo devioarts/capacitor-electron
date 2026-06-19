@@ -36,7 +36,7 @@ let isQuitting = false;
  *
  * @param cfg        Electron config (reads `cfg.ui.tray.*` and `cfg.browserWindow.icon` as fallback).
  * @param getWin     Getter that returns the current main BrowserWindow (or null).
- * @param menuItems  Menu item definitions from `src/user/tray.ts`.
+ * @param menuItems  Menu item definitions from `src/user/menu/tray.ts`.
  * @returns          A `hookWindow(win)` function, or `null` if minimizeToTray is off.
  */
 export function setupTray(

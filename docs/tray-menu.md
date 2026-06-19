@@ -40,10 +40,10 @@ const config: CapacitorConfig = {
 
 ## Customize the context menu
 
-Edit `electron/src/user/tray.ts` — this file is never overwritten by `cap-electron sync`.
+Edit `electron/src/user/menu/tray.ts` — this file is never overwritten by `cap-electron sync`.
 
 ```typescript
-import type { TrayMenuItemDef } from '../system/static/electron-api/tray-main';
+import type { TrayMenuItemDef } from '../../system/static/electron-api/tray-main';
 
 export const trayMenu: TrayMenuItemDef[] = [
   { label: 'Open', action: 'show' },
@@ -110,12 +110,22 @@ a leading slash to copy from the project root during `cap-electron sync`
 
 ## Menu-bar app (macOS)
 
-For a pure menu-bar app with no Dock icon, add the following to `electron/main.ts` after `setupTray`:
+For a pure menu-bar app with no Dock icon, enable `ui.dock.hideIcon`:
 
 ```typescript
-if (process.platform === 'darwin') {
-  app.dock.hide();
-}
+plugins: {
+  Electron: {
+    ui: {
+      tray: {
+        enabled: true,
+        icon: 'tray.png',
+      },
+      dock: {
+        hideIcon: true,
+      },
+    },
+  },
+},
 ```
 
-This is not built into the config because most apps still want a Dock presence.
+This option only affects macOS. Windows and Linux ignore it.

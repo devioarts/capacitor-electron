@@ -246,9 +246,12 @@ See [content security policy](docs/content-security-policy.md).
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `ui.menu` | `false \| object` | Electron default | Native app menu |
+| `ui.menu` | `false \| true \| object` | Electron default | Native application menu |
+| `ui.contextMenu` | `boolean \| object` | `false` | Renderer context menu from `electron/src/user/menu/context.ts` |
 | `ui.tray` | object | disabled | System tray icon and close-to-tray behavior |
 | `ui.splashScreen` | object | disabled | Splash screen shown while the app loads |
+| `ui.dock.hideIcon` | `boolean` | `false` | Hide the macOS Dock icon for pure menu-bar/tray apps |
+| `ui.dock.menu` | `boolean` | `false` | macOS Dock menu from `electron/src/user/menu/dock.ts` |
 
 See [app menu](docs/app-menu.md), [tray menu](docs/tray-menu.md), and [splash screen](docs/splash-screen.md).
 
@@ -607,7 +610,7 @@ See [docs/global-shortcuts.md](docs/global-shortcuts.md) for all variants, built
 
 ## Tray menu
 
-Show a system-tray icon. Enable in `capacitor.config.ts` and customise the context menu in `electron/src/user/tray.ts`:
+Show a system-tray icon. Enable in `capacitor.config.ts` and customise the context menu in `electron/src/user/menu/tray.ts`:
 
 ```typescript
 plugins: {
@@ -628,23 +631,25 @@ See [docs/tray-menu.md](docs/tray-menu.md) for icon formats and context menu opt
 
 ---
 
-## App menu
+## Native menus
 
-Configure the native menu bar:
+Application, context, Dock, and tray menus are user-owned files under `electron/src/user/menu/`. Use config only to enable the surface or select the simple preset:
 
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      menu: false,           // hide the menu bar
-      // or:
-      menu: { editMenu: true, viewMenu: false },  // custom menu
+      menu: true,
+      contextMenu: true,
+      dock: {
+        menu: true,
+      },
     },
   },
 },
 ```
 
-See [docs/app-menu.md](docs/app-menu.md) for platform differences and all options.
+See [docs/app-menu.md](docs/app-menu.md) for application, context, Dock, and tray menu details.
 
 ---
 

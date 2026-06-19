@@ -2,9 +2,12 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck } from './src';
 import { shortcuts } from './src/user/shortcuts';
-import { trayMenu } from './src/user/tray';
+import { appMenu } from './src/user/menu/app';
+import { contextMenu } from './src/user/menu/context';
+import { dockMenu } from './src/user/menu/dock';
+import { trayMenu } from './src/user/menu/tray';
 import { onReady } from './src/user/main-user';
 
 const isDev = !app.isPackaged;
@@ -107,6 +110,7 @@ function setup(): void {
     }
 
     applySecurityHardening(win, isDev);
+    setupContextMenu(win, cfg, isDev, getWin, contextMenu);
 
     if (windowState.isMaximized) win.maximize();
     if (appConfig.persistWindowState) trackWindowState(win);
@@ -129,8 +133,10 @@ function setup(): void {
 
   app.whenReady().then(() => {
     setupCSP(cfg, isDev);
-    setupMenu(cfg, isDev);
+    setupMenu(cfg, isDev, getWin, appMenu);
     if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
+    setupDockMenu(cfg, isDev, getWin, dockMenu);
+    if (cfg.ui?.dock?.hideIcon && process.platform === 'darwin') app.dock?.hide();
     setupShortcuts(shortcuts, getWin);
     const hookTrayWindow = setupTray(cfg, getWin, trayMenu);
     const hideSplash = setupSplash(cfg);
