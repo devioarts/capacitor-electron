@@ -20,11 +20,14 @@
   ],
   "scripts": {
     "build": "tsx scripts/build.ts",
+    "postinstall": "npm run build",
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run build",
     "release": "npm publish --access public",
-    "capacitor:sync:after": "cap-electron sync"
+    "capacitor:sync:after": "npx cap-electron sync",
+    "capacitor:copy:after": "npx cap-electron copy",
+    "capacitor:update:after": "npx cap-electron update"
   },
   "repository": {
     "type": "git",
@@ -56,14 +59,14 @@
     "@capacitor/cli": ">=8.0.0"
   },
   "dependencies": {
-    "tar": "^7.0.0"
+    "esbuild": "^0.28.0",
+    "tar": "^7.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.8.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",
     "@types/node": "^24.0.0",
-    "electron": "^42.4.0",
-    "esbuild": "^0.28.1",
-    "tsx": "^4.0.0",
-    "typescript": "^5.8.0"
+    "electron": "^42.4.0"
   }
 }
