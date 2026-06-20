@@ -1,8 +1,10 @@
-# Browser & App Launcher
+# Browser, InAppBrowser & App Launcher
 
-Built-in Electron implementations of `@capacitor/browser` and `@capacitor/app-launcher`. The goal is to keep the same API semantics as the official Capacitor plugins while mapping them onto Electron's `shell.openExternal` primitive:
+Built-in Electron implementations of `@capacitor/browser`, `@capacitor/inappbrowser`, and `@capacitor/app-launcher`.
 
-- `Browser.open()` accepts only `http://` and `https://`.
+- `Browser.open()` accepts only `http://` and `https://` and opens an Electron-owned browser window.
+- `InAppBrowser.openInExternalBrowser()` and `openInSystemBrowser()` use Electron `shell.openExternal()`.
+- `InAppBrowser.openInWebView()` opens an Electron-owned browser window with events.
 - `AppLauncher.openUrl()` accepts `http://`, `https://`, and custom schemes explicitly listed in `plugins.Electron.app.appLauncherSchemes`.
 
 No extra configuration required for Browser or for AppLauncher web URLs — install either plugin and it works on Electron out of the box.
@@ -43,11 +45,13 @@ npm install @capacitor/app-launcher
 npx cap-electron sync
 ```
 
+For `@capacitor/inappbrowser`, see [in-app-browser.md](in-app-browser.md).
+
 ---
 
 ## @capacitor/browser
 
-Opens a URL in the user's default system browser. Electron cannot control or observe the browser window once it is open.
+Opens a URL in an Electron-owned browser window. This matches Capacitor Browser's in-app browser model and allows Electron to implement `close()`, `browserFinished`, and `browserPageLoaded`.
 
 ### Basic usage
 
@@ -64,14 +68,19 @@ await Browser.open({ url: 'https://example.com' });
 | Option | Type | Description |
 |--------|------|-------------|
 | `url`  | `string` | URL to open — must be `https://` or `http://` |
+| `toolbarColor` | `string` | Applied to the Electron toolbar background |
+| `presentationStyle` | `'fullscreen' \| 'popover'` | `fullscreen` opens the Electron window fullscreen; `popover` is treated as a normal window |
+| `width` | `number` | Initial Electron window width |
+| `height` | `number` | Initial Electron window height |
+| `windowName` | `string` | Ignored on Electron; this is web-only upstream |
 
-Opens the URL with `shell.openExternal`. The call resolves once the OS has accepted the request, not when the browser page has loaded.
+The call resolves once the Electron browser window has been created and the initial navigation has been started.
 
 Non-web schemes, including custom app schemes, are rejected with an error. Use `AppLauncher.openUrl()` for explicitly allowlisted app deep links.
 
 #### `close()`
 
-No-op — Electron has no API to close an external browser window opened with `shell.openExternal`.
+Closes the active Electron browser window.
 
 #### `getSnapshot()`
 
@@ -81,10 +90,10 @@ Returns `null` — not supported.
 
 | Event | Status |
 |-------|--------|
-| `browserFinished` | Never emitted — `shell.openExternal` is fire-and-forget |
-| `browserPageLoaded` | Never emitted |
+| `browserFinished` | Emitted when the Electron browser window closes |
+| `browserPageLoaded` | Emitted when the embedded page fires `did-finish-load` |
 
-The listener is accepted without error but never fires. Use `addListener` / `removeListener` normally.
+The `Browser` plugin uses the same internal Electron WebView backend as `InAppBrowser.openInWebView()`, but only maps Capacitor Browser's own `OpenOptions`.
 
 ---
 
@@ -131,7 +140,7 @@ Rejected schemes return `{ completed: false }` without throwing. Script-like sch
 
 ## Platform behaviour
 
-`shell.openExternal` is an OS-level call. Browser limits that handoff to web URLs. AppLauncher allows web URLs plus configured app schemes. The call is asynchronous and resolves once the OS has accepted the handoff.
+`Browser.open()` uses an Electron-owned window. `InAppBrowser.openInExternalBrowser()`, `InAppBrowser.openInSystemBrowser()`, and AppLauncher external handoffs use `shell.openExternal()`.
 
 ---
 
@@ -139,7 +148,5 @@ Rejected schemes return `{ completed: false }` without throwing. Script-like sch
 
 | Feature | Status | Reason |
 |---------|--------|--------|
-| `close()` | No-op | No Electron API to close external windows |
-| `getSnapshot()` | Returns null | No access to external browser content |
+| `getSnapshot()` | Returns null | Snapshot capture is not implemented for the embedded browser view yet |
 | `canOpenUrl()` | Checks local scheme policy only | No reliable OS API to test scheme registration in Electron |
-| `browserFinished` / `browserPageLoaded` | Never emitted | `shell.openExternal` is fire-and-forget |

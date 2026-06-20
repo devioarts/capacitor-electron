@@ -54,11 +54,21 @@ class App {
 let listenCount  = 0;
 let focusHandler: (() => void) | null = null;
 let blurHandler:  (() => void) | null = null;
+let listenedWindow: BrowserWindow | null = null;
+let closeHandler: (() => void) | null = null;
 
-function attachWindowListeners(): void {
-  if (++listenCount !== 1) return;
-  const win = getMainWindow();
-  if (!win) return;
+function attachToWindow(win = getMainWindow()): void {
+  if (!win || focusHandler || listenCount === 0) return;
+  listenedWindow = win;
+  closeHandler = () => {
+    if (listenedWindow === win) {
+      focusHandler = null;
+      blurHandler = null;
+      closeHandler = null;
+      listenedWindow = null;
+    }
+  };
+  win.once('closed', closeHandler);
   focusHandler = () => {
     emitPluginEvent('App', 'appStateChange', { isActive: true });
     emitPluginEvent('App', 'resume');
@@ -71,14 +81,33 @@ function attachWindowListeners(): void {
   win.on('blur',  blurHandler);
 }
 
-function detachWindowListeners(): void {
-  if (--listenCount > 0) return;
-  const win = getMainWindow();
-  if (win && focusHandler) win.removeListener('focus', focusHandler);
-  if (win && blurHandler)  win.removeListener('blur',  blurHandler);
+function attachWindowListeners(): void {
+  listenCount++;
+  if (listenCount !== 1) return;
+  attachToWindow();
+}
+
+function detachFromWindow(): void {
+  const win = listenedWindow;
+  if (!win) return;
+  if (focusHandler) win.removeListener('focus', focusHandler);
+  if (blurHandler)  win.removeListener('blur',  blurHandler);
+  if (closeHandler) win.removeListener('closed', closeHandler);
   focusHandler = null;
   blurHandler  = null;
+  closeHandler = null;
+  listenedWindow = null;
 }
+
+function detachWindowListeners(): void {
+  if (listenCount === 0) return;
+  if (--listenCount > 0) return;
+  detachFromWindow();
+}
+
+app.on('browser-window-created', (_event, win) => {
+  attachToWindow(win);
+});
 
 const events: EventHooks = {
   appStateChange: { onAdd: attachWindowListeners, onRemove: detachWindowListeners },

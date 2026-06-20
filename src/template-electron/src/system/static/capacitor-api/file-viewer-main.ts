@@ -14,7 +14,7 @@ function resourcePath(rel: string): string {
   const clean = rel.replace(/^[/\\]+/, '');
   const base = app.isPackaged
     ? path.join(process.resourcesPath, 'app')
-    : path.join(__dirname, '..', '..', '..', '..', 'app');
+    : path.join(__dirname, '..', 'app');
   const resolved = path.resolve(base, clean);
   if (resolved !== base && !resolved.startsWith(base + path.sep)) {
     throw new Error(`Resource path escapes the app resources directory: ${rel}`);

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Toast } from "@capacitor/toast";
-import { ActionSheet, ActionSheetButtonStyle } from "@capacitor/action-sheet";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -36,48 +35,6 @@ export const PageToast: React.FC = () => {
             } catch (e) { log.error("Toast", "show", e); }
           }}>
             show(long — 3.5s)
-          </Button>
-        </div>
-      </section>
-
-      <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">ActionSheet.showActions()</p>
-        <p className="text-xs text-slate-500">
-          Na Electronu se zobrazí jako nativní dialog s tlačítky. DESTRUCTIVE = prefix ⚠.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button type="primary" onClick={async () => {
-            try {
-              const result = await ActionSheet.showActions({
-                title: "Vyber akci",
-                message: "Co chceš udělat?",
-                options: [
-                  { title: "Uložit", style: ActionSheetButtonStyle.Default },
-                  { title: "Smazat", style: ActionSheetButtonStyle.Destructive },
-                  { title: "Zrušit", style: ActionSheetButtonStyle.Cancel },
-                ],
-              });
-              log.info("ActionSheet", "showActions", { index: result.index });
-            } catch (e) { log.error("ActionSheet", "showActions", e); }
-          }}>
-            showActions() — 3 možnosti
-          </Button>
-
-          <Button type="neutral" onClick={async () => {
-            try {
-              const result = await ActionSheet.showActions({
-                title: "Sdílet soubor",
-                options: [
-                  { title: "Kopírovat odkaz" },
-                  { title: "Otevřít v prohlížeči" },
-                  { title: "Exportovat jako PDF" },
-                  { title: "Zrušit", style: ActionSheetButtonStyle.Cancel },
-                ],
-              });
-              log.info("ActionSheet", "showActions", { index: result.index });
-            } catch (e) { log.error("ActionSheet", "showActions", e); }
-          }}>
-            showActions() — 4 možnosti
           </Button>
         </div>
       </section>

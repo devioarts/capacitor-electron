@@ -140,7 +140,7 @@ Register a global shortcut from the renderer at runtime.
 registerShortcut(accelerator: string, event: string): Promise<boolean>
 ```
 
-Returns `true` if registration succeeded, `false` if the accelerator is already taken by another application.
+Returns `true` if registration succeeded, `false` if the accelerator is invalid or already taken by another application.
 
 ### `unregisterShortcut(accelerator)`
 

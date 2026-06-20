@@ -99,6 +99,7 @@
     ph('ActionSheet', ['showActions'], false),
     ph('Dialog',      ['alert','confirm','prompt'], false),
     ph('Browser',     ['open','close','getSnapshot'], true),
+    ph('InAppBrowser', ['openInWebView','openInSystemBrowser','openInExternalBrowser','close'], true),
     ph('AppLauncher', ['canOpenUrl','openUrl'], false),
     ph('Filesystem',  [
       'readFile','writeFile','appendFile','deleteFile',

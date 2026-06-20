@@ -27,6 +27,7 @@ type TimerHandle =
 const timers    = new Map<number, TimerHandle>();
 const pending   = new Map<number, NotifSchema>();
 const delivered: NotifSchema[] = [];
+const MAX_DELIVERED = 200;
 
 const EVERY_MS: Record<string, number> = {
   second:       1_000,
@@ -54,6 +55,7 @@ function fire(n: NotifSchema): void {
   const notif = new Notification({ title: n.title, body: n.body ?? '', silent: n.silent ?? false });
   notif.on('show', () => {
     delivered.push(n);
+    if (delivered.length > MAX_DELIVERED) delivered.splice(0, delivered.length - MAX_DELIVERED);
     emitPluginEvent('LocalNotifications', 'localNotificationReceived', n);
   });
   notif.on('failed', (_e, err) => {

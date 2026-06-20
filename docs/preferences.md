@@ -9,7 +9,7 @@ If you prefer the plugin's web fallback, disable the native bridge:
 ```typescript
 plugins: {
   Electron: {
-    capacitor: {
+    capacitorPlugins: {
       preferences: false,
     },
   },

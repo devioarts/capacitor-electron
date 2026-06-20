@@ -71,7 +71,7 @@ export function setupMenu(
 
   if (menu.enabled !== true) return;
 
-  const ctx = menuContext('app', isDev, getWin);
+  const ctx = createMenuContext('app', isDev, getWin);
   const customTemplate = userMenu?.(ctx);
   const template = Array.isArray(customTemplate)
     ? customTemplate
@@ -118,7 +118,7 @@ export function setupDockMenu(
 ): void {
   if (process.platform !== 'darwin' || cfg.ui?.dockMenu?.enabled !== true || !userMenu) return;
 
-  const template = userMenu(menuContext('dock', isDev, getWin));
+  const template = userMenu(createMenuContext('dock', isDev, getWin));
   if (!Array.isArray(template) || template.length === 0) return;
   app.dock?.setMenu(Menu.buildFromTemplate(template));
 }
@@ -144,10 +144,6 @@ export function createMenuContext(source: MenuActionSource, isDev: boolean, getW
       win.webContents.send('menu:action', { source, action, data });
     },
   };
-}
-
-function menuContext(source: MenuActionSource, isDev: boolean, getWin: () => BrowserWindow | null): MenuContext {
-  return createMenuContext(source, isDev, getWin);
 }
 
 function buildPresetMenu(menu: AppMenuConfig, isDev: boolean): MenuItemConstructorOptions[] {
@@ -228,7 +224,7 @@ function showContextMenu(options: {
   popup?: { x?: number; y?: number };
 }): boolean {
   const template = options.userMenu({
-    ...menuContext('context', options.isDev, options.getWin),
+    ...createMenuContext('context', options.isDev, options.getWin),
     window: options.win,
     trigger: options.trigger,
     params: options.params,

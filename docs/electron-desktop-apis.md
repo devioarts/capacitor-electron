@@ -74,7 +74,7 @@ const enabled = await window.Electron.autoLaunch.isEnabled();
 await window.Electron.autoLaunch.setEnabled(true);
 ```
 
-Uses Electron login item settings.
+Uses Electron login item settings. Auto launch is supported on macOS and Windows. On Linux, `isEnabled()` and `setEnabled()` return `false`; apps that need Linux autostart should install a desktop-environment-specific autostart entry.
 
 ## Native theme
 
@@ -85,6 +85,16 @@ await window.Electron.nativeTheme.setThemeSource('system');
 ```
 
 Supports `system`, `light`, and `dark` theme sources.
+
+## Process guardian
+
+```ts
+const off = window.Electron.onElectronError(error => console.error(error));
+```
+
+The template installs a main-process guardian that forwards uncaught exceptions and unhandled promise rejections to the renderer as `electronError` events.
+
+The guardian intentionally owns Node's `process.setUncaughtExceptionCaptureCallback()` hook. That hook is exclusive: user plugins and libraries should not call it themselves. Use `process.on('uncaughtException', ...)`, `process.on('unhandledRejection', ...)`, or plugin-specific error reporting instead.
 
 ## Managed windows
 

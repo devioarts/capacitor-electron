@@ -1,6 +1,7 @@
 // Electron implementation of @capacitor/browser and @capacitor/app-launcher
 import { shell } from 'electron';
-import { loadConfig, registerPlugin, type AnyRecord } from '../../shared/functions';
+import { loadConfig, registerPlugin, type AnyRecord, type EventHooks } from '../../shared/functions';
+import { closeElectronWebView, openElectronWebView } from './in-app-browser-main';
 
 // Browser is intentionally web-only. AppLauncher may opt custom schemes in via
 // plugins.Electron.app.appLauncherSchemes.
@@ -47,27 +48,53 @@ function isAppLauncherUrlAllowed(url: string): boolean {
 /**
  * Electron implementation of the Capacitor Browser plugin.
  *
- * Uses `shell.openExternal` — the URL opens in the default OS browser.
+ * Uses an Electron-owned WebView window so close/load events can be delivered.
  *
  * Limitations:
- * - `close()` is a no-op — Electron cannot close an external browser window.
  * - `getSnapshot()` returns null — no access to the external browser's content.
- * - `browserFinished` and `browserPageLoaded` events are never emitted
- *   (shell.openExternal is fire-and-forget).
+ * - `windowName` is ignored because Electron does not use `window.open`.
  */
 class Browser {
   async open(opts: AnyRecord): Promise<void> {
     const url = opts['url'] as string;
     if (!isBrowserUrlAllowed(url)) throw new Error(`Browser.open only supports http/https URLs: ${url}`);
-    await shell.openExternal(url);
+    await openElectronWebView({
+      url,
+      options: {
+        showToolbar: true,
+        showURL: true,
+        showNavigationButtons: false,
+        closeButtonText: 'Close',
+        toolbarColor: opts['toolbarColor'],
+        electron: {
+          window: {
+            width: opts['width'],
+            height: opts['height'],
+            fullscreen: opts['presentationStyle'] === 'fullscreen',
+            title: 'Browser',
+          },
+        },
+      },
+    }, {
+      plugin: 'Browser',
+      closed: 'browserFinished',
+      loaded: 'browserPageLoaded',
+    });
   }
 
-  async close(): Promise<void> { /* no-op — OS owns the window */ }
+  async close(): Promise<void> {
+    closeElectronWebView();
+  }
 
   async getSnapshot(): Promise<null> { return null; }
 }
 
-registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close', 'getSnapshot']);
+const browserEvents: EventHooks = {
+  browserFinished: {},
+  browserPageLoaded: {},
+};
+
+registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close', 'getSnapshot'], browserEvents);
 
 // ── @capacitor/app-launcher ───────────────────────────────────────────────────
 

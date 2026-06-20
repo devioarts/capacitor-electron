@@ -163,6 +163,49 @@ export interface CapacitorPluginsConfig {
   preferences?: boolean;
 }
 
+export interface ElectronInAppBrowserWindowOptions {
+  width?: number;
+  height?: number;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  x?: number;
+  y?: number;
+  center?: boolean;
+  title?: string;
+  alwaysOnTop?: boolean;
+  resizable?: boolean;
+  minimizable?: boolean;
+  maximizable?: boolean;
+  fullscreenable?: boolean;
+  closable?: boolean;
+  movable?: boolean;
+  show?: boolean;
+  frame?: boolean;
+  autoHideMenuBar?: boolean;
+  backgroundColor?: string;
+  opacity?: number;
+  titleBarStyle?: 'default' | 'hidden' | 'hiddenInset';
+  /** Security-sensitive BrowserWindow options such as webPreferences are intentionally ignored at runtime. */
+  [key: string]: unknown;
+}
+
+export interface ElectronInAppBrowserOptions {
+  /** Sanitized subset of Electron BrowserWindowConstructorOptions. */
+  window?: ElectronInAppBrowserWindowOptions;
+  /** Controlled session settings for the embedded browser view. */
+  session?: {
+    partition?: string;
+    clearCache?: boolean;
+    clearStorage?: boolean;
+  };
+  /** Navigation policy for links opened by the embedded page. */
+  navigation?: {
+    openExternalLinksInSystemBrowser?: boolean;
+  };
+}
+
 export interface ElectronConfig {
   /** Development workflow settings. */
   dev?: ElectronDevConfig;

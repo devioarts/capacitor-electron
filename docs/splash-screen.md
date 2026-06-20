@@ -55,7 +55,7 @@ All options live under `plugins.Electron.ui.splashScreen` in `capacitor.config.t
 | `ui.splashScreen.image` | `string` | — | **Required.** Splash image asset. Use `splash.png` for `electron/assets/splash.png`, or `/public/assets/splash.png` to copy from the project root during sync. Omitting this disables the splash screen entirely. |
 | `ui.splashScreen.width` | `number` | `400` | Width of the splash window in px |
 | `ui.splashScreen.height` | `number` | `300` | Height of the splash window in px |
-| `ui.splashScreen.backgroundColor` | `string` | `'#ffffff'` | Window background color (any CSS color or `'transparent'`) |
+| `ui.splashScreen.backgroundColor` | `string` | `'#ffffff'` | Window background color (`#rgb`, `#rrggbb`, CSS color name, `rgb(...)`, `rgba(...)`, `hsl(...)`, `hsla(...)`, or `'transparent'`) |
 | `ui.splashScreen.minDisplayTime` | `number` | `0` | Minimum time to show the splash in ms — prevents a flash when the app loads quickly |
 
 ---
@@ -76,6 +76,8 @@ The main window never shows before the splash closes, so there is no visible ove
 
 - The splash window is frameless, always-on-top, centered, and excluded from the taskbar.
 - The image is displayed centered with `object-fit: contain` — it scales to fit without cropping.
+- `backgroundColor` is applied to the Electron `BrowserWindow`; the generated splash HTML stays transparent.
+- Invalid `backgroundColor` values fall back to white.
 - `minDisplayTime` is a floor, not a fixed duration. If the app takes longer to load, the
   splash stays until loading completes, even if that exceeds `minDisplayTime`.
 - `backgroundColor: 'transparent'` enables a transparent window — works best with a PNG

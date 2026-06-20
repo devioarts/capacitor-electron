@@ -55,6 +55,14 @@ export type GlobalShortcutDef =
 
 type GetWin = () => BrowserWindow | null;
 
+function normalizeAccelerator(accelerator: unknown): string | null {
+  if (typeof accelerator !== 'string') return null;
+  const normalized = accelerator.trim();
+  if (normalized.length === 0 || normalized.length > 100) return null;
+  if (/[\x00-\x1f\x7f]/.test(normalized)) return null;
+  return normalized;
+}
+
 function runAction(action: MainAction, getWin: GetWin): void {
   const win = getWin();
   switch (action) {
@@ -78,11 +86,17 @@ function runAction(action: MainAction, getWin: GetWin): void {
 }
 
 function registerDef(def: GlobalShortcutDef, getWin: GetWin): boolean {
-  return globalShortcut.register(def.accelerator, () => {
-    if ('handler' in def)      def.handler();
-    else if ('action' in def)  runAction(def.action, getWin);
-    else                       getWin()?.webContents.send('shortcut', { event: def.event });
-  });
+  const accelerator = normalizeAccelerator(def.accelerator);
+  if (!accelerator) return false;
+  try {
+    return globalShortcut.register(accelerator, () => {
+      if ('handler' in def)      def.handler();
+      else if ('action' in def)  runAction(def.action, getWin);
+      else                       getWin()?.webContents.send('shortcut', { event: def.event });
+    });
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -107,13 +121,14 @@ export function setupShortcuts(defs: GlobalShortcutDef[], getWin: GetWin): void 
 
   for (const def of defs) registerDef(def, getWin);
 
-  ipcMain.handle('shortcuts:register', (_e, def: { accelerator: string; event: string }) =>
-    globalShortcut.register(def.accelerator, () => {
-      getWin()?.webContents.send('shortcut', { event: def.event });
-    })
-  );
+  ipcMain.handle('shortcuts:register', (_e, def: { accelerator: string; event: string }) => {
+    const event = typeof def?.event === 'string' ? def.event : '';
+    if (!event) return false;
+    return registerDef({ accelerator: def?.accelerator, event }, getWin);
+  });
 
   ipcMain.handle('shortcuts:unregister', (_e, accelerator: string) => {
-    globalShortcut.unregister(accelerator);
+    const normalized = normalizeAccelerator(accelerator);
+    if (normalized) globalShortcut.unregister(normalized);
   });
 }

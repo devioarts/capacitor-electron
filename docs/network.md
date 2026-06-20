@@ -17,7 +17,7 @@ const handle = await Network.addListener('networkStatusChange', status => {
 
 | Field | Electron behavior |
 |---|---|
-| `connected` | Based on Chromium's `net.isOnline()` plus a short reachability probe. |
+| `connected` | Based on Chromium's `net.isOnline()`. No external HTTP probe is performed. |
 | `connectionType` | `'none'` when offline, otherwise `'unknown'`. Electron cannot reliably classify wifi vs cellular on desktop. |
 
 Listeners poll periodically while at least one renderer listener is active. The polling stops when listeners are removed.

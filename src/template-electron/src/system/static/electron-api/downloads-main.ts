@@ -11,7 +11,7 @@ type DownloadState = {
   totalBytes: number;
 };
 
-const pending: DownloadState[] = [];
+const pending = new Map<string, DownloadState[]>();
 const active = new Map<string, { item: DownloadItem; state: DownloadState }>();
 
 function senderWindow(e: IpcMainInvokeEvent): BrowserWindow {
@@ -22,6 +22,19 @@ function senderWindow(e: IpcMainInvokeEvent): BrowserWindow {
 
 function emit(win: BrowserWindow, type: string, state: DownloadState): void {
   if (!win.isDestroyed()) win.webContents.send('downloads:event', { type, data: { ...state } });
+}
+
+function enqueuePending(state: DownloadState): void {
+  const queue = pending.get(state.url);
+  if (queue) queue.push(state);
+  else pending.set(state.url, [state]);
+}
+
+function dequeuePending(url: string): DownloadState | undefined {
+  const queue = pending.get(url);
+  const state = queue?.shift();
+  if (queue && queue.length === 0) pending.delete(url);
+  return state;
 }
 
 function attachDownload(win: BrowserWindow, item: DownloadItem, initial: DownloadState): void {
@@ -52,8 +65,9 @@ function attachDownload(win: BrowserWindow, item: DownloadItem, initial: Downloa
 
 ipcMain.handle('downloads:start', (e, opts: { url: string; savePath?: string }) => {
   const win = senderWindow(e);
-  const url = String(opts?.url ?? '');
-  if (!/^https?:\/\//i.test(url)) throw new Error('downloads.start only supports http/https URLs');
+  const parsed = new URL(String(opts?.url ?? ''));
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('downloads.start only supports http/https URLs');
+  const url = parsed.href;
 
   const state: DownloadState = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -65,7 +79,7 @@ ipcMain.handle('downloads:start', (e, opts: { url: string; savePath?: string }) 
     totalBytes: 0,
   };
 
-  pending.push(state);
+  enqueuePending(state);
   win.webContents.downloadURL(url);
   return { ...state };
 });
@@ -85,13 +99,12 @@ function ensureSession(win: BrowserWindow): void {
   ses.on('will-download', (event, item, webContents) => {
     const owner = BrowserWindow.fromWebContents(webContents);
     if (!owner) return;
-    const next = pending.shift();
+    const next = dequeuePending(item.getURL());
     if (!next) return;
     attachDownload(owner, item, next);
   });
 }
 
-BrowserWindow.getAllWindows().forEach(ensureSession);
 ipcMain.on('downloads:ensureSession', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   if (win) ensureSession(win);

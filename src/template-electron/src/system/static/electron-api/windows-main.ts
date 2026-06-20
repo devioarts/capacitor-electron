@@ -44,6 +44,14 @@ function getManaged(id: number): BrowserWindow {
   return win;
 }
 
+function webUrl(rawUrl: string): string {
+  const url = new URL(rawUrl);
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error(`Unsupported external URL protocol: ${url.protocol}`);
+  }
+  return url.href;
+}
+
 function windowOptions(raw: ManagedWindowOptions | undefined): ManagedWindowOptions {
   const opts = raw ?? {};
   const allowed: ManagedWindowOptions = {
@@ -92,9 +100,7 @@ ipcMain.handle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined) 
   win.once('closed', () => managed.delete(win.id));
 
   if (opts?.url) {
-    const url = new URL(opts.url);
-    if (!['http:', 'https:'].includes(url.protocol)) throw new Error(`Unsupported window URL: ${url.protocol}`);
-    void win.loadURL(url.href);
+    void win.loadURL(webUrl(opts.url));
   }
 
   return serialize(win);
@@ -106,4 +112,4 @@ ipcMain.handle('windows:close', (_e, id: number) => { getManaged(id).close(); })
 ipcMain.handle('windows:show', (_e, id: number) => { getManaged(id).show(); });
 ipcMain.handle('windows:hide', (_e, id: number) => { getManaged(id).hide(); });
 ipcMain.handle('windows:setBounds', (_e, opts: { id: number; bounds: Electron.Rectangle }) => { getManaged(opts.id).setBounds(opts.bounds); });
-ipcMain.handle('windows:openExternal', async (_e, url: string) => { await shell.openExternal(new URL(url).href); });
+ipcMain.handle('windows:openExternal', async (_e, url: string) => { await shell.openExternal(webUrl(url)); });

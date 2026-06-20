@@ -33,10 +33,12 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
   const abs = path.join(__dirname, '..', 'assets', image);
   if (!fs.existsSync(abs)) return null;
 
+  const bg = normalizeBackgroundColor(backgroundColor);
+
   // Stable filename — avoids accumulating files across launches.
   // Write only when content has changed (e.g. different image or color after a config update).
   const htmlPath = path.join(os.tmpdir(), 'cap-electron-splash.html');
-  const htmlContent = buildHTML(backgroundColor, pathToFileURL(abs).href);
+  const htmlContent = buildHTML(pathToFileURL(abs).href);
   try {
     const existing = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf-8') : null;
     if (existing !== htmlContent) fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
@@ -53,10 +55,12 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
     center: true,
     resizable: false,
     focusable: false,
-    transparent: backgroundColor === 'transparent',
+    transparent: bg === 'transparent',
+    backgroundColor: bg === 'transparent' ? '#00000000' : bg,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
 
+  splash.setBackgroundColor(bg === 'transparent' ? '#00000000' : bg);
   splash.loadFile(htmlPath);
 
   const shownAt = Date.now();
@@ -72,6 +76,16 @@ export function setupSplash(cfg: ElectronConfig): ((onClosed?: () => void) => vo
   };
 }
 
-function buildHTML(bg: string, imageUrl: string): string {
-  return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;background:${bg};overflow:hidden"><img src="${imageUrl}" style="max-width:100%;max-height:100%;object-fit:contain"></body></html>`;
+function normalizeBackgroundColor(value: string): string {
+  const color = String(value ?? '').trim();
+  if (/^transparent$/i.test(color)) return 'transparent';
+  if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
+  if (/^[a-z]+$/i.test(color)) return color;
+  if (/^rgba?\(\s*(\d{1,3}%?\s*,\s*){2}\d{1,3}%?\s*(,\s*(0|1|0?\.\d+))?\s*\)$/i.test(color)) return color;
+  if (/^hsla?\(\s*-?\d+(\.\d+)?\s*,\s*\d+(\.\d+)?%\s*,\s*\d+(\.\d+)?%\s*(,\s*(0|1|0?\.\d+))?\s*\)$/i.test(color)) return color;
+  return '#ffffff';
+}
+
+function buildHTML(imageUrl: string): string {
+  return `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;background:transparent;overflow:hidden"><img src="${imageUrl}" style="max-width:100%;max-height:100%;object-fit:contain"></body></html>`;
 }

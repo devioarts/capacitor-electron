@@ -37,6 +37,7 @@
     "@capacitor/file-transfer": "^2.0.4",
     "@capacitor/file-viewer": "^2.0.1",
     "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/inappbrowser": "^4.0.0",
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/network": "^8.0.1",
     "@capacitor/preferences": "^8.0.1",

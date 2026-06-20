@@ -33,6 +33,7 @@ import './system/static/capacitor-api/action-sheet-main';
 import './system/static/capacitor-api/dialog-main';
 import './system/static/capacitor-api/app-main';
 import './system/static/capacitor-api/browser-main';
+import './system/static/capacitor-api/in-app-browser-main';
 import './system/static/capacitor-api/filesystem-main';
 import './system/static/capacitor-api/preferences-main';
 import './system/static/capacitor-api/toast-main';

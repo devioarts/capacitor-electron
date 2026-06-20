@@ -3,7 +3,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 
-// @ts-ignore:next-line
+// @ts-expect-error: generated Electron sources exist after cap-electron sync
 import type {ElectronConfig} from "./electron/src";
 
 const config: CapacitorConfig = {

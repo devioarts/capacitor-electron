@@ -198,7 +198,7 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
 | `app.autoUpdater` | object | — | `electron-updater` settings |
 
-See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), and [auto-updater](docs/auto-updater.md).
+See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), [in-app browser](docs/in-app-browser.md), and [auto-updater](docs/auto-updater.md).
 
 ### `browserWindow`
 
@@ -352,17 +352,19 @@ App.addListener('appStateChange', ({ isActive }) => {
 
 Covers `getInfo`, `getState`, `exitApp`, `minimizeApp`, `getLaunchUrl`, and events `appStateChange`, `appUrlOpen`, `resume`, `pause`. See [docs/app.md](docs/app.md).
 
-### Browser & App Launcher
+### Browser, InAppBrowser & App Launcher
 
 ```typescript
 import { Browser } from '@capacitor/browser';
+import { DefaultWebViewOptions, InAppBrowser } from '@capacitor/inappbrowser';
 import { AppLauncher } from '@capacitor/app-launcher';
 
 await Browser.open({ url: 'https://example.com' });
+await InAppBrowser.openInWebView({ url: 'https://example.com', options: DefaultWebViewOptions });
 await AppLauncher.openUrl({ url: 'myotherapp://action/open' });
 ```
 
-Both use `shell.openExternal`. See [docs/browser.md](docs/browser.md).
+`Browser.open()` and `InAppBrowser.openInWebView()` use an Electron-owned browser window; AppLauncher and InAppBrowser external/system browser handoffs use `shell.openExternal`. See [docs/browser.md](docs/browser.md) and [docs/in-app-browser.md](docs/in-app-browser.md).
 
 ### Filesystem
 

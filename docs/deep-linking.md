@@ -95,6 +95,8 @@ The method is only present when `app.deepLinkingScheme` is configured — guard 
 
 In all cases the window is restored (if minimized or hidden), focused, and then the `deepLink` IPC event is sent to the renderer.
 
+In development, protocol registration still calls Electron's `app.setAsDefaultProtocolClient()` for the configured scheme. Reusing the same scheme across multiple local projects can therefore move the OS handler between them. Prefer a unique development scheme when testing deep links.
+
 ---
 
 ## Full usage example
