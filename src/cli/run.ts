@@ -34,29 +34,60 @@ const { url: devUrl, host, port } = readDevUrl();
 
 const children: ChildProcess[] = [];
 const watchers: fs.FSWatcher[] = [];
+let devServerOurs = false; // true = we started it, false = it was already running
+let cleaningUp = false;
 
 // Kill entire process group (pid < 0) so grandchildren (esbuild, vite) die too.
 // Falls back to child.kill() on platforms where process groups aren't supported.
-function killGroup(child: ChildProcess): void {
+function killGroup(child: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
   if (child.pid == null) return;
-  try { process.kill(-child.pid, 'SIGTERM'); } catch { try { child.kill(); } catch { /* ignore */ } }
+  try { process.kill(-child.pid, signal); } catch { try { child.kill(signal); } catch { /* ignore */ } }
 }
 
-function cleanup(): void {
+function isAlive(child: ChildProcess): boolean {
+  if (child.pid == null) return false;
+  try { process.kill(child.pid, 0); return true; } catch { return false; }
+}
+
+async function cleanup(): Promise<void> {
+  if (cleaningUp) return;
+  cleaningUp = true;
+
   for (const w of watchers) try { w.close(); } catch { /* ignore */ }
-  for (const child of children) killGroup(child);
+
+  if (children.length === 0) return;
+
+  if (devServerOurs) {
+    console.log('[cap-electron] Stopping dev server (started by this session)...');
+  }
+
+  // Phase 1: graceful SIGTERM to all spawned process groups
+  for (const child of children) killGroup(child, 'SIGTERM');
+
+  // Phase 2: wait up to 3 s for graceful shutdown
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline && children.some(isAlive)) {
+    await new Promise<void>(r => setTimeout(r, 100));
+  }
+
+  // Phase 3: SIGKILL survivors + any grandchildren still in the process group
+  for (const child of children) killGroup(child, 'SIGKILL');
 }
 
-process.on('SIGINT',  () => { cleanup(); process.exit(0); });
-process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+async function exitCleanly(code: number): Promise<never> {
+  await cleanup();
+  process.exit(code);
+}
+
+process.on('SIGINT',  () => { void exitCleanly(0); });
+process.on('SIGTERM', () => { void exitCleanly(0); });
 
 // Spawn in its own process group so we can kill the whole tree later.
 function spawnGroup(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env): ChildProcess {
   const child = spawn(cmd, args, { cwd, stdio: 'inherit', detached: true, env });
   child.on('error', (err) => {
     console.error(`[cap-electron] Failed to start "${cmd}": ${err.message}`);
-    cleanup();
-    process.exit(1);
+    void exitCleanly(1);
   });
   children.push(child);
   return child;
@@ -69,9 +100,10 @@ const devRunning = await isPortOpen(host, port);
 
 if (!devRunning) {
   console.log(`[cap-electron] Starting dev server (${devUrl})...`);
+  devServerOurs = true;
   spawnGroup(pm, ['run', 'dev'], capacitorRoot, { ...process.env, APP_PLATFORM: 'electron' });
 } else {
-  console.log(`[cap-electron] Dev server already running on ${devUrl}.`);
+  console.log(`[cap-electron] Dev server already running on ${devUrl} — will not stop it on exit.`);
 }
 
 // ── 2. Electron initial build + watch ─────────────────────────────────────────
@@ -80,8 +112,7 @@ try {
   execSync('npm run build', { cwd: electronDir, stdio: 'inherit' });
 } catch {
   console.error('[cap-electron] Electron source compilation failed.');
-  cleanup();
-  process.exit(1);
+  await exitCleanly(1);
 }
 spawnGroup('npm', ['run', 'watch'], electronDir);
 
@@ -102,8 +133,7 @@ try {
   fs.writeFileSync(reloadSignal, '0');
 } catch (e) {
   console.error(`[cap-electron] Failed to create reload signal file: ${e instanceof Error ? e.message : String(e)}`);
-  cleanup();
-  process.exit(1);
+  await exitCleanly(1);
 }
 
 let electronProc: ChildProcess | null = null;
@@ -120,8 +150,7 @@ function launchElectron(restart = false): void {
       intentionalRestart = false;
       launchElectron(true);
     } else {
-      cleanup();
-      process.exit(code ?? 0);
+      void exitCleanly(code ?? 0);
     }
   });
 }
@@ -171,8 +200,7 @@ try {
   watchers.push(fs.watch(preloadCjs, scheduleReload));
 } catch (e) {
   console.error(`[cap-electron] Failed to watch build output files: ${e instanceof Error ? e.message : String(e)}`);
-  cleanup();
-  process.exit(1);
+  await exitCleanly(1);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -226,6 +254,5 @@ async function waitForPort(host: string, port: number, timeoutMs: number): Promi
     await new Promise((r) => setTimeout(r, 500));
   }
   console.error(`[cap-electron] Timed out waiting for dev server on port ${port}.`);
-  cleanup();
-  process.exit(1);
+  await exitCleanly(1);
 }
