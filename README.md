@@ -505,6 +505,7 @@ If you ever need to add it manually:
 | `openDevTools()` | `Promise<void>` | Open DevTools |
 | `closeDevTools()` | `Promise<void>` | Close DevTools |
 | `getAppVersion()` | `Promise<string>` | Returns `app.getVersion()` |
+| `onMenuAction(callback)` | `() => void` | Subscribe to actions emitted by native app/context/dock/tray menus |
 | `startPowerSaveBlocker(type)` | `Promise<number>` | Prevent app suspension or display sleep |
 | `stopPowerSaveBlocker(id)` | `Promise<boolean>` | Stop a previously started power save blocker |
 | `isPowerSaveBlockerStarted(id)` | `Promise<boolean>` | Check whether a blocker id is active |

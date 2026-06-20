@@ -10,12 +10,11 @@ export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
   return [
     {
       label: 'Open',
-      click: () => {
-        const win = ctx.getWin();
-        if (!win) return;
-        win.show();
-        win.focus();
-      },
+      click: () => ctx.showWindow(),
+    },
+    {
+      label: 'Settings',
+      click: () => ctx.send('open-settings'),
     },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },

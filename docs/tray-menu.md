@@ -50,12 +50,11 @@ export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
   return [
     {
       label: 'Open',
-      click: () => {
-        const win = ctx.getWin();
-        if (!win) return;
-        win.show();
-        win.focus();
-      },
+      click: () => ctx.showWindow(),
+    },
+    {
+      label: 'Settings',
+      click: () => ctx.send('open-settings'),
     },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
@@ -77,13 +76,7 @@ export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
   return [
     {
       label: 'Open App',
-      click: () => {
-        const win = ctx.getWin();
-        if (win) {
-          win.show();
-          win.focus();
-        }
-      },
+      click: () => ctx.showWindow(),
     },
     {
       label: 'Set Green Icon',
@@ -106,6 +99,24 @@ export function trayMenu(ctx: TrayMenuContext): MenuItemConstructorOptions[] {
 ```
 
 The function runs in the main process. `ctx.tray` is the live Electron `Tray` instance, and `ctx.getWin()` returns the current main window.
+
+Use `ctx.send(action, data?)` to notify the web app:
+
+```typescript
+{
+  label: 'Open Settings',
+  click: () => ctx.send('open-settings', { source: 'tray-menu' }),
+}
+```
+
+```typescript
+// Web app
+const unsubscribe = window.Electron.onMenuAction(({ source, action, data }) => {
+  if (source === 'tray' && action === 'open-settings') {
+    router.push('/settings');
+  }
+});
+```
 
 ---
 

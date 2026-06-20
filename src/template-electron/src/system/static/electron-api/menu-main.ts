@@ -1,10 +1,12 @@
 import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
-import type { ElectronConfig, MenuConfig } from '../../shared/types';
+import type { ElectronConfig, MenuConfig, MenuActionSource } from '../../shared/types';
 
 export interface MenuContext {
   appName: string;
   isDev: boolean;
   getWin: () => BrowserWindow | null;
+  showWindow: () => BrowserWindow | null;
+  send: (action: string, data?: unknown) => void;
 }
 
 export interface ContextMenuContext extends MenuContext {
@@ -46,7 +48,7 @@ export function setupMenu(
     return;
   }
 
-  const ctx = menuContext(isDev, getWin);
+  const ctx = menuContext('app', isDev, getWin);
   const customTemplate = userMenu?.(ctx);
   const template = Array.isArray(customTemplate)
     ? customTemplate
@@ -67,7 +69,7 @@ export function setupContextMenu(
   if (!enabled || !userMenu) return;
 
   win.webContents.on('context-menu', (_event, params) => {
-    const template = userMenu({ ...menuContext(isDev, getWin), window: win, params });
+    const template = userMenu({ ...menuContext('context', isDev, getWin), window: win, params });
     if (!Array.isArray(template) || template.length === 0) return;
     Menu.buildFromTemplate(template).popup({ window: win });
   });
@@ -81,17 +83,36 @@ export function setupDockMenu(
 ): void {
   if (process.platform !== 'darwin' || cfg.ui?.dock?.menu !== true || !userMenu) return;
 
-  const template = userMenu(menuContext(isDev, getWin));
+  const template = userMenu(menuContext('dock', isDev, getWin));
   if (!Array.isArray(template) || template.length === 0) return;
   app.dock?.setMenu(Menu.buildFromTemplate(template));
 }
 
-function menuContext(isDev: boolean, getWin: () => BrowserWindow | null): MenuContext {
+export function createMenuContext(source: MenuActionSource, isDev: boolean, getWin: () => BrowserWindow | null): MenuContext {
+  const showWindow = (): BrowserWindow | null => {
+    const win = getWin();
+    if (!win) return null;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+    return win;
+  };
+
   return {
     appName: app.name,
     isDev,
     getWin,
+    showWindow,
+    send: (action: string, data?: unknown) => {
+      const win = showWindow();
+      if (!win) return;
+      win.webContents.send('menu:action', { source, action, data });
+    },
   };
+}
+
+function menuContext(source: MenuActionSource, isDev: boolean, getWin: () => BrowserWindow | null): MenuContext {
+  return createMenuContext(source, isDev, getWin);
 }
 
 function buildPresetMenu(menu: Exclude<MenuConfig, false>, isDev: boolean): MenuItemConstructorOptions[] {

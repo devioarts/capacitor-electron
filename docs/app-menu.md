@@ -41,6 +41,7 @@ export function appMenu(ctx: MenuContext): MenuItemConstructorOptions[] {
       label: 'File',
       submenu: [
         { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => ctx.getWin()?.reload() },
+        { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => ctx.send('open-settings') },
         { type: 'separator' },
         { role: 'quit' },
       ],
@@ -124,6 +125,7 @@ export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions
   return [
     { role: 'copy' },
     { type: 'separator' },
+    { label: 'Inspect Item', click: () => ctx.send('inspect-context', { x: ctx.params.x, y: ctx.params.y }) },
     { label: 'Reload', click: () => ctx.window.reload() },
   ];
 }
@@ -157,8 +159,8 @@ import type { MenuContext } from '../../system/static/electron-api/menu-main';
 
 export function dockMenu(ctx: MenuContext): MenuItemConstructorOptions[] {
   return [
-    { label: 'Show Window', click: () => ctx.getWin()?.show() },
-    { label: 'New Window', click: () => ctx.getWin()?.reload() },
+    { label: 'Show Window', click: () => ctx.showWindow() },
+    { label: 'Open Settings', click: () => ctx.send('open-settings') },
   ];
 }
 ```
@@ -170,6 +172,43 @@ export function dockMenu(ctx: MenuContext): MenuItemConstructorOptions[] {
 ## Tray Menu
 
 Tray menus are covered in [tray-menu.md](tray-menu.md). They use `ui.tray.enabled` and `electron/src/user/menu/tray.ts`.
+
+---
+
+## Sending Actions To The Web App
+
+Every menu context has:
+
+| Helper | Description |
+|---|---|
+| `ctx.send(action, data?)` | Sends a typed menu action to the renderer and focuses the main window |
+| `ctx.showWindow()` | Shows/focuses the main window and returns it |
+| `ctx.getWin()` | Returns the current main window without changing visibility |
+
+Use `ctx.send()` from any native menu:
+
+```typescript
+{
+  label: 'Open Settings',
+  accelerator: 'CmdOrCtrl+,',
+  click: () => ctx.send('open-settings', { tab: 'general' }),
+}
+```
+
+Handle it in the web app:
+
+```typescript
+const unsubscribe = window.Electron.onMenuAction(({ source, action, data }) => {
+  if (action === 'open-settings') {
+    router.push('/settings');
+  }
+});
+
+// Call on component unmount.
+unsubscribe();
+```
+
+`source` is one of `'app'`, `'context'`, `'dock'`, or `'tray'`.
 
 ---
 

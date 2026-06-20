@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot } from '../../shared/types';
+import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent } from '../../shared/types';
 
 ipcRenderer.send('downloads:ensureSession');
 
@@ -139,6 +139,12 @@ const bridge: ElectronBridge = {
     const listener = (_e: IpcRendererEvent, data: { event: string }) => callback(data);
     ipcRenderer.on('shortcut', listener);
     return () => ipcRenderer.removeListener('shortcut', listener);
+  },
+
+  onMenuAction: (callback: (event: MenuActionEvent) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, event: MenuActionEvent) => callback(event);
+    ipcRenderer.on('menu:action', listener);
+    return () => ipcRenderer.removeListener('menu:action', listener);
   },
 
   // ── Badge count ─────────────────────────────────────────────────────────────

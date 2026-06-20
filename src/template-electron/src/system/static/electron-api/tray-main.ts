@@ -2,14 +2,12 @@ import { app, Tray, Menu, BrowserWindow, nativeImage, type MenuItemConstructorOp
 import * as path from 'path';
 import * as fs from 'fs';
 import type { ElectronConfig } from '../../shared/types';
+import { createMenuContext, type MenuContext } from './menu-main';
 
 type GetWin = () => BrowserWindow | null;
 
-export interface TrayMenuContext {
-  appName: string;
-  isDev: boolean;
+export interface TrayMenuContext extends MenuContext {
   tray: Tray;
-  getWin: GetWin;
 }
 
 export type TrayMenuFactory = (ctx: TrayMenuContext) => MenuItemConstructorOptions[] | null | undefined;
@@ -50,7 +48,7 @@ export function setupTray(
   tray = new Tray(image);
   if (trayConfig.tooltip) tray.setToolTip(trayConfig.tooltip);
 
-  const template = userMenu?.({ appName: app.name, isDev, tray, getWin });
+  const template = userMenu?.({ ...createMenuContext('tray', isDev, getWin), tray });
   if (Array.isArray(template) && template.length > 0) {
     tray.setContextMenu(Menu.buildFromTemplate(template));
   }

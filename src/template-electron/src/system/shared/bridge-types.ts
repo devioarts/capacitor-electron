@@ -204,6 +204,14 @@ export interface WindowsBridge {
   openExternal(url: string): Promise<void>;
 }
 
+export type MenuActionSource = 'app' | 'context' | 'dock' | 'tray';
+
+export interface MenuActionEvent {
+  source: MenuActionSource;
+  action: string;
+  data?: unknown;
+}
+
 export interface ElectronBridge {
   quit():                       Promise<void>;
   minimize():                   Promise<void>;
@@ -266,6 +274,8 @@ export interface ElectronBridge {
    * }, []);
    */
   onShortcut(callback: (data: { event: string }) => void): () => void;
+  /** Subscribe to actions emitted by native app/context/dock/tray menus. */
+  onMenuAction(callback: (event: MenuActionEvent) => void): () => void;
 
   // ── Badge count ─────────────────────────────────────────────────────────────
   /** Set the dock/taskbar badge count. Returns false on unsupported platforms. */
