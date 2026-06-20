@@ -42,7 +42,7 @@ Detailed manual test steps live in [TESTING_PLAN.md](TESTING_PLAN.md).
 | App (lifecycle)<br><sub>getInfo, getState, exitApp, minimizeApp, getLaunchUrl; events: appStateChange / resume / pause / appUrlOpen</sub> | [app.md](docs/app.md) | ✅ | ✅ | 🧪 | |
 | Action Sheet<br><sub>showActions() — modal list of buttons the user can pick from</sub> | [action-sheet.md](docs/action-sheet.md) | ✅ | ✅ | 🧪 | |
 | App Launcher<br><sub>canOpenUrl() — checks whether the OS can open a URL; openUrl() — opens it in the default app/browser</sub> | — | 🧪 | 🧪 | 🧪 | |
-| App Menu<br><sub>Native application menu bar configured via `menu` in capacitor.config; editMenu, viewMenu options</sub> | [app-menu.md](docs/app-menu.md) | ❌ | ✅ | 🧪 | Mac not working |
+| Native Menus<br><sub>Application, context, Dock, and tray menu files enabled via `ui.appMenu`, `ui.contextMenu`, `ui.dockMenu`, and `ui.trayMenu`</sub> | [menus.md](docs/menus.md) | ❌ | ✅ | 🧪 | Mac not working |
 | Auto Updater<br><sub>electron-updater: checkForUpdate, download, quitAndInstall; latest/beta/alpha channels</sub> | [auto-updater.md](docs/auto-updater.md) | 🧪 | 🧪 | 🧪 | |
 | Browser (InAppBrowser)<br><sub>open() — opens URL in the default OS browser via `shell.openExternal`; close() — no-op; getSnapshot() — returns null</sub> | [browser.md](docs/browser.md) | 🧪 | 🧪 | 🧪 | |
 | Clipboard<br><sub>write/read text, URL text, and image data URLs through Electron clipboard</sub> | [clipboard.md](docs/clipboard.md) | 🧪 | 🧪 | 🧪 | |
@@ -96,7 +96,7 @@ Detailed manual test steps live in [TESTING_PLAN.md](TESTING_PLAN.md).
 | Deep Linking<br><sub>Register a URL scheme (myapp://) via app.deepLinkingScheme; cold start + running instance + window.Electron.onDeepLink</sub> | [deep-linking.md](docs/deep-linking.md) | ✅ | ✅ | 🧪 | |
 | Content Security Policy<br><sub>CSP headers for BrowserWindow; string / object / false via `csp` in config; sensible defaults in prod</sub> | [content-security-policy.md](docs/content-security-policy.md) | ✅ | ✅ | 🧪 | |
 | Icons & Assets<br><sub>icon.png → .icns/.ico via electron-builder; runtime window and Dock icon via `icon` in config</sub> | [icons.md](docs/icons.md) | 🧪 | 🧪 | 🧪 | |
-| Project-root asset paths<br><sub>Leading-slash config paths for `browserWindow.icon`, `ui.tray.icon`, and `ui.splashScreen.image` copy from project root into `electron/assets/` and rewrite generated config</sub> | [icons.md](docs/icons.md) | ✅ | 🧪 | 🧪 | Tested via isolated CLI update run on macOS |
+| Project-root asset paths<br><sub>Leading-slash config paths for `browserWindow.icon`, `ui.trayMenu.icon`, and `ui.splashScreen.image` copy from project root into `electron/assets/` and rewrite generated config</sub> | [icons.md](docs/icons.md) | ✅ | 🧪 | 🧪 | Tested via isolated CLI update run on macOS |
 | Plugin Settings (shared)<br><sub>Plugin configuration via plugins.Electron in capacitor.config.ts; read via getElectronConfig() in main</sub> | — | ✅ | ✅ | 🧪 | |
 | serveMode: 'server'<br><sub>Embedded HTTP server on 127.0.0.1 (random port) instead of file://; required for WebUSB / WebBluetooth</sub> | — | 🧪 | 🧪 | 🧪 | |
 | singleInstance<br><sub>Single instance lock — second launch focuses the existing window; required for Windows deep linking</sub> | — | ✅ | ✅ | 🧪 | |

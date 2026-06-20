@@ -115,6 +115,10 @@ plugins: {
 },
 ```
 
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `ui.contextMenu.enabled` | `boolean` | `false` | Listen for native right-click context menu events in the main window and call `electron/src/user/menu/context.ts` |
+
 Then edit `electron/src/user/menu/context.ts`:
 
 ```typescript
@@ -143,6 +147,37 @@ export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions
 
 Return `null` or an empty array to show no menu for that right-click.
 
+The web app does not call the context menu directly. Once enabled, Electron invokes the factory when the user opens a context menu in the renderer, usually by right-clicking. Use `ctx.params` to decide what to show for the clicked target, editable fields, selected text, links, or images.
+
+Use menu actions when a context menu item should notify the web app:
+
+```typescript
+// electron/src/user/menu/context.ts
+export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions[] | null {
+  return [
+    {
+      label: 'Open Details',
+      click: () => ctx.send('open-details', {
+        x: ctx.params.x,
+        y: ctx.params.y,
+        selectedText: ctx.params.selectionText,
+      }),
+    },
+  ];
+}
+```
+
+```typescript
+// Web app
+const unsubscribe = window.Electron.onMenuAction(({ source, action, data }) => {
+  if (source === 'context' && action === 'open-details') {
+    openDetailsPanel(data);
+  }
+});
+
+unsubscribe();
+```
+
 ---
 
 ## Dock Menu
@@ -160,6 +195,11 @@ plugins: {
   },
 },
 ```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `ui.dockMenu.enabled` | `boolean` | `false` | Read `electron/src/user/menu/dock.ts` and set it as the macOS Dock menu |
+| `ui.dockMenu.hideIcon` | `boolean` | `false` | Hide the macOS Dock icon. When hidden, the Dock menu is not visible to the user |
 
 Then edit `electron/src/user/menu/dock.ts`:
 

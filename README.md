@@ -254,7 +254,7 @@ See [content security policy](docs/content-security-policy.md).
 | `ui.splashScreen` | object | disabled | Splash screen shown while the app loads |
 | `ui.dockMenu` | object | disabled | Set `enabled: true` to read `electron/src/user/menu/dock.ts`; also supports hiding the macOS Dock icon |
 
-See [app menu](docs/app-menu.md), [tray menu](docs/tray-menu.md), and [splash screen](docs/splash-screen.md).
+See [native menus](docs/menus.md), [tray menu](docs/tray-menu.md), and [splash screen](docs/splash-screen.md).
 
 ### `capacitorPlugins`
 
@@ -655,7 +655,7 @@ plugins: {
 },
 ```
 
-See [docs/app-menu.md](docs/app-menu.md) for application, context, Dock, and tray menu details.
+See [docs/menus.md](docs/menus.md) for application, context, Dock, and tray menu details.
 
 ---
 
