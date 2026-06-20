@@ -117,7 +117,7 @@ plugins: {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `ui.contextMenu.enabled` | `boolean` | `false` | Listen for native right-click context menu events in the main window and call `electron/src/user/menu/context.ts` |
+| `ui.contextMenu.enabled` | `boolean` | `false` | Listen for native right-click context menu events and enable `window.Electron.showContextMenu()` |
 
 Then edit `electron/src/user/menu/context.ts`:
 
@@ -126,6 +126,20 @@ import type { MenuItemConstructorOptions } from 'electron';
 import type { ContextMenuContext } from '../../system/static/electron-api/menu-main';
 
 export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions[] | null {
+  if (ctx.target?.id === 'settings-card') {
+    return [
+      { label: 'Open Settings', click: () => ctx.send('open-settings', ctx.target) },
+      { role: 'copy' },
+    ];
+  }
+
+  if (ctx.target?.classList?.includes('context-row')) {
+    return [
+      { label: 'Open Row', click: () => ctx.send('open-row', ctx.target?.dataset) },
+      { label: 'Archive Row', click: () => ctx.send('archive-row', ctx.target?.dataset) },
+    ];
+  }
+
   if (ctx.params.isEditable) {
     return [
       { role: 'cut' },
@@ -147,7 +161,49 @@ export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions
 
 Return `null` or an empty array to show no menu for that right-click.
 
-The web app does not call the context menu directly. Once enabled, Electron invokes the factory when the user opens a context menu in the renderer, usually by right-clicking. Use `ctx.params` to decide what to show for the clicked target, editable fields, selected text, links, or images.
+Once enabled, Electron invokes the factory when the user opens a context menu in the renderer, usually by right-clicking. Capacitor Electron also captures safe DOM metadata for the clicked element, so `ctx.target` can contain:
+
+| Field | Description |
+|---|---|
+| `ctx.trigger` | `'right-click'` for the native context-menu event, or `'renderer'` for `window.Electron.showContextMenu()` |
+| `ctx.params` | Electron context-menu params such as `isEditable`, `selectionText`, `x`, and `y` |
+| `ctx.target.id` | Clicked element id |
+| `ctx.target.classList` | Clicked element classes |
+| `ctx.target.dataset` | Clicked element `data-*` attributes |
+| `ctx.target.text` | Trimmed text from the clicked element |
+| `ctx.data` | App data passed by `window.Electron.showContextMenu()` |
+
+This lets one `context.ts` provide the standard editable-field menu and still branch for application-specific targets:
+
+```typescript
+if (ctx.target?.id === 'project-card') {
+  return [
+    { label: 'Open Project', click: () => ctx.send('open-project', ctx.target?.dataset) },
+    { label: 'Rename Project', click: () => ctx.send('rename-project', ctx.target?.dataset) },
+  ];
+}
+
+if (ctx.target?.classList?.includes('task-row')) {
+  return [
+    { label: 'Complete Task', click: () => ctx.send('complete-task', ctx.target?.dataset) },
+  ];
+}
+```
+
+You can also open the same configured native context menu from renderer code, for example from a three-dot button:
+
+```typescript
+await window.Electron.showContextMenu({
+  x: event.clientX,
+  y: event.clientY,
+  target: {
+    classList: ['task-row'],
+    dataset: { taskId: task.id },
+    text: task.title,
+  },
+  data: { source: 'overflow-button' },
+});
+```
 
 Use menu actions when a context menu item should notify the web app:
 

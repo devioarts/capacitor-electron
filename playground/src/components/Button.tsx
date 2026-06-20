@@ -2,7 +2,7 @@ import React from "react";
 
 export const Button: React.FC<React.PropsWithChildren<{
   type?: "primary" | "green" | "red" | "neutral" | "yellow";
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
 }>> = ({ type = "primary", children, onClick, disabled, ...props }) => {
   const toneClasses = {

@@ -506,6 +506,7 @@ If you ever need to add it manually:
 | `openDevTools()` | `Promise<void>` | Open DevTools |
 | `closeDevTools()` | `Promise<void>` | Close DevTools |
 | `getAppVersion()` | `Promise<string>` | Returns `app.getVersion()` |
+| `showContextMenu(options?)` | `Promise<boolean>` | Show the configured native context menu from renderer code |
 | `onMenuAction(callback)` | `() => void` | Subscribe to actions emitted by native app/context/dock/tray menus |
 | `startPowerSaveBlocker(type)` | `Promise<number>` | Prevent app suspension or display sleep |
 | `stopPowerSaveBlocker(id)` | `Promise<boolean>` | Stop a previously started power save blocker |

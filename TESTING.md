@@ -42,7 +42,7 @@ Detailed manual test steps live in [TESTING_PLAN.md](TESTING_PLAN.md).
 | App (lifecycle)<br><sub>getInfo, getState, exitApp, minimizeApp, getLaunchUrl; events: appStateChange / resume / pause / appUrlOpen</sub> | [app.md](docs/app.md) | ✅ | ✅ | 🧪 | |
 | Action Sheet<br><sub>showActions() — modal list of buttons the user can pick from</sub> | [action-sheet.md](docs/action-sheet.md) | ✅ | ✅ | 🧪 | |
 | App Launcher<br><sub>canOpenUrl() — checks whether the OS can open a URL; openUrl() — opens it in the default app/browser</sub> | — | 🧪 | 🧪 | 🧪 | |
-| Native Menus<br><sub>Application, context, Dock, and tray menu files enabled via `ui.appMenu`, `ui.contextMenu`, `ui.dockMenu`, and `ui.trayMenu`</sub> | [menus.md](docs/menus.md) | ❌ | ✅ | 🧪 | Mac not working |
+| Native Menus<br><sub>Application, context, Dock, and tray menu files; right-click target metadata; renderer `showContextMenu()`</sub> | [menus.md](docs/menus.md) | ❌ | ✅ | 🧪 | Mac not working |
 | Auto Updater<br><sub>electron-updater: checkForUpdate, download, quitAndInstall; latest/beta/alpha channels</sub> | [auto-updater.md](docs/auto-updater.md) | 🧪 | 🧪 | 🧪 | |
 | Browser (InAppBrowser)<br><sub>open() — opens URL in the default OS browser via `shell.openExternal`; close() — no-op; getSnapshot() — returns null</sub> | [browser.md](docs/browser.md) | 🧪 | 🧪 | 🧪 | |
 | Clipboard<br><sub>write/read text, URL text, and image data URLs through Electron clipboard</sub> | [clipboard.md](docs/clipboard.md) | 🧪 | 🧪 | 🧪 | |

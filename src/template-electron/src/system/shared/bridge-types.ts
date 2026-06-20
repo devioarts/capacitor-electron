@@ -212,6 +212,31 @@ export interface MenuActionEvent {
   data?: unknown;
 }
 
+export type ContextMenuTrigger = 'right-click' | 'renderer';
+
+export interface ContextMenuTarget {
+  id?: string;
+  tagName?: string;
+  className?: string;
+  classList?: string[];
+  dataset?: Record<string, string>;
+  text?: string;
+  href?: string;
+  src?: string;
+  value?: string;
+}
+
+export interface ShowContextMenuOptions {
+  /** Window-relative x coordinate. Defaults to the current cursor position. */
+  x?: number;
+  /** Window-relative y coordinate. Defaults to the current cursor position. */
+  y?: number;
+  /** Optional target metadata used by `electron/src/user/menu/context.ts`. */
+  target?: Partial<ContextMenuTarget>;
+  /** Arbitrary app data forwarded to `ContextMenuContext.data`. */
+  data?: unknown;
+}
+
 export interface ElectronBridge {
   quit():                       Promise<void>;
   minimize():                   Promise<void>;
@@ -274,6 +299,12 @@ export interface ElectronBridge {
    * }, []);
    */
   onShortcut(callback: (data: { event: string }) => void): () => void;
+  /**
+   * Show the configured native context menu from renderer code. The menu template
+   * still comes from `electron/src/user/menu/context.ts`; renderer code only
+   * supplies target metadata and optional data.
+   */
+  showContextMenu(options?: ShowContextMenuOptions): Promise<boolean>;
   /** Subscribe to actions emitted by native app/context/dock/tray menus. */
   onMenuAction(callback: (event: MenuActionEvent) => void): () => void;
 

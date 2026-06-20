@@ -14,6 +14,7 @@ import { PagePowerMonitor }    from "./pages/PagePowerMonitor.tsx";
 import { PageScreen }          from "./pages/PageScreen.tsx";
 import { PageCapacitorDesktop } from "./pages/PageCapacitorDesktop.tsx";
 import { PageElectronDesktop } from "./pages/PageElectronDesktop.tsx";
+import { PageNativeMenus }     from "./pages/PageNativeMenus.tsx";
 
 export type TabItem = {
 	id: string;
@@ -35,6 +36,7 @@ export const tabs: TabItem[] = [
 	{ id: 'deeplink',      label: 'Deep Link',     page: <PageDeepLink /> },
 	{ id: 'powermonitor',  label: 'Power Monitor', page: <PagePowerMonitor /> },
 	{ id: 'screen',        label: 'Screen',        page: <PageScreen /> },
+	{ id: 'menus',         label: 'Native Menus',  page: <PageNativeMenus /> },
 	{ id: 'capdesktop',    label: 'Cap Desktop',   page: <PageCapacitorDesktop /> },
 	{ id: 'eldesktop',     label: 'Electron+',     page: <PageElectronDesktop /> },
 ];

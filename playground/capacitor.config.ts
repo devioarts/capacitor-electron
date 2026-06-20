@@ -34,6 +34,12 @@ const config: CapacitorConfig = {
           editMenu: false,
           viewMenu: true,
         },
+        contextMenu: {
+          enabled: true,
+        },
+        dockMenu: {
+          enabled: true,
+        },
         trayMenu: {
           enabled:        true,
           icon:           '/public/assets/tray.png',

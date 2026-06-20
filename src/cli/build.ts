@@ -18,6 +18,11 @@ if (!fs.existsSync(electronDir)) {
   process.exit(1);
 }
 
+if (!fs.existsSync(path.join(electronDir, 'package.json'))) {
+  console.error('[cap-electron] electron/package.json not found — electron/ is incomplete. Recreate it with: npx cap-electron add');
+  process.exit(1);
+}
+
 const PLATFORM_FLAGS: Record<string, string[]> = {
   mac:   ['--mac', '--x64', '--arm64'],
   win:   ['--win', '--x64', '--arm64'],

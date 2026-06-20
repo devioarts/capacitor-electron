@@ -18,6 +18,11 @@ if (!fs.existsSync(electronDir)) {
   process.exit(1);
 }
 
+if (!fs.existsSync(path.join(electronDir, 'package.json'))) {
+  console.error('[cap-electron] electron/package.json not found — electron/ is incomplete. Recreate it with: npx cap-electron add');
+  process.exit(1);
+}
+
 console.log('[cap-electron] Building Electron sources...');
 try {
   execSync('npm run build', { cwd: electronDir, stdio: 'inherit' });

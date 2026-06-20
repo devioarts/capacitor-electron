@@ -1,7 +1,15 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent } from '../../shared/types';
+import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent, ContextMenuTarget, ShowContextMenuOptions } from '../../shared/types';
 
 ipcRenderer.send('downloads:ensureSession');
+
+window.addEventListener('contextmenu', (event) => {
+  ipcRenderer.send('menu:contextTarget', {
+    x: Math.round(event.clientX),
+    y: Math.round(event.clientY),
+    target: contextMenuTarget(event),
+  });
+}, { capture: true });
 
 const bridge: ElectronBridge = {
   quit:           ()                  => ipcRenderer.invoke('system:quit'),
@@ -141,6 +149,9 @@ const bridge: ElectronBridge = {
     return () => ipcRenderer.removeListener('shortcut', listener);
   },
 
+  showContextMenu: (options?: ShowContextMenuOptions): Promise<boolean> =>
+    ipcRenderer.invoke('menu:showContextMenu', normalizeShowContextMenuOptions(options)),
+
   onMenuAction: (callback: (event: MenuActionEvent) => void): (() => void) => {
     const listener = (_e: IpcRendererEvent, event: MenuActionEvent) => callback(event);
     ipcRenderer.on('menu:action', listener);
@@ -191,3 +202,76 @@ const bridge: ElectronBridge = {
 };
 
 contextBridge.exposeInMainWorld('Electron', bridge);
+
+function normalizeShowContextMenuOptions(options?: ShowContextMenuOptions): ShowContextMenuOptions {
+  if (!options || typeof options !== 'object') return {};
+  const normalized: ShowContextMenuOptions = {};
+  if (Number.isFinite(options.x)) normalized.x = Math.round(Number(options.x));
+  if (Number.isFinite(options.y)) normalized.y = Math.round(Number(options.y));
+  if (options.target && typeof options.target === 'object') normalized.target = normalizeTarget(options.target);
+  if ('data' in options) normalized.data = options.data;
+  return normalized;
+}
+
+function contextMenuTarget(event: MouseEvent): ContextMenuTarget | undefined {
+  const path = event.composedPath();
+  const element = path.find((item): item is Element => item instanceof Element);
+  if (!element) return undefined;
+  return normalizeTarget(readTarget(element));
+}
+
+function readTarget(element: Element): ContextMenuTarget {
+  const html = element as HTMLElement;
+  const anchor = element.closest('a[href]') as HTMLAnchorElement | null;
+  const media = element.closest('img[src], video[src], audio[src]') as HTMLImageElement | HTMLVideoElement | HTMLAudioElement | null;
+  const form = element.closest('input, textarea, select') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+  const className = typeof html.className === 'string' ? html.className : undefined;
+  const innerText = typeof html.innerText === 'string' ? html.innerText : '';
+  const text = (innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+
+  return {
+    id: html.id || undefined,
+    tagName: element.tagName.toLowerCase(),
+    className,
+    classList: Array.from(html.classList),
+    dataset: readDataset(html.dataset),
+    text: text || undefined,
+    href: anchor?.href,
+    src: media?.src,
+    value: form?.value,
+  };
+}
+
+function normalizeTarget(raw: Partial<ContextMenuTarget>): ContextMenuTarget {
+  const target: ContextMenuTarget = {};
+  const stringKeys = ['id', 'tagName', 'className', 'text', 'href', 'src', 'value'] as const;
+
+  for (const key of stringKeys) {
+    const value = raw[key];
+    if (typeof value === 'string' && value.length > 0) target[key] = value.slice(0, 500);
+  }
+
+  if (Array.isArray(raw.classList)) {
+    target.classList = raw.classList
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .slice(0, 32)
+      .map((value) => value.slice(0, 120));
+  }
+
+  if (raw.dataset && typeof raw.dataset === 'object') {
+    target.dataset = {};
+    for (const [key, value] of Object.entries(raw.dataset).slice(0, 32)) {
+      if (typeof value === 'string') target.dataset[key.slice(0, 120)] = value.slice(0, 500);
+    }
+  }
+
+  return target;
+}
+
+function readDataset(dataset: DOMStringMap): Record<string, string> | undefined {
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(dataset).slice(0, 32)) {
+    if (typeof value === 'string') values[key.slice(0, 120)] = value.slice(0, 500);
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
