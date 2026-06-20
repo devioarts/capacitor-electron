@@ -22,7 +22,7 @@ let tray: Tray | null = null;
  * `minimizeToTray` is enabled — pass it the newly created `BrowserWindow`
  * inside `createWindow()` to wire up the close-to-tray behaviour.
  *
- * @param cfg        Electron config (reads `cfg.ui.tray.*` and `cfg.browserWindow.icon` as fallback).
+ * @param cfg        Electron config (reads `cfg.ui.trayMenu.*` and `cfg.browserWindow.icon` as fallback).
  * @param isDev      `true` when the app is not packaged.
  * @param getWin     Getter that returns the current main BrowserWindow (or null).
  * @param userMenu   Menu template factory from `src/user/menu/tray.ts`.
@@ -34,7 +34,7 @@ export function setupTray(
   getWin: GetWin,
   userMenu?: TrayMenuFactory,
 ): ((win: BrowserWindow) => void) | null {
-  const trayConfig = cfg.ui?.tray;
+  const trayConfig = cfg.ui?.trayMenu;
   if (!trayConfig?.enabled) return null;
 
   const iconSrc = trayConfig.icon ?? cfg.browserWindow?.icon;

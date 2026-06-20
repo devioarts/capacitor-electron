@@ -159,9 +159,9 @@ function normalizeElectronAssetPaths(electronPlugin: unknown): unknown {
   }
 
   const ui = normalized['ui'];
-  const tray = isRecord(ui) ? ui['tray'] : undefined;
+  const tray = isRecord(ui) ? ui['trayMenu'] : undefined;
   if (isRecord(tray) && typeof tray['icon'] === 'string') {
-    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.ui.tray.icon');
+    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.ui.trayMenu.icon');
   }
 
   const splashScreen = isRecord(ui) ? ui['splashScreen'] : undefined;

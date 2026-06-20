@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   plugins: {
     Electron: {
       ui: {
-        tray: {
+        trayMenu: {
           enabled: true,
           icon: 'tray.png',
           tooltip: 'My App',
@@ -31,10 +31,10 @@ const config: CapacitorConfig = {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `ui.tray.enabled` | `boolean` | `false` | Enable the tray icon |
-| `ui.tray.icon` | `string` | — | Tray icon asset. Use `'tray.png'` for `electron/assets/tray.png`, or `'/public/assets/tray.png'` to copy from the project root during sync. Falls back to the window icon (`browserWindow.icon`). |
-| `ui.tray.tooltip` | `string` | — | Tooltip shown on hover |
-| `ui.tray.minimizeToTray` | `boolean` | `false` | Hide the window instead of quitting when the user clicks the close button |
+| `ui.trayMenu.enabled` | `boolean` | `false` | Enable the tray icon and read `electron/src/user/menu/tray.ts` |
+| `ui.trayMenu.icon` | `string` | — | Tray icon asset. Use `'tray.png'` for `electron/assets/tray.png`, or `'/public/assets/tray.png'` to copy from the project root during sync. Falls back to the window icon (`browserWindow.icon`). |
+| `ui.trayMenu.tooltip` | `string` | — | Tooltip shown on hover |
+| `ui.trayMenu.minimizeToTray` | `boolean` | `false` | Hide the window instead of quitting when the user clicks the close button |
 
 ---
 
@@ -150,17 +150,17 @@ a leading slash to copy from the project root during `cap-electron sync`
 
 ## Menu-bar app (macOS)
 
-For a pure menu-bar app with no Dock icon, enable `ui.dock.hideIcon`:
+For a pure menu-bar app with no Dock icon, enable `ui.dockMenu.hideIcon`:
 
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      tray: {
+      trayMenu: {
         enabled: true,
         icon: 'tray.png',
       },
-      dock: {
+      dockMenu: {
         hideIcon: true,
       },
     },

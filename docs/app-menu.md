@@ -4,10 +4,10 @@ Electron has four native menu surfaces: application menu, renderer context menu,
 
 | Menu | Enable/configure | User file |
 |---|---|---|
-| Application menu | `ui.menu` | `electron/src/user/menu/app.ts` |
-| Renderer context menu | `ui.contextMenu` | `electron/src/user/menu/context.ts` |
-| macOS Dock menu | `ui.dock.menu` | `electron/src/user/menu/dock.ts` |
-| Tray menu | `ui.tray.enabled` | `electron/src/user/menu/tray.ts` |
+| Application menu | `ui.appMenu.enabled` | `electron/src/user/menu/app.ts` |
+| Renderer context menu | `ui.contextMenu.enabled` | `electron/src/user/menu/context.ts` |
+| macOS Dock menu | `ui.dockMenu.enabled` | `electron/src/user/menu/dock.ts` |
+| Tray menu | `ui.trayMenu.enabled` | `electron/src/user/menu/tray.ts` |
 
 All files under `electron/src/user/menu/` are safe to edit and are not overwritten by `cap-electron upgrade`.
 
@@ -15,19 +15,21 @@ All files under `electron/src/user/menu/` are safe to edit and are not overwritt
 
 ## Application Menu
 
-Set `ui.menu` under `plugins.Electron` in `capacitor.config.ts`.
+Set `ui.appMenu.enabled` under `plugins.Electron` in `capacitor.config.ts`.
 
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      menu: true,
+      appMenu: {
+        enabled: true,
+      },
     },
   },
 },
 ```
 
-When `ui.menu` is `true` or an object, Capacitor Electron calls `electron/src/user/menu/app.ts`. If that file returns `null`, the built-in preset is used.
+When `ui.appMenu.enabled` is `true`, Capacitor Electron calls `electron/src/user/menu/app.ts`. If that file returns `null`, the built-in preset is used.
 
 ```typescript
 // electron/src/user/menu/app.ts
@@ -54,11 +56,14 @@ export function appMenu(ctx: MenuContext): MenuItemConstructorOptions[] {
 
 ### Built-in Preset
 
+The template `electron/src/user/menu/app.ts` ships with an editable example menu. Return `null` from that file when you want to use this built-in preset instead.
+
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      menu: {
+      appMenu: {
+        enabled: true,
         editMenu: true,
         viewMenu: false,
       },
@@ -69,9 +74,10 @@ plugins: {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `ui.menu` | `false \| true \| object` | `undefined` | `false` hides the menu; `true` enables user/preset menu; object enables the preset with options; omit to keep Electron's default |
-| `ui.menu.editMenu` | `boolean` | `true` | Include the standard Edit menu |
-| `ui.menu.viewMenu` | `boolean` | `true` in dev, `false` in prod | Include the View menu (Reload, DevTools, Zoom) |
+| `ui.appMenu.enabled` | `boolean` | `false` | Read `electron/src/user/menu/app.ts`; if it returns `null`, use the built-in preset |
+| `ui.appMenu.hide` | `boolean` | `false` | Hide the menu; on macOS a minimal Quit menu is kept |
+| `ui.appMenu.editMenu` | `boolean` | `true` | Include the standard Edit menu in the built-in preset |
+| `ui.appMenu.viewMenu` | `boolean` | `true` in dev, `false` in prod | Include the View menu (Reload, DevTools, Zoom) in the built-in preset |
 
 In development, `viewMenu` is always included for the built-in preset so Reload and DevTools remain accessible.
 
@@ -81,7 +87,9 @@ In development, `viewMenu` is always included for the built-in preset so Reload 
 plugins: {
   Electron: {
     ui: {
-      menu: false,
+      appMenu: {
+        hide: true,
+      },
     },
   },
 },
@@ -93,13 +101,15 @@ On macOS a minimal App menu with Quit is kept so Cmd+Q continues to work. On Win
 
 ## Context Menu
 
-Enable renderer context menus with `ui.contextMenu`.
+Enable renderer context menus with `ui.contextMenu.enabled`.
 
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      contextMenu: true,
+      contextMenu: {
+        enabled: true,
+      },
     },
   },
 },
@@ -137,14 +147,14 @@ Return `null` or an empty array to show no menu for that right-click.
 
 ## Dock Menu
 
-Dock menus are macOS-only. Enable them with `ui.dock.menu`.
+Dock menus are macOS-only. Enable them with `ui.dockMenu.enabled`.
 
 ```typescript
 plugins: {
   Electron: {
     ui: {
-      dock: {
-        menu: true,
+      dockMenu: {
+        enabled: true,
       },
     },
   },
@@ -165,13 +175,13 @@ export function dockMenu(ctx: MenuContext): MenuItemConstructorOptions[] {
 }
 ```
 
-`ui.dock.hideIcon: true` hides the Dock icon entirely, so a Dock menu is only useful when the icon remains visible.
+`ui.dockMenu.hideIcon: true` hides the Dock icon entirely, so a Dock menu is only useful when the icon remains visible.
 
 ---
 
 ## Tray Menu
 
-Tray menus are covered in [tray-menu.md](tray-menu.md). They use `ui.tray.enabled` and `electron/src/user/menu/tray.ts`.
+Tray menus are covered in [tray-menu.md](tray-menu.md). They use `ui.trayMenu.enabled` and `electron/src/user/menu/tray.ts`.
 
 ---
 
@@ -216,5 +226,5 @@ unsubscribe();
 
 - Menu templates use Electron `MenuItemConstructorOptions`, so roles, accelerators, nested submenus, checkbox/radio items, icons, and platform-specific entries are available.
 - Prefer Electron roles (`editMenu`, `viewMenu`, `copy`, `paste`, `quit`, etc.) for native behavior.
-- `browserWindow.autoHideMenuBar` hides the menu bar on Windows/Linux until the user presses Alt. It works independently of `ui.menu`.
+- `browserWindow.autoHideMenuBar` hides the menu bar on Windows/Linux until the user presses Alt. It works independently of `ui.appMenu`.
 - Global keyboard shortcuts are separate from menu accelerators; see [global-shortcuts.md](global-shortcuts.md).

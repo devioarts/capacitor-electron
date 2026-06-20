@@ -136,8 +136,10 @@ const config: CapacitorConfig = {
         },
       },
       ui: {
-        menu: { editMenu: true, viewMenu: false },
-        tray: {
+        appMenu: {
+          enabled: true,
+        },
+        trayMenu: {
           enabled: true,
           icon: '/public/assets/tray.png',
           tooltip: 'MyApp',
@@ -246,12 +248,11 @@ See [content security policy](docs/content-security-policy.md).
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `ui.menu` | `false \| true \| object` | Electron default | Native application menu |
-| `ui.contextMenu` | `boolean \| object` | `false` | Renderer context menu from `electron/src/user/menu/context.ts` |
-| `ui.tray` | object | disabled | System tray icon and close-to-tray behavior |
+| `ui.appMenu` | object | Electron default | Set `enabled: true` to read `electron/src/user/menu/app.ts`; if it returns `null`, use the built-in preset |
+| `ui.contextMenu` | object | disabled | Set `enabled: true` to read `electron/src/user/menu/context.ts` |
+| `ui.trayMenu` | object | disabled | Set `enabled: true` to create the tray icon and read `electron/src/user/menu/tray.ts` |
 | `ui.splashScreen` | object | disabled | Splash screen shown while the app loads |
-| `ui.dock.hideIcon` | `boolean` | `false` | Hide the macOS Dock icon for pure menu-bar/tray apps |
-| `ui.dock.menu` | `boolean` | `false` | macOS Dock menu from `electron/src/user/menu/dock.ts` |
+| `ui.dockMenu` | object | disabled | Set `enabled: true` to read `electron/src/user/menu/dock.ts`; also supports hiding the macOS Dock icon |
 
 See [app menu](docs/app-menu.md), [tray menu](docs/tray-menu.md), and [splash screen](docs/splash-screen.md).
 
@@ -617,7 +618,7 @@ Show a system-tray icon. Enable in `capacitor.config.ts` and customise the conte
 plugins: {
   Electron: {
     ui: {
-      tray: {
+      trayMenu: {
         enabled: true,
         icon: 'tray.png',
         tooltip: 'My App',
@@ -640,10 +641,14 @@ Application, context, Dock, and tray menus are user-owned files under `electron/
 plugins: {
   Electron: {
     ui: {
-      menu: true,
-      contextMenu: true,
-      dock: {
-        menu: true,
+      appMenu: {
+        enabled: true,
+      },
+      contextMenu: {
+        enabled: true,
+      },
+      dockMenu: {
+        enabled: true,
       },
     },
   },

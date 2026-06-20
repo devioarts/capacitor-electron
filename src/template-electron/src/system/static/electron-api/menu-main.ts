@@ -1,5 +1,5 @@
 import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
-import type { ElectronConfig, MenuConfig, MenuActionSource } from '../../shared/types';
+import type { AppMenuConfig, ElectronConfig, MenuActionSource } from '../../shared/types';
 
 export interface MenuContext {
   appName: string;
@@ -21,10 +21,10 @@ export type DockMenuFactory = (ctx: MenuContext) => MenuItemConstructorOptions[]
 /**
  * Configure the native application menu (menu bar).
  *
- * - `cfg.ui.menu === undefined` — keeps Electron's default menu unchanged.
- * - `cfg.ui.menu === false` — removes the menu entirely on Windows/Linux; on macOS keeps a
+ * - `cfg.ui.appMenu === undefined` — keeps Electron's default menu unchanged.
+ * - `cfg.ui.appMenu.hide === true` — removes the menu entirely on Windows/Linux; on macOS keeps a
  *   minimal App menu (Quit only) because Cmd+Q must always work.
- * - `cfg.ui.menu === true` or object — uses `src/user/menu/app.ts` when it returns a
+ * - `cfg.ui.appMenu.enabled === true` — uses `src/user/menu/app.ts` when it returns a
  *   template, otherwise falls back to the built-in edit/view preset.
  */
 export function setupMenu(
@@ -33,11 +33,11 @@ export function setupMenu(
   getWin: () => BrowserWindow | null,
   userMenu?: ApplicationMenuFactory,
 ): void {
-  const menu = cfg.ui?.menu;
+  const menu = cfg.ui?.appMenu;
 
   if (menu === undefined) return;
 
-  if (menu === false) {
+  if (menu.hide === true) {
     if (process.platform === 'darwin') {
       Menu.setApplicationMenu(Menu.buildFromTemplate([
         { label: app.name, submenu: [{ role: 'quit' }] },
@@ -47,6 +47,8 @@ export function setupMenu(
     }
     return;
   }
+
+  if (menu.enabled !== true) return;
 
   const ctx = menuContext('app', isDev, getWin);
   const customTemplate = userMenu?.(ctx);
@@ -65,8 +67,7 @@ export function setupContextMenu(
   userMenu?: ContextMenuFactory,
 ): void {
   const contextMenu = cfg.ui?.contextMenu;
-  const enabled = contextMenu === true || (typeof contextMenu === 'object' && contextMenu.enabled === true);
-  if (!enabled || !userMenu) return;
+  if (contextMenu?.enabled !== true || !userMenu) return;
 
   win.webContents.on('context-menu', (_event, params) => {
     const template = userMenu({ ...menuContext('context', isDev, getWin), window: win, params });
@@ -81,7 +82,7 @@ export function setupDockMenu(
   getWin: () => BrowserWindow | null,
   userMenu?: DockMenuFactory,
 ): void {
-  if (process.platform !== 'darwin' || cfg.ui?.dock?.menu !== true || !userMenu) return;
+  if (process.platform !== 'darwin' || cfg.ui?.dockMenu?.enabled !== true || !userMenu) return;
 
   const template = userMenu(menuContext('dock', isDev, getWin));
   if (!Array.isArray(template) || template.length === 0) return;
@@ -115,9 +116,8 @@ function menuContext(source: MenuActionSource, isDev: boolean, getWin: () => Bro
   return createMenuContext(source, isDev, getWin);
 }
 
-function buildPresetMenu(menu: Exclude<MenuConfig, false>, isDev: boolean): MenuItemConstructorOptions[] {
-  const options = typeof menu === 'object' ? menu : {};
-  const { editMenu = true, viewMenu } = options;
+function buildPresetMenu(menu: AppMenuConfig, isDev: boolean): MenuItemConstructorOptions[] {
+  const { editMenu = true, viewMenu } = menu;
   const showView = isDev || viewMenu === true;
   const template: MenuItemConstructorOptions[] = [];
 

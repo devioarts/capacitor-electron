@@ -1,18 +1,22 @@
 export type CspConfig = string | Record<string, string | string[]> | false;
 
-export type MenuConfig = boolean | {
+export interface AppMenuConfig {
+  /** Enable the application menu from `src/user/menu/app.ts`. Default: false */
+  enabled?: boolean;
+  /** Hide the application menu. On macOS a minimal Quit menu is kept. Default: false */
+  hide?: boolean;
   /** Include standard Edit menu (Undo, Redo, Cut, Copy, Paste, Select All). Default: true */
   editMenu?: boolean;
   /** Include View menu (Reload, Toggle DevTools, Zoom). Default: true in dev, false in production */
   viewMenu?: boolean;
-};
+}
 
-export type ContextMenuConfig = boolean | {
+export interface ContextMenuConfig {
   /** Enable renderer context menus from `src/user/menu/context.ts`. Default: false */
   enabled?: boolean;
-};
+}
 
-export interface TrayConfig {
+export interface TrayMenuConfig {
   /** Enable the tray icon. Default: false */
   enabled?: boolean;
   /**
@@ -46,10 +50,10 @@ export interface SplashScreenConfig {
 }
 
 export interface DockConfig {
+  /** Enable the macOS Dock menu from `src/user/menu/dock.ts`. macOS only. */
+  enabled?: boolean;
   /** Hide the macOS Dock icon. Useful for pure menu-bar/tray apps. macOS only. */
   hideIcon?: boolean;
-  /** Enable the macOS Dock menu from `src/user/menu/dock.ts`. macOS only. */
-  menu?: boolean;
 }
 
 export interface AutoUpdaterConfig {
@@ -142,21 +146,16 @@ export interface ElectronSecurityConfig {
 }
 
 export interface ElectronUiConfig {
-  /**
-   * Native application menu (menu bar).
-   * - `false` — hide entirely (on macOS keeps a minimal App menu so Cmd+Q still works)
-   * - object — build a menu from the options below
-   * - omit — keep Electron's default menu
-   */
-  menu?: MenuConfig;
+  /** Native application menu (menu bar). */
+  appMenu?: AppMenuConfig;
   /** Renderer context menu. Disabled by default. */
   contextMenu?: ContextMenuConfig;
   /** System tray icon and context menu. Disabled by default. */
-  tray?: TrayConfig;
+  trayMenu?: TrayMenuConfig;
   /** Splash screen shown while the main app window loads in the background. */
   splashScreen?: SplashScreenConfig;
   /** macOS Dock behavior. */
-  dock?: DockConfig;
+  dockMenu?: DockConfig;
 }
 
 export interface CapacitorPluginsConfig {

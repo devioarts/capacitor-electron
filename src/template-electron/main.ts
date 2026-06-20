@@ -136,7 +136,7 @@ function setup(): void {
     setupMenu(cfg, isDev, getWin, appMenu);
     if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
     setupDockMenu(cfg, isDev, getWin, dockMenu);
-    if (cfg.ui?.dock?.hideIcon && process.platform === 'darwin') app.dock?.hide();
+    if (cfg.ui?.dockMenu?.hideIcon && process.platform === 'darwin') app.dock?.hide();
     setupShortcuts(shortcuts, getWin);
     const hookTrayWindow = setupTray(cfg, isDev, getWin, trayMenu);
     const hideSplash = setupSplash(cfg);

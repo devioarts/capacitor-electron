@@ -29,11 +29,12 @@ const config: CapacitorConfig = {
           backgroundColor: 'transparent',
           minDisplayTime:  1200,
         },
-        menu: {
+        appMenu: {
+          enabled: true,
           editMenu: false,
           viewMenu: true,
         },
-        tray: {
+        trayMenu: {
           enabled:        true,
           icon:           '/public/assets/tray.png',
           tooltip:        'cap-electron playground',

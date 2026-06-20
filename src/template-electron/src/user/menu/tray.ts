@@ -1,6 +1,6 @@
 // Tray menu — edit freely, never overwritten by cap-electron upgrade.
 //
-// Only used when ui.tray.enabled is true in capacitor.config.ts.
+// Only used when ui.trayMenu.enabled is true in capacitor.config.ts.
 // Return a normal Electron Menu.buildFromTemplate() template.
 
 import { app, type MenuItemConstructorOptions } from 'electron';
