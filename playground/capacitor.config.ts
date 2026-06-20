@@ -22,6 +22,9 @@ const config: CapacitorConfig = {
         center: true,
         icon:   '/public/assets/icon.png',
       },
+      security:{
+        csp: false
+      },
       ui: {
         splashScreen: {
           image:           '/public/assets/splash.svg',

@@ -4,6 +4,10 @@ import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
 
+const AndroidOnly: React.FC = () => (
+  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-green-100 text-green-700 ml-1">Android</span>
+);
+
 let nextId = 1;
 
 export const PageNotifications: React.FC = () => {
@@ -96,7 +100,7 @@ export const PageNotifications: React.FC = () => {
               log.info("Notifications", "checkExactNotificationSetting", result);
             } catch (e) { log.error("Notifications", "checkExactNotificationSetting", e); }
           }}>
-            checkExactNotificationSetting()
+            checkExactNotificationSetting()<AndroidOnly />
           </Button>
           <Button type="neutral" onClick={async () => {
             try {
@@ -104,7 +108,7 @@ export const PageNotifications: React.FC = () => {
               log.info("Notifications", "changeExactNotificationSetting", result);
             } catch (e) { log.error("Notifications", "changeExactNotificationSetting", e); }
           }}>
-            changeExactNotificationSetting()
+            changeExactNotificationSetting()<AndroidOnly />
           </Button>
         </div>
       </section>
@@ -279,13 +283,13 @@ export const PageNotifications: React.FC = () => {
               log.info("Notifications", "createChannel", { channelId });
             } catch (e) { log.error("Notifications", "createChannel", e); }
           }}>
-            createChannel()
+            createChannel()<AndroidOnly />
           </Button>
           <Button type="neutral" onClick={async () => {
             try { log.info("Notifications", "listChannels", await LocalNotifications.listChannels()); }
             catch (e) { log.error("Notifications", "listChannels", e); }
           }}>
-            listChannels()
+            listChannels()<AndroidOnly />
           </Button>
           <Button type="yellow" onClick={async () => {
             try {
@@ -293,7 +297,7 @@ export const PageNotifications: React.FC = () => {
               log.info("Notifications", "deleteChannel", { channelId });
             } catch (e) { log.error("Notifications", "deleteChannel", e); }
           }}>
-            deleteChannel()
+            deleteChannel()<AndroidOnly />
           </Button>
         </div>
       </section>

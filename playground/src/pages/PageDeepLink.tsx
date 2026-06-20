@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Button } from "../components/Button.tsx";
+import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
 
 interface DeepLinkEvent {
@@ -11,6 +12,7 @@ interface DeepLinkEvent {
 export const PageDeepLink: React.FC = () => {
   const log = useLogger();
   const { info } = log;
+  const [scheme, setScheme] = useState("capelectron");
   const [events, setEvents] = useState<DeepLinkEvent[]>([]);
   const [listening, setListening] = useState(false);
 
@@ -26,10 +28,24 @@ export const PageDeepLink: React.FC = () => {
     return unsub;
   }, [listening, info]);
 
-  const scheme = "capelectron";
+  const sanitizeScheme = (v: string) => v.toLowerCase().replace(/[^a-z0-9+\-.]/g, "");
 
   return (
     <div className="space-y-6">
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Scheme</p>
+        <p className="text-xs text-slate-500">
+          Must match <code>app.deepLinkingScheme</code> in <code>capacitor.config.ts</code>.
+        </p>
+        <Label label="Scheme">
+          <Input
+            value={scheme}
+            onChange={(e) => setScheme(sanitizeScheme(e.target.value))}
+            placeholder="myapp"
+          />
+        </Label>
+      </section>
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Listener state</p>
         <Button
@@ -63,7 +79,7 @@ export const PageDeepLink: React.FC = () => {
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">
-          getLaunchUrl() - URL used to launch the app
+          getLaunchUrl() — URL used to launch the app
         </p>
         <Button
           type="primary"

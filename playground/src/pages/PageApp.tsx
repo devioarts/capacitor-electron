@@ -13,8 +13,10 @@ export const PageApp: React.FC = () => {
 
     const handles: Array<Promise<{ remove: () => Promise<void> }>> = [
       App.addListener("appStateChange", (state) => info("App", "appStateChange", state)),
-      App.addListener("resume", () => info("App", "resume")),
-      App.addListener("pause", () => info("App", "pause")),
+      App.addListener("resume",         ()        => info("App", "resume")),
+      App.addListener("pause",          ()        => info("App", "pause")),
+      App.addListener("appUrlOpen",     (data)    => info("App", "appUrlOpen", data)),
+      App.addListener("backButton",     ()        => info("App", "backButton (no-op on desktop)")),
     ];
 
     return () => {
@@ -27,8 +29,8 @@ export const PageApp: React.FC = () => {
       <div className="flex flex-wrap gap-2">
         <Button type="primary" onClick={async () => {
           try {
-            const info = await App.getInfo();
-            log.info("App", "getInfo", info);
+            const appInfo = await App.getInfo();
+            log.info("App", "getInfo", appInfo);
           } catch (e) { log.error("App", "getInfo", e); }
         }}>
           getInfo()
@@ -50,6 +52,15 @@ export const PageApp: React.FC = () => {
           } catch (e) { log.error("App", "getLaunchUrl", e); }
         }}>
           getLaunchUrl()
+        </Button>
+
+        <Button type="primary" onClick={async () => {
+          try {
+            const lang = await App.getAppLanguage();
+            log.info("App", "getAppLanguage", lang);
+          } catch (e) { log.error("App", "getAppLanguage", e); }
+        }}>
+          getAppLanguage()
         </Button>
 
         <Button type="yellow" onClick={async () => {
@@ -79,7 +90,9 @@ export const PageApp: React.FC = () => {
 
       {listening && (
         <p className="text-xs text-slate-500">
-          Listening for appStateChange / resume / pause. Switch windows or minimize the app to test it.
+          Listening for <code>appStateChange</code>, <code>resume</code>, <code>pause</code>,{" "}
+          <code>appUrlOpen</code>, <code>backButton</code> (desktop no-op).
+          Switch windows or minimize the app to trigger lifecycle events.
         </p>
       )}
     </div>

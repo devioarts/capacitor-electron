@@ -30,15 +30,6 @@ export const PageWindow: React.FC = () => {
           }}>
             isFullscreen()
           </Button>
-
-          <Button type="primary" onClick={async () => {
-            try {
-              const v = await E.getAppVersion();
-              log.info("Electron", "getAppVersion", v);
-            } catch (e) { log.error("Electron", "getAppVersion", e); }
-          }}>
-            getAppVersion()
-          </Button>
         </div>
       </section>
 

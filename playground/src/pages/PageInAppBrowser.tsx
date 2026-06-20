@@ -42,6 +42,10 @@ export const PageInAppBrowser: React.FC = () => {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [modal, setModal] = useState(false);
   const [resizable, setResizable] = useState(true);
+  const [fullscreenable, setFullscreenable] = useState(true);
+  const [closable, setClosable] = useState(true);
+  const [movable, setMovable] = useState(true);
+  const [titleBarStyle, setTitleBarStyle] = useState<"default" | "hidden" | "hiddenInset">("default");
   const [clearCache, setClearCache] = useState(false);
   const [clearStorage, setClearStorage] = useState(false);
   const [externalLinks, setExternalLinks] = useState(true);
@@ -84,6 +88,10 @@ export const PageInAppBrowser: React.FC = () => {
         alwaysOnTop,
         modal,
         resizable,
+        fullscreenable,
+        closable,
+        movable,
+        titleBarStyle,
         backgroundColor,
         opacity: Number(opacity) || undefined,
       },
@@ -145,6 +153,17 @@ export const PageInAppBrowser: React.FC = () => {
           <Label label="Min width"><Input type="number" value={minWidth} onChange={(e) => setMinWidth(e.target.value)} placeholder="optional" /></Label>
           <Label label="Min height"><Input type="number" value={minHeight} onChange={(e) => setMinHeight(e.target.value)} placeholder="optional" /></Label>
           <Label label="Opacity"><Input type="number" min="0.1" max="1" step="0.1" value={opacity} onChange={(e) => setOpacity(e.target.value)} /></Label>
+          <Label label="Title bar style (macOS)">
+            <select
+              value={titleBarStyle}
+              onChange={(e) => setTitleBarStyle(e.target.value as "default" | "hidden" | "hiddenInset")}
+              className="bg-white border border-slate-300 rounded px-2 py-1 text-sm w-full"
+            >
+              <option value="default">default</option>
+              <option value="hidden">hidden</option>
+              <option value="hiddenInset">hiddenInset</option>
+            </select>
+          </Label>
           <Label label="iOS WebView style">
             <select
               value={iosViewStyle}
@@ -189,6 +208,9 @@ export const PageInAppBrowser: React.FC = () => {
           <label className="flex items-center gap-2"><input type="checkbox" checked={alwaysOnTop} onChange={(e) => setAlwaysOnTop(e.target.checked)} /> always on top</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={modal} onChange={(e) => setModal(e.target.checked)} /> modal</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={resizable} onChange={(e) => setResizable(e.target.checked)} /> resizable</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={fullscreenable} onChange={(e) => setFullscreenable(e.target.checked)} /> fullscreenable</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={closable} onChange={(e) => setClosable(e.target.checked)} /> closable</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={movable} onChange={(e) => setMovable(e.target.checked)} /> movable</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={clearCache} onChange={(e) => setClearCache(e.target.checked)} /> clear cache</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={clearStorage} onChange={(e) => setClearStorage(e.target.checked)} /> clear storage</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={externalLinks} onChange={(e) => setExternalLinks(e.target.checked)} /> external links in system browser</label>
