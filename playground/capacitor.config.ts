@@ -3,6 +3,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 
+// @ts-ignore:next-line
 import type {ElectronConfig} from "./electron/src";
 
 const config: CapacitorConfig = {
