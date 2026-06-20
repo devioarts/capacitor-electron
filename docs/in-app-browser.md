@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/inappbrowser`.
 
+Official references: [Capacitor InAppBrowser API](https://capacitorjs.com/docs/apis/inappbrowser), Electron [BrowserWindow](https://electronjs.org/docs/latest/api/browser-window), and Electron [shell](https://electronjs.org/docs/latest/api/shell).
+
 ```bash
 npm install @capacitor/inappbrowser
 npx cap-electron sync
@@ -109,6 +111,7 @@ electron: {
     show?: boolean;
     frame?: boolean;
     autoHideMenuBar?: boolean;
+    modal?: boolean;
     backgroundColor?: string;
     opacity?: number;
     titleBarStyle?: 'default' | 'hidden' | 'hiddenInset';
@@ -125,6 +128,8 @@ electron: {
 ```
 
 `electron.window` follows the shape of Electron `BrowserWindowConstructorOptions`, but it is sanitized before use. Security-sensitive fields are ignored, including `webPreferences`, `preload`, `nodeIntegration`, `contextIsolation`, `sandbox`, `webSecurity`, `session`, and `partition`.
+
+When `electron.window.modal` is `true`, Capacitor Electron uses the focused app window as the modal parent when one is available.
 
 Use `electron.session.partition` for controlled session selection.
 
@@ -157,3 +162,9 @@ Events are emitted for `openInWebView()` only.
 | `browserPageNavigationCompleted` | `{ url }` | Embedded page navigation |
 
 `openInExternalBrowser()` and `openInSystemBrowser()` use `shell.openExternal()`, so Electron cannot observe page load or close events for them.
+
+---
+
+## Supported operating systems
+
+All three modes are supported on macOS, Windows, and Linux for `http://` and `https://` URLs. OS-specific behavior comes from Electron `BrowserWindow` and `shell.openExternal()`; see [platform-support.md](platform-support.md).

@@ -4,6 +4,8 @@ Built-in Electron implementation of `@capacitor/filesystem`. No extra configurat
 
 Uses Node.js `fs/promises` for all I/O. No extra dependencies.
 
+Official reference: [Capacitor Filesystem API](https://capacitorjs.com/docs/apis/filesystem).
+
 ---
 
 ## Setup
@@ -57,6 +59,22 @@ console.log(data); // Hello, Electron!
 ---
 
 ## API reference
+
+### `checkPermissions()`
+
+```typescript
+const { publicStorage } = await Filesystem.checkPermissions();
+```
+
+Returns `{ publicStorage: 'granted' }`. Desktop filesystem access is handled by the app process and does not trigger Android-style runtime permission prompts.
+
+### `requestPermissions()`
+
+```typescript
+const { publicStorage } = await Filesystem.requestPermissions();
+```
+
+Returns `{ publicStorage: 'granted' }` for API compatibility.
 
 ### `readFile(options)`
 
@@ -125,19 +143,20 @@ Each entry in `files` contains:
 | `mtime` | `number` | Last-modified timestamp in milliseconds |
 | `ctime` | `number` | Created/changed timestamp in milliseconds |
 | `uri`   | `string` | Absolute `file://` URI |
+| `path`  | `string` | Absolute filesystem path |
 
 ### `getUri(options)`
 
 ```typescript
-const { uri } = await Filesystem.getUri({ path, directory? });
+const { uri, path } = await Filesystem.getUri({ path, directory? });
 ```
 
-Returns the absolute `file://` URI for a path without performing any I/O.
+Returns the absolute `file://` URI and filesystem path without performing any I/O.
 
 ### `stat(options)`
 
 ```typescript
-const { type, size, mtime, ctime, uri } = await Filesystem.stat({ path, directory? });
+const { type, size, mtime, ctime, uri, path } = await Filesystem.stat({ path, directory? });
 ```
 
 ### `rename(options)`
@@ -159,7 +178,7 @@ Copies a file or directory. `directory` is the source directory; `toDirectory` i
 ### `downloadFile(options)`
 
 ```typescript
-const { path } = await Filesystem.downloadFile({ url, path, directory?, headers? });
+const { path, uri } = await Filesystem.downloadFile({ url, path, directory?, headers? });
 ```
 
 Fetches a remote URL and saves the response body to the given path. Uses global `fetch` (available in Node.js 18+ / Electron 20+). Creates parent directories automatically.
@@ -171,7 +190,13 @@ Fetches a remote URL and saves the response body to the given path. Uses global 
 | `directory` | `string` | Optional Capacitor directory |
 | `headers` | `object` | Optional HTTP headers |
 
-Returns `{ path }` — the absolute filesystem path of the saved file.
+Returns `{ path, uri }` — the absolute filesystem path and `file://` URI of the saved file.
+
+---
+
+## Supported operating systems
+
+All Filesystem methods are supported on macOS, Windows, and Linux. Path roots differ by OS through Electron `app.getPath()`; see [platform-support.md](platform-support.md) for the full matrix.
 
 ---
 
@@ -205,7 +230,9 @@ Common errors are mapped to Capacitor-compatible messages:
 
 | Feature | Status | Reason |
 |---------|--------|--------|
-| `requestPermissions()` | Not needed | Node.js has direct filesystem access; no permission prompt |
+| `requestPermissions()` prompt | Not shown | Node.js has direct filesystem access; the method returns `granted` for API compatibility |
+| `readFileInChunks()` | Not supported | Requires a callback-style native bridge that is not implemented for built-in Filesystem yet |
+| `addListener('progress')` for `Filesystem.downloadFile()` | Not supported | Use `@capacitor/file-transfer` for progress events |
 | Watching for file changes | Not supported | `@capacitor/filesystem` has no watch API |
 | URIs from `getUri()` in `<img src>` | May need CSP adjustment | `file://` URLs require `img-src: file:` in the CSP — see [content-security-policy.md](content-security-policy.md) |
 | Cross-volume `rename()` | Fails with `EXDEV` | OS limitation; use `copy()` + `deleteFile()` instead |

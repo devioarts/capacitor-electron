@@ -86,6 +86,13 @@ function targetDirectory(opts: AnyRecord, fromDirectory?: string): string | unde
  *   (no directory)   → path treated as absolute
  */
 class Filesystem {
+  async checkPermissions(): Promise<{ publicStorage: string }> {
+    return { publicStorage: 'granted' };
+  }
+
+  async requestPermissions(): Promise<{ publicStorage: string }> {
+    return { publicStorage: 'granted' };
+  }
 
   async readFile(opts: AnyRecord): Promise<{ data: string }> {
     const abs = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
@@ -206,6 +213,7 @@ class Filesystem {
 }
 
 const METHODS = [
+  'checkPermissions', 'requestPermissions',
   'readFile', 'writeFile', 'appendFile', 'deleteFile',
   'mkdir', 'rmdir', 'readdir', 'getUri', 'stat',
   'rename', 'copy', 'downloadFile',

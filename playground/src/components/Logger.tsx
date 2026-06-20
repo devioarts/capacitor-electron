@@ -160,7 +160,7 @@ const LogEntries: React.FC<{
 }> = ({ logs, scrollRef, className }) => (
   <div ref={scrollRef} className={`overflow-auto text-xs p-2 ${className ?? ""}`}>
     {logs.length === 0 ? (
-      <div className="text-slate-400 p-1">No logs yet…</div>
+      <div className="text-slate-400 p-1">No logs yet...</div>
     ) : (
       <ul className="space-y-1.5">
         {logs.map((l, i) => (

@@ -60,7 +60,7 @@ export const PageElectronDialogs: React.FC = () => {
               log.info("Dialogs", "showMessageBox(question)", await window.Electron.dialogs.showMessageBox({
                 type: "question",
                 message,
-                buttons: ["Ano", "Ne", "Zrusit"],
+                buttons: ["Yes", "No", "Cancel"],
                 defaultId: 0,
                 cancelId: 2,
               }));

@@ -184,6 +184,8 @@ export interface ElectronInAppBrowserWindowOptions {
   show?: boolean;
   frame?: boolean;
   autoHideMenuBar?: boolean;
+  /** Creates an Electron modal child window. A focused app window is used as parent when available. */
+  modal?: boolean;
   backgroundColor?: string;
   opacity?: number;
   titleBarStyle?: 'default' | 'hidden' | 'hiddenInset';

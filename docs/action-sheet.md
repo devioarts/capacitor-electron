@@ -2,6 +2,8 @@
 
 Built-in Electron implementation of `@capacitor/action-sheet`. No extra configuration required — install the Capacitor plugin and it works on Electron out of the box.
 
+Official reference: [Capacitor Action Sheet API](https://capacitorjs.com/docs/apis/action-sheet).
+
 ---
 
 ## Setup
@@ -63,6 +65,8 @@ if (index === 1) console.log('Delete selected');
 ## Platform behaviour
 
 The dialog is rendered as a native OS message box (`dialog.showMessageBox`), not an HTML overlay. It blocks user interaction with the main window until dismissed — identical to the native modal behaviour on iOS/Android.
+
+Supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).
 
 ### Button styles
 

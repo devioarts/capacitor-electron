@@ -2,6 +2,8 @@
 
 Desktop-only APIs are exposed under `window.Electron.*`. They are intentionally separate from Capacitor-compatible plugins so app code can clearly see when it depends on Electron.
 
+For per-namespace macOS, Windows, and Linux support, see [platform-support.md](platform-support.md).
+
 ## Native dialogs
 
 ```ts
@@ -9,6 +11,8 @@ await window.Electron.dialogs.showOpenDialog({ properties: ['openFile'] });
 await window.Electron.dialogs.showSaveDialog({ defaultPath: 'export.pdf' });
 await window.Electron.dialogs.showMessageBox({ message: 'Done' });
 ```
+
+Maps to Electron [dialog](https://electronjs.org/docs/latest/api/dialog).
 
 ## Secure storage
 
@@ -19,6 +23,8 @@ const token = await window.Electron.secureStorage.get('token');
 
 Values are encrypted with Electron `safeStorage` and stored in `userData/CapacitorStorage/secure-storage.json`. Check `isEncryptionAvailable()` and `getSelectedStorageBackend()` on Linux because some environments may fall back to weaker storage.
 
+Official reference: Electron [safeStorage](https://electronjs.org/docs/latest/api/safe-storage).
+
 ## Protocols
 
 ```ts
@@ -27,6 +33,8 @@ await window.Electron.protocols.setAsDefaultProtocolClient('myapp');
 ```
 
 Renderer code may only register schemes already present in Capacitor Electron config, such as `app.deepLinkingScheme` or `app.appLauncherSchemes`.
+
+Official references: Electron [app protocol client methods](https://electronjs.org/docs/latest/api/app) and [shell.openExternal](https://electronjs.org/docs/latest/api/shell).
 
 ## Session
 
@@ -37,6 +45,8 @@ await window.Electron.session.setProxy({ proxyRules: 'http=localhost:8080' });
 ```
 
 This is a constrained wrapper around the current window session: cache, storage data, cookies, proxy, user agent, and connection cleanup.
+
+Official reference: Electron [session](https://electronjs.org/docs/latest/api/session).
 
 ## Downloads
 
@@ -66,6 +76,8 @@ const sources = await window.Electron.desktopCapture.getSources({
 ```
 
 Returns source ids, names, display ids, thumbnails, and app icons as data URLs when available.
+
+Official reference: Electron [desktopCapturer](https://electronjs.org/docs/latest/api/desktop-capturer).
 
 ## Auto launch
 
@@ -111,3 +123,18 @@ await window.Electron.windows.focus(child.id);
 Managed windows use the same secure preload defaults as the main app window and can be listed, focused, shown, hidden, resized, and closed.
 
 Renderer-created managed windows accept only `http` and `https` URLs and a whitelist of normal window options. They cannot override `webPreferences`.
+
+Official reference: Electron [BrowserWindow](https://electronjs.org/docs/latest/api/browser-window).
+
+## Supported operating systems
+
+Most `window.Electron` namespaces are available on macOS, Windows, and Linux. The notable exceptions are:
+
+| API | macOS | Windows | Linux | Notes |
+|---|---:|---:|---:|---|
+| `autoLaunch` | Yes | Yes | No | Linux returns `false`; create a desktop-environment autostart entry manually. |
+| `secureStorage` | Yes | Yes | Partial | Linux depends on secret storage backend availability. |
+| Deep-link/protocol cold start | Yes | Yes | Partial | Linux cold-start URL handling depends on desktop integration. |
+| Dock menu / Dock icon | Yes | No | No | Electron Dock APIs are macOS-only. |
+| Badge count | Yes | Partial | Partial | Electron returns platform-specific support. |
+| Desktop capture | Partial | Partial | Partial | OS permission prompts and window-manager behavior apply. |

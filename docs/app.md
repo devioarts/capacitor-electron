@@ -2,6 +2,8 @@
 
 Built-in Electron implementation of `@capacitor/app`. No extra configuration required — install the Capacitor plugin and it works on Electron out of the box.
 
+Official reference: [Capacitor App API](https://capacitorjs.com/docs/apis/app).
+
 ---
 
 ## Setup
@@ -80,7 +82,19 @@ const result = await App.getLaunchUrl();
 if (result) console.log('Launched via', result.url);
 ```
 
-The URL is parsed from `process.argv` at startup. It is only available on the first call after launch.
+The startup URL is stored once and consumed by the first `getLaunchUrl()` call. Subsequent calls return `null` unless the app was launched again.
+
+### `getAppLanguage()`
+
+Returns the current app locale language code from Electron `app.getLocale()`.
+
+```typescript
+const { value } = await App.getAppLanguage();
+```
+
+### `toggleBackButtonHandler(options)`
+
+No-op on Electron. This is an Android-only Capacitor method; it is accepted for API compatibility.
 
 ---
 
@@ -136,11 +150,24 @@ This event uses the same infrastructure as `window.Electron.onDeepLink()`. Both 
 
 No-op on Electron — desktop apps have no hardware back button. The listener is accepted without error but never fires.
 
+### `appRestoredResult`
+
+No-op on Electron — Android activity result restoration has no desktop equivalent. The listener is accepted without error but never fires.
+
 ---
 
 ## Platform behaviour
 
 `appStateChange`, `resume`, and `pause` are driven by the Electron `focus` and `blur` events on the main `BrowserWindow`. They share a single pair of window-level event handlers and are attached lazily (only when the first listener is added).
+
+| Feature | macOS | Windows | Linux |
+|---|---:|---:|---:|
+| `getInfo()`, `getState()`, `exitApp()`, `minimizeApp()`, `getAppLanguage()` | Yes | Yes | Yes |
+| `getLaunchUrl()` | Yes | Yes | Partial |
+| `appUrlOpen` | Yes | Yes | Partial |
+| `toggleBackButtonHandler()`, `backButton`, `appRestoredResult` | No-op | No-op | No-op |
+
+Linux cold-start URL extraction is not implemented by the built-in helper. Running-instance Linux links can arrive through Electron's `second-instance` event when the desktop entry launches the app with the URL argument. See [deep-linking.md](deep-linking.md) and [platform-support.md](platform-support.md).
 
 ---
 
@@ -149,5 +176,6 @@ No-op on Electron — desktop apps have no hardware back button. The listener is
 | Feature | Status | Reason |
 |---------|--------|--------|
 | `backButton` event | No-op | No hardware back button on desktop |
-| `getLaunchUrl()` persistence | Startup URL only | `process.argv` is read at startup; subsequent deep links arrive via `appUrlOpen` |
+| `appRestoredResult` event | No-op | Android activity result restoration has no desktop equivalent |
+| `getLaunchUrl()` persistence | Startup URL only | The launch URL is consumed by the first `getLaunchUrl()` call; subsequent deep links arrive via `appUrlOpen` |
 | `minimizeApp()` in fullscreen | Exits fullscreen first | Matches the behaviour of `window.Electron.minimize()` |

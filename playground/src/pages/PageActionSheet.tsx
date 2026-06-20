@@ -9,18 +9,18 @@ export const PageActionSheet: React.FC = () => {
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-500">
-        Na Electronu se ActionSheet zobrazuje jako nativni dialog s tlacitky.
+        Electron renders ActionSheet as a native message box with indexed buttons.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="primary" onClick={async () => {
           try {
             const result = await ActionSheet.showActions({
-              title: "Vyber akci",
-              message: "Co chces udelat?",
+              title: "Choose an action",
+              message: "What would you like to do?",
               options: [
-                { title: "Ulozit", style: ActionSheetButtonStyle.Default },
-                { title: "Smazat", style: ActionSheetButtonStyle.Destructive },
-                { title: "Zrusit", style: ActionSheetButtonStyle.Cancel },
+                { title: "Save", style: ActionSheetButtonStyle.Default },
+                { title: "Delete", style: ActionSheetButtonStyle.Destructive },
+                { title: "Cancel", style: ActionSheetButtonStyle.Cancel },
               ],
             });
             log.info("ActionSheet", "showActions(default/destructive/cancel)", result);
@@ -31,12 +31,12 @@ export const PageActionSheet: React.FC = () => {
         <Button type="neutral" onClick={async () => {
           try {
             const result = await ActionSheet.showActions({
-              title: "Sdilet soubor",
+              title: "Share file",
               options: [
-                { title: "Kopirovat odkaz" },
-                { title: "Otevrit v prohlizeci" },
-                { title: "Exportovat jako PDF" },
-                { title: "Zrusit", style: ActionSheetButtonStyle.Cancel },
+                { title: "Copy link" },
+                { title: "Open in browser" },
+                { title: "Export as PDF" },
+                { title: "Cancel", style: ActionSheetButtonStyle.Cancel },
               ],
             });
             log.info("ActionSheet", "showActions(multiple)", result);
@@ -48,7 +48,7 @@ export const PageActionSheet: React.FC = () => {
           try {
             const result = await ActionSheet.showActions({
               options: [
-                { title: "Bez titulku" },
+                { title: "No title" },
                 { title: "Cancel", style: ActionSheetButtonStyle.Cancel },
               ],
             });

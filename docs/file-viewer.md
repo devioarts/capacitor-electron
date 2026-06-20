@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/file-viewer`.
 
+Official reference: [Capacitor File Viewer API](https://capacitorjs.com/docs/apis/file-viewer).
+
 ```ts
 import { FileViewer } from '@capacitor/file-viewer';
 
@@ -19,3 +21,5 @@ await FileViewer.openDocumentFromUrl({ url: 'https://example.com/file.pdf' });
 | `previewMediaContentFrom*` | Aliases to the matching document-opening method. |
 
 The upstream mobile plugin has iOS-specific media preview behavior. Electron uses native desktop file associations instead.
+
+Supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).

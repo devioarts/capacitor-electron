@@ -2,6 +2,8 @@
 
 Built-in Electron implementation of `@capacitor/local-notifications`. No extra configuration required — install the Capacitor plugin and it works on Electron out of the box.
 
+Official reference: [Capacitor Local Notifications API](https://capacitorjs.com/docs/apis/local-notifications).
+
 ---
 
 ## Setup
@@ -159,6 +161,8 @@ await LocalNotifications.addListener('localNotificationActionPerformed', ({ noti
 ---
 
 ## Platform behaviour
+
+Notification methods are available on macOS, Windows, and Linux, but delivery depends on the OS notification service and Electron `Notification` support. See [platform-support.md](platform-support.md).
 
 ### Windows
 

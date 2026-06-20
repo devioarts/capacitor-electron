@@ -1,312 +1,118 @@
-# Code Review Report — capacitor-electron
+# Report: dokumentace vs. implementace
 
-> Datum: 2026-06-20  
-> Verze: Electron 42, Capacitor 8, esbuild bundle  
-> Scope: Veškerý zdrojový kód kromě složky `playground/`  
-> Zaměření: stabilita, funkčnost, soulad s oficiální dokumentací Electron/Capacitor/electron-builder
+Datum: 2026-06-20
 
----
+## Rozsah
 
-## Přehled
+- Prosel jsem dokumentaci v `README.md` a `docs/*.md`.
+- Prosel jsem runtime implementace v `src/template-electron/src/system/static/**`, sdilene typy/bridge v `src/template-electron/src/system/shared/**`, renderer init v `src/template-electron/src/system/js/electron-init.js` a relevantni CLI soubory v `src/cli/**`.
+- Playground jsem podle zadani vynechal. V pracovnim stromu uz existuji rozpracovane zmeny v `playground/**`; nesahal jsem na ne.
+- Overoval jsem proti oficialnim primarnim zdrojum Capacitor a Electron docs. Markdown externi odkazy v dokumentaci jsem zkontroloval pres HTTP a vsechny aktualni odkazy vraci 200.
 
-Codebase je celkově dobře strukturovaný. Bezpečnostní model (contextIsolation, IPC sender check, path traversal guard) je solidní. Klíčové problémy se týkají konkrétních edge cases v implementacích pluginů a jedné dokumentační chyby, která může vést k tiché konfigurační chybě.
+## Provedene opravy dokumentace
 
----
+- Pridal jsem centralni OS matici: `docs/platform-support.md`.
+  - Obsahuje podporu pro macOS, Windows a Linux po jednotlivych funkcich/metodach.
+  - Rozlisuje `Yes`, `Partial`, `No` a `No-op`.
+  - Pridava overene odkazy na oficialni Capacitor, Electron a electron-builder dokumentaci.
+- `README.md`
+  - Pridan odkaz na `docs/platform-support.md`.
+  - U App pluginu doplneno aktualni pokryti metod a udalosti.
+  - Pridan aktualni electron-builder CLI odkaz pro platform/arch pravidla.
+- `docs/auto-updater.md`
+  - Opraven nefunkcni odkaz `https://www.electron.build/configuration/publish` na funkcni `https://www.electron.build/docs/publish/`.
+- `docs/app.md`
+  - Doplnen oficialni Capacitor odkaz.
+  - Popsano jednorazove spotrebovani launch URL.
+  - Doplneny `getAppLanguage()`, `toggleBackButtonHandler()`, `appRestoredResult` a OS matice.
+- `docs/filesystem.md`
+  - Doplnen oficialni Capacitor odkaz.
+  - Opravene navratove hodnoty podle implementace: `readdir()` obsahuje `path`, `getUri()` vraci `{ uri, path }`, `stat()` vraci i `path`, `downloadFile()` vraci `{ path, uri }`.
+  - Doplneny `checkPermissions()` a `requestPermissions()`.
+  - Jasne uvedeno, ze `readFileInChunks()` a stary Filesystem `progress` listener nejsou zatim podporovane.
+- `docs/in-app-browser.md`
+  - Doplneny oficialni odkazy.
+  - Zdokumentovana podpora `electron.window.modal`, ktera uz byla rozpracovana v kodu.
+- `docs/browser.md`, `docs/action-sheet.md`, `docs/clipboard.md`, `docs/device.md`, `docs/dialog.md`, `docs/file-transfer.md`, `docs/file-viewer.md`, `docs/local-notifications.md`, `docs/network.md`, `docs/preferences.md`, `docs/privacy-screen.md`, `docs/toast.md`, `docs/electron-desktop-apis.md`
+  - Doplneny oficialni odkazy a/nebo OS poznámky.
+  - `docs/electron-desktop-apis.md` ma novou souhrnnou OS tabulku pro `window.Electron`.
 
-## 🔴 Kritické
+## Provedene opravy kodu
 
-### 1. Race condition při stahování souborů — `downloads-main.ts:88` ✅ opraveno
+### Event lifecycle leak / vice oken
 
-**Původní problém:** Systém párování stažení používal `pending.shift()` — globální FIFO frontu. Předpokládal, že `will-download` event přijde ve stejném pořadí, v jakém byly volány `downloadURL()`. Electron toto nezaručuje — pokud dvě `downloadURL()` volání přijdou souběžně nebo z různých WebContents, pořadí `will-download` eventů nemusí odpovídat. Výsledek: metadata (URL, savePath, id) jednoho stahování se mohla přiřadit k jinému.
+Soubor: `src/template-electron/src/system/shared/functions.ts`
 
-```ts
-// downloads-main.ts:88
-const next = pending.shift(); // FIFO — nezaručené pořadí
-if (!next) return;
-attachDownload(owner, item, next);
-```
+Problem: `registerPlugin()` volal `onRemove` hned pri kazdem `event-remove-*`. Pri vice oknech nebo reloadu jednoho rendereru to mohlo predcasne vypnout sdileny zdroj udalosti, napr. Network polling nebo App focus listenery. Pri zavreni okna bez korektniho remove zase hrozilo, ze zdroj zustane bez realnych posluchacu.
 
-**Stav:** Nahrazeno mapou `Map<string, DownloadState[]>` podle normalizované URL. `will-download` páruje přes `item.getURL()`. FIFO zůstává pouze uvnitř stejné URL; URL se neupravuje interním query parametrem, aby se nerozbily signed URLs nebo server-side cache pravidla.
+Oprava:
 
----
+- Main process ted drzi pocitadla listeneru podle typu udalosti a `webContents.id`.
+- `onAdd` se vola jen pri prechodu z 0 na 1 globalni listener.
+- `onRemove` se vola jen pri prechodu z 1 na 0 globalnich listeneru.
+- Pri `webContents.destroyed` se listener stavy pro dane okno uklidi automaticky.
 
-### 2. Chybná cesta `resourcePath()` v dev módu — `file-viewer-main.ts:17` ✅ opraveno
+### App launch URL a upstream App API
 
-**Problém:** Funkce `resourcePath()` pro dev mód (non-packaged) používá:
+Soubory:
 
-```ts
-const base = path.join(__dirname, '..', '..', '..', '..', 'app');
-```
+- `src/template-electron/src/system/static/electron-api/deep-link-main.ts`
+- `src/template-electron/src/system/static/capacitor-api/app-main.ts`
+- `src/template-electron/src/system/js/electron-init.js`
 
-Po bundlování esbuild do `dist/main.cjs` je `__dirname = <electronDir>/dist`. Čtyři `../` by šly daleko nad adresář `electron/` — konkrétně na `grandparent/` projektu. Všechna ostatní použití `__dirname` v projektu používají jednotně **jedno** `../` pro navigaci z `dist/` do `electron/`:
+Oprava:
 
-```ts
-// splash-main.ts:33 — správně
-const abs = path.join(__dirname, '..', 'assets', image);
+- Cold-start deep link URL se uklada jednou a `App.getLaunchUrl()` ji pri prvnim volani spotrebuje.
+- Windows argv fallback uz neni vracen opakovane pri kazdem volani.
+- macOS `open-url` pred `app.ready` se umi ulozit jako launch URL.
+- Doplneno `App.getAppLanguage()`.
+- Doplneno `App.toggleBackButtonHandler()` jako desktop no-op.
+- Doplnen `appRestoredResult` event jako desktop no-op listener.
 
-// tray-main.ts:43 — správně
-const abs = path.join(__dirname, '..', 'assets', iconSrc as string);
-```
+### Filesystem permission metody
 
-Správný dev path by měl být: `path.join(__dirname, '..', 'app')` (jeden level nahoru z `dist/` = `electron/app/`).
+Soubory:
 
-**Dopad:** `FileViewer.openDocumentFromResources()` v dev módu vždy selže nebo otevře nesprávný soubor.
+- `src/template-electron/src/system/static/capacitor-api/filesystem-main.ts`
+- `src/template-electron/src/system/js/electron-init.js`
 
-**Stav:** Dev path opraven na `path.join(__dirname, '..', 'app')`.
+Oprava:
 
----
+- Doplneny `Filesystem.checkPermissions()` a `Filesystem.requestPermissions()`.
+- Na desktopu vraci `{ publicStorage: 'granted' }`, protoze Node/Electron filesystem pristup nema Android-style runtime permission prompt.
 
-## 🟠 Vysoké
+## Soulad s oficialni dokumentaci
 
-### 3. `windows:openExternal` bez whitelist protokolů — `windows-main.ts:109` ✅ opraveno
+Overene primarni zdroje:
 
-**Problém:** IPC handler `windows:openExternal` jen parsuje URL a bez dalších kontrol volá `shell.openExternal()`:
+- Capacitor API docs: `@capacitor/app`, `action-sheet`, `browser`, `app-launcher`, `clipboard`, `device`, `dialog`, `filesystem`, `file-transfer`, `file-viewer`, `inappbrowser`, `local-notifications`, `network`, `preferences`, `privacy-screen`, `toast`.
+- Electron API docs: `app`, `BrowserWindow`, `dialog`, `shell`, `Notification`, `safeStorage`, `globalShortcut`, `powerMonitor`, `powerSaveBlocker`, `desktopCapturer`, `screen`, `session`.
+- electron-builder docs: CLI a publish docs.
 
-```ts
-ipcMain.handle('windows:openExternal', async (_e, url: string) => {
-  await shell.openExternal(new URL(url).href); // žádný allowlist
-});
-```
+Nalezeny a opraveny nesoulady:
 
-Naproti tomu `protocol-main.ts:openExternal` správně kontroluje povolené protokoly (`http:`, `https:`, `mailto:`, konfigurovaná schémata). Přes `windows:openExternal` může renderer otevřít libovolný protokol včetně `file://` nebo nestandardních schémat.
+- `App.getAppLanguage()` a `toggleBackButtonHandler()` chybely v Electron bridge.
+- `appRestoredResult` nebyl prijiman jako App listener.
+- `Filesystem.checkPermissions()` a `requestPermissions()` chybely v Electron bridge.
+- `Filesystem` dokumentace nepopisovala presne realne navratove hodnoty.
+- `getLaunchUrl()` nebylo jednorazove a nemelo dobrou macOS cold-start vazbu.
+- Jeden externi electron-builder odkaz byl nefunkcni.
 
-**Navrhované řešení:** Stejná filtrace jako v `protocol-main.ts` — povolovat jen `http:`, `https:`, `mailto:` a konfigurovatelná schémata.
+## Otevrene body k rozhodnuti
 
-**Stav:** `windows:openExternal` používá společný web URL helper s `windows:create` a povoluje jen `http:` / `https:`. Custom schémata zůstávají přes explicitní `protocol:openExternal`.
+- `App.getLaunchUrl()` bez URL: oficialni Capacitor typ uvadi `AppLaunchUrl | undefined`, aktualni Electron implementace i docs vraci `null`. Nechal jsem to kvuli kompatibilite se stavajici dokumentaci, ale pokud chceme striktni upstream kontrakt, zmenit na `undefined` a upravit docs.
+- `Filesystem.readFileInChunks()` neni implementovane. Upstream Capacitor API ho ma; doplneni vyzaduje rozsirit callback-style bridge pro vestavene pluginy, nejen pridat main-process metodu.
+- Deprecated `Filesystem.addListener('progress')` pro `Filesystem.downloadFile()` neni implementovany. Doporučení v docs smeruje na `@capacitor/file-transfer`, ktery progress udalosti ma.
+- Linux cold-start deep link handling zustava partial. Electron helper umi running-instance `second-instance` cestu, ale cold start zavisi na `.desktop` integraci a argumentech predanych OS.
+- Local Notifications jsou jen runtime/in-memory. Pokud aplikace potrebuje notifikace prezit restart, je treba perzistovat schedule v aplikaci a znovu volat `schedule()` po startu.
 
----
+## Overeni
 
-### 4. HTML injection v splash buildHTML — `splash-main.ts:76` ✅ opraveno
+- `npm run typecheck` proslo.
+- Interni markdown linky v `README.md` a `docs/*.md` prosly lokalnim checkem.
+- Vsechny externi markdown odkazy v `README.md` a `docs/*.md` byly overeny pres HTTP a vracely 200.
 
-**Původní problém:** Hodnota `backgroundColor` z `capacitor.config.json` se vkládala přímo do inline HTML bez escapování:
+## Poznamky
 
-```ts
-function buildHTML(bg: string, imageUrl: string): string {
-  return `...background:${bg};...`;
-}
-```
-
-Pokud config obsahuje hodnotu jako `#fff;}</style><script>malicious()</script><style>`, HTML struktura by se rozbila. Jde o konfigurační riziko (ne přímý user-facing útok), ale config může být modifikován při build procesu nebo CI pipeline.
-
-**Stav:** Barva se už nevkládá do inline HTML. Splash HTML má transparentní background, `backgroundColor` se validuje/normalizuje a aplikuje přes `BrowserWindow.backgroundColor` / `setBackgroundColor()`. Neplatné hodnoty padají zpět na `#ffffff`.
-
----
-
-### 5. Race condition při souběžných zápisech do secure storage — `secure-storage-main.ts:19-24` ✅ opraveno
-
-**Problém:** `readStore()` a `writeStore()` jsou async bez žádného zamykání. Dvě souběžná `secureStorage:set` volání přečtou stejný stav, oba ho upraví, oba zapíší zpět — druhý zápis přepíše změny prvního.
-
-```ts
-// Dvě souběžná volání:
-const store = await readStore(); // oba přečtou stejný obsah
-store[opts.key] = await encrypt(...);
-await writeStore(store); // druhý zápis přepíše první
-```
-
-**Navrhované řešení:** Serializovat zápisy přes jednoduchou frontu slibů (promise queue / mutex). Alternativně použít synchronní `fs.readFileSync`/`fs.writeFileSync` a zpracovávat IPC handlery synchronně (přes `ipcMain.on` + `event.returnValue`), nebo použít `electron-store` knihovnu.
-
-**Stav:** Přidána promise queue kolem `set/get/remove/clear/keys`, aby čtení i zápisy viděly konzistentní stav backing JSON store.
-
----
-
-## 🟡 Střední
-
-### 6. Neoznámený external HTTP request v Network pluginu — `network-main.ts:19` ✅ opraveno
-
-**Původní problém:** Funkce `probeNetwork()` posílala `HEAD https://capacitorjs.com/` při každém volání `getStatus()` a každých 10 sekund při aktivním listeneru:
-
-```ts
-await fetch('https://capacitorjs.com/', { method: 'HEAD', signal: controller.signal });
-```
-
-Problémy:
-- Neoznámený request třetí strany viditelný v síťovém provozu uživatele (privacy)
-- Tvrdě zakódovaná URL — pokud capacitorjs.com není dostupný, plugin nesprávně hlásí `connected: false` i při funkční síti
-- Timeout 3 s blokuje `getStatus()` na 3 sekundy při každém volání
-- Dokumentace `docs/network.md` se o tomto probing nezmiňuje
-
-**Stav:** Probe odstraněn. Network plugin používá pouze Electron/Chromium `net.isOnline()` a dokumentace explicitně uvádí, že se neprovádí žádný external HTTP probe.
-
----
-
-### 7. `App.getState().isActive` — Electron používá focus semantics — `app-main.ts:36`
-
-**Problém:** Implementace:
-```ts
-async getState(): Promise<{ isActive: boolean }> {
-  const win = getMainWindow();
-  return { isActive: !!win && !win.isMinimized() && win.isFocused() };
-}
-```
-
-Capacitor API dokumentace definuje `isActive` jako „whether the app is active/in the foreground." Aplikace může být viditelná a v popředí bez toho, aby měla keyboard focus (uživatel přejde do jiné aplikace a vrátí se, nebo klikne na jiné okno v jiné aplikaci). V takovém případě by `isActive` mělo být `true`, ale `isFocused()` vrátí `false`.
-
-**Stav:** Neopravovat kódem. Na desktopu je pro tento projekt záměrné mapování na focus semantics (`!isMinimized() && isFocused()`), blíže mobilnímu “aktivní aplikace” modelu. `docs/app.md` uvádí, že `isActive` znamená fokusované hlavní okno.
-
----
-
-### 8. `setUncaughtExceptionCaptureCallback` — dokumentovaný ownership hooku — `process-guardian.ts:16`
-
-**Upřesnění:** `process.setUncaughtExceptionCaptureCallback()` je exkluzivní — druhé volání vyhodí `ERR_UNCAUGHT_EXCEPTION_CAPTURE_ALREADY_SET`. V tomto projektu je ale exkluzivní ownership záměr: `process-guardian` centrálně zachytává main-process výjimky a forwarduje je rendereru přes `window.Electron.onElectronError()`.
-
-**Stav:** Neopravovat změnou kódu. Doplnit dokumentaci, že uživatelské pluginy a knihovny nemají volat `setUncaughtExceptionCaptureCallback()` a mají používat `process.on('uncaughtException', ...)`, `process.on('unhandledRejection', ...)` nebo vlastní plugin-level error reporting.
-
----
-
-### 9. Auto-launch: Linux nepodporován, ale bez varování — `auto-launch-main.ts` ✅ opraveno
-
-**Původní problém:** Electron login item settings jsou podporované na macOS a Windows. Na Linuxu je `app.setLoginItemSettings()` no-op a `app.getLoginItemSettings().openAtLogin` typicky vrací `false`. Implementace toto nedetekovala a nehlásila:
-
-```ts
-ipcMain.handle('autoLaunch:setEnabled', (_e, enabled: boolean) => {
-  app.setLoginItemSettings({ openAtLogin: enabled === true }); // no-op na Linuxu
-  return app.getLoginItemSettings().openAtLogin; // vždy false na Linuxu
-});
-```
-
-**Stav:** Linux je explicitně no-op: `isEnabled()` i `setEnabled()` vrací `false`. Dokumentace uvádí, že auto launch je podporovaný přes Electron login item settings pouze na macOS a Windows.
-
----
-
-### 10. Accelerator stringu ve `shortcuts:register` není validován — `shortcuts-main.ts:110` ✅ opraveno
-
-**Původní problém:** `ipcMain.handle('shortcuts:register', ...)` bral `accelerator` string přímo z rendereru a předával ho do `globalShortcut.register()` bez jakékoliv validace. Chybný accelerator mohl způsobit interní výjimku v Electronu.
-
-**Stav:** Přidána lehká validace typu/délky/control znaků a `globalShortcut.register()` je obalený `try/catch`. Neplatný nebo obsazený accelerator vrací `false`. Záměrně nepoužit obří whitelist regex, protože Electron accelerator syntaxe je širší a křehký regex by časem odmítal validní zkratky.
-
----
-
-### 11. Listener se nezaregistruje, pokud okno neexistuje při `attachWindowListeners()` — `app-main.ts:58-70` ✅ opraveno
-
-**Problém:** `attachWindowListeners()` volá `getMainWindow()` = `BrowserWindow.getAllWindows()[0]`. Pokud je volána před vytvořením okna, `win` je `undefined`, focus/blur handlery se nevytvoří, ale `listenCount` je inkrementován. Každé další `addListener` ho zdvojnásobuje. Při `removeListener`: `listenCount` klesne, ale real handlery nikdy nevznikly — `win.removeListener` dostane `null`.
-
-V praxi renderer běží po `app.whenReady()` a okno existuje, ale edge case zůstává.
-
-**Stav:** Ref-count listenerů je oddělený od fyzicky připojeného okna. Pokud listener existuje dřív než okno, handlery se dopojí při `browser-window-created`; pokud se okno zavře, další okno se umí připojit znovu.
-
----
-
-## 🟢 Nízké
-
-### 12. Neomezený `delivered` array v LocalNotifications — `local-notifications-main.ts:29` ✅ opraveno
-
-`delivered` roste s každou odeslanou notifikací bez horní hranice. Dlouhodobě běžící aplikace s mnoha notifikacemi akumuluje data v paměti.
-
-**Návrh:** Omezit na posledních N notifikací (např. 200), nebo je automaticky mazat po určité době.
-
-**Stav:** `delivered` se omezuje na posledních 200 notifikací.
-
----
-
-### 13. Synchronní I/O v Preferences při každém zápisu — `preferences-main.ts:31` ⏸️ ponecháno
-
-`fs.writeFileSync` blokuje event loop hlavního procesu při každém `set()`, `remove()`, `clear()`. Na pomalých discích nebo síťových mountech způsobí patrné zpoždění IPC odpovědí.
-
-**Návrh:** Debounce persist (např. 200 ms) nebo přechod na `fs.promises.writeFile` s mutex frontou (viz issue #5).
-
-**Stav:** Nechat jako future performance improvement. Aktuální synchronní write-through chování je jednoduché a předvídatelné; bez reálného performance problému se teď nebude komplikovat debounce/mutexem.
-
----
-
-### 14. Dead code při inicializaci `downloads-main.ts` — `downloads-main.ts:94` ✅ opraveno
-
-```ts
-BrowserWindow.getAllWindows().forEach(ensureSession);
-```
-
-Tato linka se volá při importu modulu (před `app.whenReady()`), kdy žádné okno neexistuje. Vždy je no-op. Skutečná registrace session probíhá přes `downloads:ensureSession` IPC z preloadu.
-
-**Stav:** No-op inicializační řádek odstraněn při opravě downloads párování.
-
----
-
-### 15. Zbytečná wrapper funkce `menuContext()` — `menu-main.ts:149` ✅ opraveno
-
-Privátní funkce `menuContext()` je jen alias pro exportovanou `createMenuContext()` bez přidané hodnoty. Přispívá k zbytečnému kogitivnímu zatížení.
-
-**Stav:** Wrapper odstraněn, volání používají přímo `createMenuContext()`.
-
----
-
-### 16. `Device.getInfo().operatingSystem` vrací `'unknown'` na Linuxu — `device-main.ts:12` ✅ zdokumentováno
-
-Capacitor Device API nepokrývá Linux v enum `OperatingSystem` (jen `ios|android|windows|mac|unknown`). Vrácení `'unknown'` je technicky korektní, ale mohlo by být zdokumentováno.
-
-**Stav:** `docs/device.md` explicitně uvádí, že Linux vrací `operatingSystem: 'unknown'`, protože Capacitor enum nemá Linux hodnotu.
-
----
-
-## 📄 Dokumentace
-
-### D1. Chybný konfigurační klíč v `docs/preferences.md:14` ✅ opraveno
-
-**Kritická chyba v dokumentaci:** Příklad v docs ukazuje:
-
-```typescript
-plugins: {
-  Electron: {
-    capacitor: {      // ← ŠPATNĚ
-      preferences: false,
-    },
-  },
-}
-```
-
-Správný klíč dle `types.ts` (`interface ElectronConfig`) a kódu `preferences-main.ts` je `capacitorPlugins`:
-
-```typescript
-plugins: {
-  Electron: {
-    capacitorPlugins: {  // ← SPRÁVNĚ
-      preferences: false,
-    },
-  },
-}
-```
-
-**Dopad:** Uživatelé kteří zkopírují příklad z docs, uvidí klíč `capacitor` tiše ignorován — Preferences plugin bude aktivní i přes nastavení `false`. Funkční chyba.
-
-**Stav:** Dokumentace používá správný klíč `capacitorPlugins`.
-
----
-
-### D2. `docs/network.md` nezmiňuje external HTTP probe — `network.md` ✅ opraveno
-
-Probe byl odstraněn. `docs/network.md` teď explicitně uvádí, že Network plugin používá `net.isOnline()` a neprovádí žádný external HTTP probe.
-
----
-
-### D3. `docs/deep-linking.md`: registrace protokolu v dev módu probíhá vždy — `deep-link-main.ts:26` ✅ zdokumentováno
-
-Docs: _"V production to happens at launch. In development it also registers but prints a warning."_  
-Kód: `app.setAsDefaultProtocolClient(scheme)` se volá bez podmínky. Toto může způsobit konflikt s jinými projekty sdílejícími stejné schéma v dev módu. Docs to uvádějí v Notes, ale výraznější varování by bylo na místě.
-
-**Stav:** `docs/deep-linking.md` nyní výrazněji upozorňuje, že dev registrace může přesouvat OS handler mezi lokálními projekty a doporučuje unikátní dev schéma.
-
----
-
-### D4. `Browser` plugin: `hasEvents: true` v electron-init.js ale žádné eventy se neodesílají ✅ zdokumentováno
-
-V `electron-init.js`: `ph('Browser', ['open','close','getSnapshot'], true)` — `true` znamená, že PluginHeaders zahrnují `addListener/removeListener`. Ale `browser-main.ts` registruje plugin bez parametru `events`:
-
-```ts
-registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close', 'getSnapshot']);
-// žádný ipcMain.on('event-add-Browser', ...) neexistuje
-```
-
-Výsledek: `Browser.addListener('browserFinished', ...)` se zaregistruje na straně rendereru, ale event nikdy nepřijde a `event-add-Browser` zpráva jde do prázdna. Komentář v kódu to zmiňuje, ale v `docs/browser.md` není zmínka — vývojáři mohou zbytečně debugovat proč event nefunguje.
-
-**Stav:** Ponecháno kvůli kompatibilitě s upstream `@capacitor/browser` API. Capacitor v8 docs uvádí `browserFinished` a `browserPageLoaded` jako Android/iOS-only eventy; Electron je přes `shell.openExternal` neumí pozorovat. `docs/browser.md` toto explicitně vysvětluje.
-
----
-
-## Souhrn
-
-| Stav | Položky |
-|------|--------|
-| ✅ Opraveno / zdokumentováno / upřesněno | #1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #14, #15, #16, D1, D2, D3, D4 |
-| ⏸️ Ponecháno jako future improvement | #13 |
-
-### Prioritizace oprav
-
-1. **Zbývá jen sledovat:** #13 (Preferences sync I/O) jako případný performance improvement, pokud se objeví reálný problém.
+- Existujici rozpracovane zmeny v `src/template-electron/src/system/shared/types.ts` a `src/template-electron/src/system/static/capacitor-api/in-app-browser-main.ts` pridavaji `modal` podporu pro InAppBrowser. Neprepisoval jsem je; pouze jsem doplnil dokumentaci.
+- Runtime OS chovani nebylo manualne testovane na macOS/Windows/Linux v playgroundu, protoze playground byl mimo rozsah zadani.

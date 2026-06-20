@@ -4,6 +4,8 @@ Built-in Electron implementation of `@capacitor/toast`. No extra configuration r
 
 Uses the Electron `Notification` API — silent, fire-and-forget, auto-dismissed after the specified duration.
 
+Official reference: [Capacitor Toast API](https://capacitorjs.com/docs/apis/toast).
+
 ---
 
 ## Setup
@@ -50,6 +52,8 @@ Toasts are shown as OS notifications using Electron's `Notification` API:
 - **Sound** — silent (`silent: true`)
 - **Position** — controlled by the OS; the `position` option is ignored
 - **Auto-dismiss** — a `setTimeout` closes the notification after 2 or 3.5 seconds. On macOS the OS may dismiss it earlier; on Windows the notification may remain in the Action Center after the auto-dismiss timeout.
+
+Supported on macOS, Windows, and Linux when Electron notifications are available. See [platform-support.md](platform-support.md).
 
 ### macOS (unsigned builds)
 

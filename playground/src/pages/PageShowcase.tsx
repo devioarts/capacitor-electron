@@ -49,7 +49,7 @@ export const PageShowcase: React.FC = () => {
     <div className="space-y-8 max-w-2xl">
 
       {/* ── Buttons ───────────────────────────────── */}
-      <Section dot="bg-indigo-400" title="Buttons — variants">
+      <Section dot="bg-indigo-400" title="Buttons - variants">
         <div className="space-y-3">
           <Row label="default">
             <Button type="primary"  onClick={() => log.info("btn", "primary")}>primary</Button>
@@ -96,7 +96,7 @@ export const PageShowcase: React.FC = () => {
               type="text"
               value={textVal}
               onChange={(e) => setTextVal(e.target.value)}
-              placeholder="Enter text…"
+              placeholder="Enter text..."
             />
           </Label>
           <Label label="Email">
@@ -122,7 +122,7 @@ export const PageShowcase: React.FC = () => {
             <TextArea
               value={taVal}
               onChange={(e) => setTaVal(e.target.value)}
-              placeholder="Multi-line content…"
+              placeholder="Multi-line content..."
               rows={3}
             />
           </Label>
@@ -138,7 +138,7 @@ export const PageShowcase: React.FC = () => {
             type="neutral"
             onClick={() => log.info("form", "snapshot", { text: textVal, email: emailVal, number: numberVal, textarea: taVal })}
           >
-            Log form values →
+            Log form values
           </Button>
         </div>
       </Section>
@@ -191,7 +191,7 @@ export const PageShowcase: React.FC = () => {
       <Divider />
 
       {/* ── Logger levels ─────────────────────────── */}
-      <Section dot="bg-amber-400" title="Logger — levels">
+      <Section dot="bg-amber-400" title="Logger - levels">
         <div className="space-y-3">
           <Row label="info">
             <Button type="primary" onClick={() => log.info("showcase", "Simple info message")}>
@@ -226,11 +226,11 @@ export const PageShowcase: React.FC = () => {
       <Divider />
 
       {/* ── Capacitor info ───────────────────────── */}
-      <Section dot="bg-rose-400" title="Capacitor — runtime info">
+      <Section dot="bg-rose-400" title="Capacitor - runtime info">
         <div className="space-y-2 mb-3">
           <KV k="platform" v={Capacitor.getPlatform()} />
           <KV k="isNative" v={String(Capacitor.isNativePlatform())} />
-          <KV k="userAgent" v={navigator.userAgent.slice(0, 60) + "…"} />
+          <KV k="userAgent" v={navigator.userAgent.slice(0, 60) + "..."} />
           <KV k="language" v={navigator.language} />
           <KV k="online" v={String(navigator.onLine)} />
         </div>
@@ -250,7 +250,7 @@ export const PageShowcase: React.FC = () => {
       <Divider />
 
       {/* ── Data types ───────────────────────────── */}
-      <Section dot="bg-teal-400" title="Logger — data types">
+      <Section dot="bg-teal-400" title="Logger - data types">
         <div className="flex flex-wrap gap-2">
           <Button type="neutral" onClick={() => log.info("types", "string", "hello world")}>string</Button>
           <Button type="neutral" onClick={() => log.info("types", "number", 3.14159)}>number</Button>
@@ -270,7 +270,7 @@ export const PageShowcase: React.FC = () => {
       <Divider />
 
       {/* ── Stress test ──────────────────────────── */}
-      <Section dot="bg-orange-400" title="Logger — stress">
+      <Section dot="bg-orange-400" title="Logger - stress">
         <div className="flex flex-wrap gap-2">
           <Button
             type="yellow"
@@ -280,7 +280,7 @@ export const PageShowcase: React.FC = () => {
               }
             }}
           >
-            burst ×10
+            burst x10
           </Button>
           <Button
             type="yellow"
@@ -291,7 +291,7 @@ export const PageShowcase: React.FC = () => {
               }
             }}
           >
-            mixed ×50
+            mixed x50
           </Button>
           <Button
             type="red"
@@ -301,7 +301,7 @@ export const PageShowcase: React.FC = () => {
               }
             }}
           >
-            errors ×5
+            errors x5
           </Button>
         </div>
       </Section>

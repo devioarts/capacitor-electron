@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import { emitPluginEvent } from '../../shared/functions';
 
 let _pending: string | null = null;
+let _launchUrl: string | null = null;
 
 function urlFromArgv(argv: string[], scheme: string): string | undefined {
   return argv.find(arg => arg.startsWith(`${scheme}://`));
@@ -21,6 +22,16 @@ function forward(url: string, getWin: () => BrowserWindow | null): void {
   emitPluginEvent('App', 'appUrlOpen', { url });
 }
 
+function rememberLaunchUrl(url: string): void {
+  if (_launchUrl === null) _launchUrl = url;
+}
+
+export function consumeLaunchUrl(): string | null {
+  const url = _launchUrl;
+  _launchUrl = null;
+  return url;
+}
+
 /** Register the protocol and event listeners. Call before app.whenReady(). */
 export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | null): void {
   if (!app.isPackaged) {
@@ -32,6 +43,7 @@ export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | n
   // macOS: system fires open-url when the app is launched via protocol URL
   app.on('open-url', (event, url) => {
     event.preventDefault();
+    if (!app.isReady()) rememberLaunchUrl(url);
     forward(url, getWin);
   });
 
@@ -58,7 +70,7 @@ export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | n
 export function flushDeepLink(scheme: string, getWin: () => BrowserWindow | null): void {
   if (process.platform === 'win32') {
     const url = urlFromArgv(process.argv, scheme);
-    if (url) { forward(url, getWin); return; }
+    if (url) { rememberLaunchUrl(url); forward(url, getWin); return; }
   }
   if (_pending) forward(_pending, getWin);
 }

@@ -7,14 +7,14 @@ import { useLogger } from "../components/logger-context";
 export const PageDialog: React.FC = () => {
   const log = useLogger();
 
-  const [alertTitle, setAlertTitle]   = useState("Upozornění");
-  const [alertMsg, setAlertMsg]       = useState("Ahoj z Electronu!");
+  const [alertTitle, setAlertTitle]   = useState("Notice");
+  const [alertMsg, setAlertMsg]       = useState("Hello from Electron!");
   const [alertBtn, setAlertBtn]       = useState("OK");
 
-  const [confirmTitle, setConfirmTitle] = useState("Potvrdit");
-  const [confirmMsg, setConfirmMsg]     = useState("Jsi si jistý?");
-  const [confirmOk, setConfirmOk]       = useState("Ano");
-  const [confirmCancel, setConfirmCancel] = useState("Zrušit");
+  const [confirmTitle, setConfirmTitle] = useState("Confirm");
+  const [confirmMsg, setConfirmMsg]     = useState("Are you sure?");
+  const [confirmOk, setConfirmOk]       = useState("Yes");
+  const [confirmCancel, setConfirmCancel] = useState("Cancel");
 
   return (
     <div className="space-y-6">
@@ -74,11 +74,11 @@ export const PageDialog: React.FC = () => {
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">
-          prompt() — na Electronu vždy vrací <code>{"{ value: '', cancelled: true }"}</code>
+          prompt() returns <code>{"{ value: '', cancelled: true }"}</code> on Electron.
         </p>
         <Button type="neutral" onClick={async () => {
           try {
-            const result = await Dialog.prompt({ title: "Zadej hodnotu", message: "Tento dialog není na Electronu podporován." });
+            const result = await Dialog.prompt({ title: "Enter a value", message: "This dialog is not supported on Electron." });
             log.info("Dialog", "prompt", result);
           } catch (e) { log.error("Dialog", "prompt", e); }
         }}>

@@ -18,10 +18,10 @@ export const PagePreferences: React.FC = () => {
         <p className="text-sm font-semibold text-slate-700">set()</p>
         <div className="flex flex-wrap gap-2">
           <Label label="Key">
-            <Input value={setKey} onChange={(e) => setSetKey(e.target.value)} placeholder="klíč" />
+            <Input value={setKey} onChange={(e) => setSetKey(e.target.value)} placeholder="key" />
           </Label>
           <Label label="Value">
-            <Input value={setValue} onChange={(e) => setSetValue(e.target.value)} placeholder="hodnota" />
+            <Input value={setValue} onChange={(e) => setSetValue(e.target.value)} placeholder="value" />
           </Label>
         </div>
         <Button type="primary" onClick={async () => {
@@ -37,7 +37,7 @@ export const PagePreferences: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">get()</p>
         <Label label="Key">
-          <Input value={getKey} onChange={(e) => setGetKey(e.target.value)} placeholder="klíč" />
+          <Input value={getKey} onChange={(e) => setGetKey(e.target.value)} placeholder="key" />
         </Label>
         <Button type="primary" onClick={async () => {
           try {
@@ -52,7 +52,7 @@ export const PagePreferences: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">remove()</p>
         <Label label="Key">
-          <Input value={removeKey} onChange={(e) => setRemoveKey(e.target.value)} placeholder="klíč" />
+          <Input value={removeKey} onChange={(e) => setRemoveKey(e.target.value)} placeholder="key" />
         </Label>
         <Button type="red" onClick={async () => {
           try {
@@ -65,7 +65,7 @@ export const PagePreferences: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Ostatní</p>
+        <p className="text-sm font-semibold text-slate-700">Other operations</p>
         <div className="flex flex-wrap gap-2">
           <Button type="neutral" onClick={async () => {
             try {
@@ -88,10 +88,10 @@ export const PagePreferences: React.FC = () => {
           <Button type="red" onClick={async () => {
             try {
               await Preferences.clear();
-              log.info("Preferences", "clear", "done — všechny klíče smazány");
+              log.info("Preferences", "clear", "done - all keys removed");
             } catch (e) { log.error("Preferences", "clear", e); }
           }}>
-            clear() ⚠
+            clear()
           </Button>
         </div>
       </section>

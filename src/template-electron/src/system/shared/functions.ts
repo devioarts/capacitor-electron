@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
+import type { WebContents } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AppConfig, ElectronConfig } from './types';
@@ -77,13 +78,58 @@ export function registerPlugin(pluginClass: string, instance: AnyRecord, methods
   }
 
   if (events && Object.keys(events).length > 0) {
-    ipcMain.on(`event-add-${pluginClass}`, (_event, type: string) => {
-      events[type]?.onAdd?.();
+    const listenerCounts = new Map<string, Map<number, number>>();
+    const webContentsById = new Map<number, WebContents>();
+
+    const totalListeners = (type: string): number => {
+      let total = 0;
+      for (const count of listenerCounts.get(type)?.values() ?? []) total += count;
+      return total;
+    };
+
+    const cleanupWebContents = (wcId: number): void => {
+      for (const [type, perWindow] of listenerCounts) {
+        const before = totalListeners(type);
+        if (!perWindow.delete(wcId)) continue;
+        if (perWindow.size === 0) listenerCounts.delete(type);
+        if (before > 0 && totalListeners(type) === 0) events[type]?.onRemove?.();
+      }
+      webContentsById.delete(wcId);
+    };
+
+    const trackWebContents = (wc: WebContents): void => {
+      if (webContentsById.has(wc.id)) return;
+      webContentsById.set(wc.id, wc);
+      wc.once('destroyed', () => cleanupWebContents(wc.id));
+    };
+
+    ipcMain.on(`event-add-${pluginClass}`, (event, type: string) => {
+      if (!events[type]) return;
+      const wc = event.sender;
+      const before = totalListeners(type);
+      let perWindow = listenerCounts.get(type);
+      if (!perWindow) {
+        perWindow = new Map<number, number>();
+        listenerCounts.set(type, perWindow);
+      }
+      trackWebContents(wc);
+      perWindow.set(wc.id, (perWindow.get(wc.id) ?? 0) + 1);
+      if (before === 0) events[type]?.onAdd?.();
     });
     for (const [type, hooks] of Object.entries(events)) {
-      if (hooks.onRemove) {
-        ipcMain.on(`event-remove-${pluginClass}-${type}`, () => hooks.onRemove!());
-      }
+      ipcMain.on(`event-remove-${pluginClass}-${type}`, (event) => {
+        const perWindow = listenerCounts.get(type);
+        if (!perWindow) return;
+
+        const before = totalListeners(type);
+        const wcId = event.sender.id;
+        const next = (perWindow.get(wcId) ?? 0) - 1;
+        if (next > 0) perWindow.set(wcId, next);
+        else perWindow.delete(wcId);
+
+        if (perWindow.size === 0) listenerCounts.delete(type);
+        if (before > 0 && totalListeners(type) === 0) hooks.onRemove?.();
+      });
     }
   }
 }

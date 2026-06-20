@@ -65,7 +65,7 @@ export const PageApp: React.FC = () => {
           type={listening ? "green" : "neutral"}
           onClick={() => setListening((v) => !v)}
         >
-          {listening ? "Events: ON ✓" : "Events: OFF"}
+          {listening ? "Events ON" : "Events OFF"}
         </Button>
 
         <Button type="red" onClick={async () => {
@@ -73,13 +73,13 @@ export const PageApp: React.FC = () => {
             await App.exitApp();
           } catch (e) { log.error("App", "exitApp", e); }
         }}>
-          exitApp() ⚠
+          exitApp()
         </Button>
       </div>
 
       {listening && (
         <p className="text-xs text-slate-500">
-          Poslouchám appStateChange / resume / pause — přepni okno nebo ho minimalizuj
+          Listening for appStateChange / resume / pause. Switch windows or minimize the app to test it.
         </p>
       )}
     </div>

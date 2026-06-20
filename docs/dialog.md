@@ -4,6 +4,8 @@ Built-in Electron implementation of `@capacitor/dialog`. No extra configuration 
 
 `alert` and `confirm` use `dialog.showMessageBox` — native OS dialogs. `prompt` is not supported and always returns a cancelled response.
 
+Official reference: [Capacitor Dialog API](https://capacitorjs.com/docs/apis/dialog).
+
 ---
 
 ## Setup
@@ -94,6 +96,8 @@ if (!cancelled) {
 Both `alert` and `confirm` block user interaction with the main window until dismissed — identical to the native modal behaviour on iOS/Android.
 
 Pressing **Escape** in a `confirm` dialog is treated as Cancel (`value: false`).
+
+`alert()` and `confirm()` are supported on macOS, Windows, and Linux. `prompt()` is a no-op stub on every desktop OS. See [platform-support.md](platform-support.md).
 
 ---
 

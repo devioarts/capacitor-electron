@@ -20,7 +20,7 @@ export default function App() {
   return (
     <LoggerProvider>
       <div className="h-screen flex flex-col bg-white text-slate-900">
-        <Header title="Electron Platform — Playground">
+        <Header title="Electron Platform - Playground">
           <LoggerSinkSwitch />
         </Header>
         <div className={`flex-1 flex overflow-hidden ${logPosition === "bottom" ? "flex-col" : "flex-row"}`}>

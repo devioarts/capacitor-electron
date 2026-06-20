@@ -23,10 +23,10 @@ export const PagePowerMonitor: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Události systémového napájení</p>
+        <p className="text-sm font-semibold text-slate-700">System power events</p>
         <p className="text-xs text-slate-500">
-          Zapni posluchač, pak zkus uspat/probudit počítač nebo zamknout obrazovku.
-          Události: <code>suspend</code>, <code>resume</code>, <code>lock-screen</code>,{" "}
+          Enable the listener, then sleep/wake the machine or lock/unlock the screen.
+          Events: <code>suspend</code>, <code>resume</code>, <code>lock-screen</code>,{" "}
           <code>unlock-screen</code>, <code>on-battery</code>, <code>on-ac</code>,{" "}
           <code>shutdown</code>.
         </p>
@@ -34,15 +34,15 @@ export const PagePowerMonitor: React.FC = () => {
           type={listening ? "green" : "neutral"}
           onClick={() => setListening((v) => !v)}
         >
-          {listening ? "Posluchač: ON ✓" : "Posluchač: OFF"}
+          {listening ? "Listener ON" : "Listener OFF"}
         </Button>
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">getSystemIdleState()</p>
         <p className="text-xs text-slate-500">
-          Vrátí stav uživatele: <code>active</code>, <code>idle</code>, <code>locked</code>{" "}
-          nebo <code>unknown</code>. Threshold určuje kolik sekund nečinnosti = idle.
+          Returns the user state: <code>active</code>, <code>idle</code>, <code>locked</code>{" "}
+          or <code>unknown</code>. The threshold controls how many inactive seconds count as idle.
         </p>
         <Label label="Idle threshold (s)">
           <Input
@@ -68,7 +68,7 @@ export const PagePowerMonitor: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">getSystemIdleTime()</p>
         <p className="text-xs text-slate-500">
-          Vrátí počet sekund od posledního vstupu uživatele (myš / klávesnice).
+          Returns the number of seconds since the last user input (mouse or keyboard).
         </p>
         <Button type="primary" onClick={async () => {
           try {
@@ -83,8 +83,8 @@ export const PagePowerMonitor: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">powerSaveBlocker</p>
         <p className="text-xs text-slate-500">
-          <code>prevent-app-suspension</code> drží aplikaci aktivní,{" "}
-          <code>prevent-display-sleep</code> navíc brání uspání displeje.
+          <code>prevent-app-suspension</code> keeps the app active.{" "}
+          <code>prevent-display-sleep</code> also prevents the display from sleeping.
         </p>
         <Label label="Blocker type">
           <select
@@ -128,7 +128,7 @@ export const PagePowerMonitor: React.FC = () => {
           </Button>
         </div>
         <p className="text-xs text-slate-500">
-          Aktivní blocker id: <code>{blockerId ?? "none"}</code>
+          Active blocker id: <code>{blockerId ?? "none"}</code>
         </p>
       </section>
     </div>

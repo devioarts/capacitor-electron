@@ -297,6 +297,8 @@ plugins: {
 
 The following `@capacitor/*` plugins are implemented natively for Electron — install the plugin and it works without any extra configuration or IPC wiring.
 
+For per-feature macOS, Windows, and Linux support, see [docs/platform-support.md](docs/platform-support.md).
+
 ### Local notifications
 
 ```typescript
@@ -350,7 +352,7 @@ App.addListener('appStateChange', ({ isActive }) => {
 });
 ```
 
-Covers `getInfo`, `getState`, `exitApp`, `minimizeApp`, `getLaunchUrl`, and events `appStateChange`, `appUrlOpen`, `resume`, `pause`. See [docs/app.md](docs/app.md).
+Covers `getInfo`, `getState`, `exitApp`, `minimizeApp`, `getLaunchUrl`, `getAppLanguage`, `toggleBackButtonHandler`, and events `appStateChange`, `appUrlOpen`, `resume`, `pause`, `appRestoredResult`, `backButton`. See [docs/app.md](docs/app.md).
 
 ### Browser, InAppBrowser & App Launcher
 
@@ -755,6 +757,8 @@ For pre-built overrides add `assets/icon.icns` or `assets/icon.ico` — they tak
 Use `plugins.Electron.builder` when you need to override electron-builder settings such as targets, signing, publish providers, artifact names, or platform metadata.
 
 See [docs/icons.md](docs/icons.md) for details on window icon vs. bundle icon, platform behavior, and the Windows icon cache.
+
+For current electron-builder platform and architecture behavior, see the [electron-builder CLI docs](https://www.electron.build/docs/cli/).
 
 ---
 

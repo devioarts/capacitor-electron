@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 // import { MyPlugin } from "@devioarts/capacitor-PLUGIN_NAME";
+import { PlatformSupport } from "./components/PlatformSupport.tsx";
 import { TabButton } from "./components/TabButton.tsx";
 import { tabGroups, tabs, type TabItem } from "./tabs.tsx";
 
@@ -20,7 +21,8 @@ export const Playground: React.FC = () => {
           />
         ))}
       </div>
-      <div className="flex-1 overflow-auto px-4 py-6">
+      <div className="flex-1 overflow-auto px-4 py-6 space-y-4">
+        {activeTab && <PlatformSupport platforms={activeTab.platforms} os={activeTab.os} notes={activeTab.supportNotes} />}
         {activeTab?.page}
       </div>
     </div>

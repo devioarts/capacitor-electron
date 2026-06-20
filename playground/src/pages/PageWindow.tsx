@@ -11,7 +11,7 @@ export const PageWindow: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Stav okna</p>
+        <p className="text-sm font-semibold text-slate-700">Window state</p>
         <div className="flex flex-wrap gap-2">
           <Button type="primary" onClick={async () => {
             try {
@@ -43,7 +43,7 @@ export const PageWindow: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Ovládání okna</p>
+        <p className="text-sm font-semibold text-slate-700">Window controls</p>
         <div className="flex flex-wrap gap-2">
           <Button type="neutral" onClick={async () => {
             try { await E.minimize(); log.info("Electron", "minimize", "done"); }
@@ -105,9 +105,9 @@ export const PageWindow: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Badge count</p>
         <p className="text-xs text-slate-500">
-          Nastaví číslo na ikoně v Docku (macOS) nebo taskbaru. 0 = odstraní badge.
+          Sets the badge number on the Dock icon (macOS) or taskbar where supported. Use 0 to clear the badge.
         </p>
-        <Label label="Počet">
+        <Label label="Count">
           <Input
             type="number"
             min="0"
@@ -147,17 +147,17 @@ export const PageWindow: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Nebezpečné akce</p>
+        <p className="text-sm font-semibold text-slate-700">Destructive actions</p>
         <div className="flex flex-wrap gap-2">
           <Button type="red" onClick={async () => {
             try { await E.reload(); log.info("Electron", "reload", "done"); }
             catch (e) { log.error("Electron", "reload", e); }
-          }}>reload() ⚠</Button>
+          }}>reload()</Button>
 
           <Button type="red" onClick={async () => {
             try { await E.quit(); }
             catch (e) { log.error("Electron", "quit", e); }
-          }}>quit() ⚠</Button>
+          }}>quit()</Button>
         </div>
       </section>
     </div>

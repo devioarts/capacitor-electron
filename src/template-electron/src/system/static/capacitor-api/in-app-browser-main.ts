@@ -107,6 +107,7 @@ function sanitizeWindowOptions(raw: unknown): BrowserWindowConstructorOptions {
     'frame',
     'fullscreen',
     'autoHideMenuBar',
+    'modal',
   ] as const;
 
   for (const key of numberKeys) {
@@ -270,12 +271,18 @@ export async function openElectronWebView(opts: AnyRecord, events: BrowserEventN
 
     const toolbarHeight = options.showToolbar === false ? 0 : TOOLBAR_HEIGHT;
     const toolbarPosition: ToolbarPosition = options.toolbarPosition === 1 ? 1 : 0;
+    const windowOptions = sanitizeWindowOptions(electron.window);
+    if (windowOptions.modal && !windowOptions.parent) {
+      const parent = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+      if (parent) windowOptions.parent = parent;
+    }
+
     const win = new BrowserWindow({
       width: 1000,
       height: 720,
       title: 'InAppBrowser',
       show: true,
-      ...sanitizeWindowOptions(electron.window),
+      ...windowOptions,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,

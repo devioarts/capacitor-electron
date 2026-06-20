@@ -18,7 +18,7 @@ export const PageScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Displeje</p>
+        <p className="text-sm font-semibold text-slate-700">Displays</p>
         <div className="flex flex-wrap gap-2">
           <Button type="primary" onClick={async () => {
             try {
@@ -59,9 +59,9 @@ export const PageScreen: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Události displeje</p>
+        <p className="text-sm font-semibold text-slate-700">Display events</p>
         <p className="text-xs text-slate-500">
-          Připoj nebo odpoj monitor, změň rozlišení / scaling — zobrazí se{" "}
+          Connect or disconnect a monitor, change resolution, or change scaling to receive{" "}
           <code>display-added</code>, <code>display-removed</code>,{" "}
           <code>display-metrics-changed</code>.
         </p>
@@ -69,7 +69,7 @@ export const PageScreen: React.FC = () => {
           type={listening ? "green" : "neutral"}
           onClick={() => setListening((v) => !v)}
         >
-          {listening ? "Posluchač: ON ✓" : "Posluchač: OFF"}
+          {listening ? "Listener ON" : "Listener OFF"}
         </Button>
       </section>
     </div>

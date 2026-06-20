@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/device`.
 
+Official reference: [Capacitor Device API](https://capacitorjs.com/docs/apis/device).
+
 ```ts
 import { Device } from '@capacitor/device';
 
@@ -22,3 +24,5 @@ const id = await Device.getId();
 `platform` is reported as `'electron'` so desktop code can distinguish it from mobile and web.
 
 `operatingSystem` follows Capacitor's enum. Electron reports `'mac'` on macOS and `'windows'` on Windows. Linux does not have a dedicated Capacitor enum value, so it is reported as `'unknown'`; use `platform === 'electron'` and `model` / `osVersion` for Linux-specific diagnostics.
+
+Supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).

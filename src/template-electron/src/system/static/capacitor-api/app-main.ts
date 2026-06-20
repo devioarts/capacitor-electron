@@ -1,6 +1,7 @@
 // Electron implementation of @capacitor/app
 import { app, BrowserWindow } from 'electron';
 import { registerPlugin, emitPluginEvent, loadConfig, type AnyRecord, type EventHooks } from '../../shared/functions';
+import { consumeLaunchUrl } from '../electron-api/deep-link-main';
 
 function getMainWindow(): BrowserWindow | undefined {
   return BrowserWindow.getAllWindows()[0];
@@ -13,6 +14,8 @@ function parseLaunchUrl(): string | null {
   // Intentionally NOT falling back to webContents.getURL() — getLaunchUrl() must return null
   // on a normal launch (no deep link), matching Capacitor's documented behaviour.
 }
+
+let fallbackLaunchUrlConsumed = false;
 
 // ── Plugin class ──────────────────────────────────────────────────────────────
 
@@ -42,9 +45,17 @@ class App {
   async minimizeApp(): Promise<void> { getMainWindow()?.minimize(); }
 
   async getLaunchUrl(): Promise<{ url: string } | null> {
-    const url = parseLaunchUrl();
+    const url = consumeLaunchUrl() ?? (fallbackLaunchUrlConsumed ? null : parseLaunchUrl());
+    fallbackLaunchUrlConsumed = true;
     return url ? { url } : null;
   }
+
+  async getAppLanguage(): Promise<{ value: string }> {
+    const tag = app.getLocale() || Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+    return { value: tag.split(/[-_]/)[0] || tag };
+  }
+
+  async toggleBackButtonHandler(): Promise<void> {}
 }
 
 // ── Window event hooks ────────────────────────────────────────────────────────
@@ -114,12 +125,13 @@ const events: EventHooks = {
   resume:         { onAdd: attachWindowListeners, onRemove: detachWindowListeners },
   pause:          { onAdd: attachWindowListeners, onRemove: detachWindowListeners },
   appUrlOpen:     {},  // emitted from deep-link-main.ts via emitPluginEvent('App', 'appUrlOpen')
+  appRestoredResult: {}, // no-op on desktop; Android activity result restoration has no Electron equivalent
   backButton:     {},  // no-op on desktop
 };
 
 registerPlugin(
   'App',
   new App() as unknown as AnyRecord,
-  ['getInfo', 'getState', 'exitApp', 'minimizeApp', 'getLaunchUrl'],
+  ['getInfo', 'getState', 'exitApp', 'minimizeApp', 'getLaunchUrl', 'getAppLanguage', 'toggleBackButtonHandler'],
   events,
 );

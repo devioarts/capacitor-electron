@@ -6,14 +6,14 @@ import { useLogger } from "../components/logger-context";
 
 export const PageToast: React.FC = () => {
   const log = useLogger();
-  const [toastText, setToastText] = useState("Ahoj z Electronu!");
+  const [toastText, setToastText] = useState("Hello from Capacitor Electron");
 
   return (
     <div className="space-y-6">
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Toast.show()</p>
         <p className="text-xs text-slate-500">
-          Na Electronu se zobrazí jako systémové oznámení (silent). Na macOS může selhat u unsigned buildů.
+          Electron displays toast messages as silent native notifications. macOS may reject notifications from unsigned builds.
         </p>
         <Label label="Text">
           <Input value={toastText} onChange={(e) => setToastText(e.target.value)} />
@@ -25,7 +25,7 @@ export const PageToast: React.FC = () => {
               log.info("Toast", "show(short)", toastText);
             } catch (e) { log.error("Toast", "show", e); }
           }}>
-            show(short — 2s)
+            show(short - 2s)
           </Button>
 
           <Button type="neutral" onClick={async () => {
@@ -34,7 +34,7 @@ export const PageToast: React.FC = () => {
               log.info("Toast", "show(long)", toastText);
             } catch (e) { log.error("Toast", "show", e); }
           }}>
-            show(long — 3.5s)
+            show(long - 3.5s)
           </Button>
         </div>
       </section>

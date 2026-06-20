@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { AppLauncher } from "@capacitor/app-launcher";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
+import { PlatformSupport } from "../components/PlatformSupport.tsx";
 import { useLogger } from "../components/logger-context";
 
 export const PageAppLauncher: React.FC = () => {
@@ -10,9 +11,17 @@ export const PageAppLauncher: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500">
-        canOpenUrl() pouziva allowlist schemat z Electron configu, openUrl() pouziva shell.openExternal.
-      </p>
+      <PlatformSupport
+        title="Electron behavior"
+        platforms={["Electron", "iOS", "Android"]}
+        notes={
+          <>
+            Electron opens URLs through <code>shell.openExternal</code>.{" "}
+            <code>canOpenUrl()</code> checks the local allowlist only; a true result means the URL
+            is allowed, not that the operating system has a registered handler.
+          </>
+        }
+      />
       <Label label="URL">
         <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
       </Label>

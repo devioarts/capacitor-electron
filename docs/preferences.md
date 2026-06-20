@@ -4,6 +4,8 @@ Built-in Electron implementation of `@capacitor/preferences`. No extra configura
 
 Data is stored in `{userData}/CapacitorStorage/{appId}/preferences.json`. An in-memory Map serves as a write-through cache so reads never hit disk.
 
+Official reference: [Capacitor Preferences API](https://capacitorjs.com/docs/apis/preferences).
+
 If you prefer the plugin's web fallback, disable the native bridge:
 
 ```typescript
@@ -128,6 +130,8 @@ No-op.
 | Linux    | `~/.config/{appName}/CapacitorStorage/{appId}/preferences.json` |
 
 The file is created automatically on the first write.
+
+All Preferences methods are supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).
 
 ---
 

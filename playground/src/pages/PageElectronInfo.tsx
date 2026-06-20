@@ -28,7 +28,7 @@ export const PageElectronInfo: React.FC = () => {
       </div>
       {listening && (
         <p className="text-xs text-slate-500">
-          Poslouchám uncaughtException / unhandledRejection z main procesu.
+          Listening for uncaughtException / unhandledRejection events from the main process.
         </p>
       )}
     </div>

@@ -31,7 +31,7 @@ export const PageDeepLink: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Stav posluchače</p>
+        <p className="text-sm font-semibold text-slate-700">Listener state</p>
         <Button
           type={listening ? "green" : "neutral"}
           onClick={() => {
@@ -40,12 +40,12 @@ export const PageDeepLink: React.FC = () => {
             setListening((v) => !v);
           }}
         >
-          {listening ? "Listener: ON ✓" : "Listener: OFF"}
+          {listening ? "Listener ON" : "Listener OFF"}
         </Button>
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Jak otestovat deep link</p>
+        <p className="text-sm font-semibold text-slate-700">How to test a deep link</p>
         <div className="rounded bg-slate-100 p-3 space-y-2 text-sm font-mono text-slate-700">
           <p className="text-xs text-slate-500 font-sans font-medium">macOS (Terminal)</p>
           <p>open {scheme}://hello/world</p>
@@ -56,21 +56,21 @@ export const PageDeepLink: React.FC = () => {
           </div>
         </div>
         <p className="text-xs text-slate-500">
-          Schéma se registruje přes <code>app.setAsDefaultProtocolClient()</code> při startu.
-          Na macOS funguje okamžitě, na Windows vyžaduje packaged build.
+          The scheme is registered through <code>app.setAsDefaultProtocolClient()</code> on startup.
+          macOS can test this immediately; Windows usually requires a packaged build.
         </p>
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">
-          getLaunchUrl() — URL při startu aplikace
+          getLaunchUrl() - URL used to launch the app
         </p>
         <Button
           type="primary"
           onClick={async () => {
             try {
               const result = await App.getLaunchUrl();
-              log.info("App", "getLaunchUrl", result ?? "(žádná URL při startu)");
+              log.info("App", "getLaunchUrl", result ?? "(no launch URL)");
             } catch (e) {
               log.error("App", "getLaunchUrl", e);
             }
@@ -83,12 +83,12 @@ export const PageDeepLink: React.FC = () => {
       {events.length > 0 && (
         <section className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-700">Přijaté události</p>
+            <p className="text-sm font-semibold text-slate-700">Received events</p>
             <button
               className="text-xs text-slate-400 hover:text-slate-600"
               onClick={() => setEvents([])}
             >
-              Vymazat
+              Clear
             </button>
           </div>
           <div className="space-y-1">

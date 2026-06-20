@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/file-transfer`.
 
+Official reference: [Capacitor File Transfer API](https://capacitorjs.com/docs/apis/file-transfer).
+
 ```ts
 import { FileTransfer } from '@capacitor/file-transfer';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -27,3 +29,5 @@ await FileTransfer.downloadFile({
 | `addListener('progress', cb)` | Receives `{ type, url, bytes, contentLength, lengthComputable }`. |
 
 `path` should be an absolute path or `file://` URL. Use `Filesystem.getUri()` first when you want Capacitor-style directory resolution.
+
+Supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).

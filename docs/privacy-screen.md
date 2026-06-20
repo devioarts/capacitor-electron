@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/privacy-screen`.
 
+Official reference: [Capacitor Privacy Screen API](https://capacitorjs.com/docs/apis/privacy-screen).
+
 ```ts
 import { PrivacyScreen } from '@capacitor/privacy-screen';
 
@@ -21,3 +23,5 @@ This is a useful mitigation but not a universal guarantee:
 - Electron cannot exactly reproduce Android `FLAG_SECURE` or iOS app-switcher snapshots.
 
 Use it for sensitive desktop screens, but keep server-side authorization and data minimization in place.
+
+Supported on macOS, Windows, and Linux with OS/window-manager limitations. See [platform-support.md](platform-support.md).

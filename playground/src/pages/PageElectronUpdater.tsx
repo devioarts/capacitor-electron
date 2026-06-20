@@ -26,7 +26,7 @@ export const PageElectronUpdater: React.FC = () => {
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-500">
-        Updater calls jsou no-op v dev režimu, pokud neni <code>app.autoUpdater.enabled</code> aktivni v packaged buildu.
+        Updater calls are no-ops in development unless <code>app.autoUpdater.enabled</code> is active in a packaged build.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="neutral" onClick={async () => {

@@ -10,7 +10,7 @@ export const PageFilesystem: React.FC = () => {
 
   const [dir, setDir]         = useState("DATA");
   const [path, setPath]       = useState("cap-electron-test/hello.txt");
-  const [content, setContent] = useState("Ahoj z Electronu!");
+  const [content, setContent] = useState("Hello from Electron!");
   const [encoding, setEncoding] = useState("utf8");
 
   const [fromPath, setFromPath]  = useState("cap-electron-test/hello.txt");
@@ -23,7 +23,7 @@ export const PageFilesystem: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Společné parametry</p>
+        <p className="text-sm font-semibold text-slate-700">Shared parameters</p>
         <div className="flex flex-wrap gap-2">
           <Label label="Directory">
             <select
@@ -37,7 +37,7 @@ export const PageFilesystem: React.FC = () => {
             </select>
           </Label>
           <Label label="Path">
-            <Input value={path} onChange={(e) => setPath(e.target.value)} placeholder="relativní cesta" />
+            <Input value={path} onChange={(e) => setPath(e.target.value)} placeholder="relative path" />
           </Label>
           <Label label="Encoding">
             <select
@@ -55,12 +55,12 @@ export const PageFilesystem: React.FC = () => {
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">writeFile() / appendFile()</p>
-        <Label label="Obsah">
+        <Label label="Content">
           <TextArea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={3}
-            placeholder="obsah souboru"
+            placeholder="file content"
           />
         </Label>
         <div className="flex flex-wrap gap-2">
@@ -141,8 +141,8 @@ export const PageFilesystem: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Adresáře (mkdir / rmdir / readdir)</p>
-        <Label label="Cesta adresáře">
+        <p className="text-sm font-semibold text-slate-700">Directories (mkdir / rmdir / readdir)</p>
+        <Label label="Directory path">
           <Input value={dirPath} onChange={(e) => setDirPath(e.target.value)} />
         </Label>
         <div className="flex flex-wrap gap-2">
@@ -178,10 +178,10 @@ export const PageFilesystem: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">rename() / copy()</p>
         <div className="flex flex-wrap gap-2">
-          <Label label="Z (from)">
+          <Label label="From">
             <Input value={fromPath} onChange={(e) => setFromPath(e.target.value)} />
           </Label>
-          <Label label="Do (to)">
+          <Label label="To">
             <Input value={toPath} onChange={(e) => setToPath(e.target.value)} />
           </Label>
         </div>

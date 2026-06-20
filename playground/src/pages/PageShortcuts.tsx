@@ -22,23 +22,23 @@ export const PageShortcuts: React.FC = () => {
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Poslouchání zkratek</p>
+        <p className="text-sm font-semibold text-slate-700">Shortcut listener</p>
         <p className="text-xs text-slate-500">
-          Nejdříve zapni posluchač, pak zaregistruj zkratku a stiskni ji.
+          Enable the listener, register a shortcut, then press the accelerator.
         </p>
         <Button
           type={listening ? "green" : "neutral"}
           onClick={() => setListening((v) => !v)}
         >
-          {listening ? "Posluchač: ON ✓" : "Posluchač: OFF"}
+          {listening ? "Listener ON" : "Listener OFF"}
         </Button>
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">registerShortcut()</p>
         <p className="text-xs text-slate-500">
-          Zkratky akcelerátory: <code>CmdOrCtrl</code>, <code>Alt</code>, <code>Shift</code>,
-          <code>Super</code> + klávesa. Např. <code>CmdOrCtrl+Shift+K</code>.
+          Accelerator examples: <code>CmdOrCtrl</code>, <code>Alt</code>, <code>Shift</code>,
+          <code>Super</code> plus a key, such as <code>CmdOrCtrl+Shift+K</code>.
         </p>
         <div className="flex flex-wrap gap-2">
           <Label label="Accelerator">
@@ -86,7 +86,7 @@ export const PageShortcuts: React.FC = () => {
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Rychlé testy</p>
+        <p className="text-sm font-semibold text-slate-700">Quick tests</p>
         <div className="flex flex-wrap gap-2">
           <Button type="neutral" onClick={async () => {
             const ok = await window.Electron.registerShortcut("CmdOrCtrl+Shift+1", "test-1");
@@ -107,7 +107,7 @@ export const PageShortcuts: React.FC = () => {
             await window.Electron.unregisterShortcut("CmdOrCtrl+Shift+2");
             log.info("Shortcuts", "unregistered", "CmdOrCtrl+Shift+1, CmdOrCtrl+Shift+2");
           }}>
-            Unregister oba
+            Unregister both
           </Button>
         </div>
       </section>

@@ -2,6 +2,8 @@
 
 Electron implementation of `@capacitor/clipboard`.
 
+Official reference: [Capacitor Clipboard API](https://capacitorjs.com/docs/apis/clipboard).
+
 ```ts
 import { Clipboard } from '@capacitor/clipboard';
 
@@ -19,3 +21,5 @@ const { value, type } = await Clipboard.read();
 | `read()` | Returns `{ value, type }`; images are returned as PNG data URLs. |
 
 `label` is accepted by the upstream Capacitor type but ignored on Electron because desktop clipboards do not have Android-style user-visible labels.
+
+Supported on macOS, Windows, and Linux. See [platform-support.md](platform-support.md).

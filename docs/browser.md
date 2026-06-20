@@ -2,6 +2,8 @@
 
 Built-in Electron implementations of `@capacitor/browser`, `@capacitor/inappbrowser`, and `@capacitor/app-launcher`.
 
+Official references: [Capacitor Browser API](https://capacitorjs.com/docs/apis/browser), [Capacitor App Launcher API](https://capacitorjs.com/docs/apis/app-launcher), [Capacitor InAppBrowser API](https://capacitorjs.com/docs/apis/inappbrowser), and Electron [shell](https://electronjs.org/docs/latest/api/shell).
+
 - `Browser.open()` accepts only `http://` and `https://` and opens an Electron-owned browser window.
 - `InAppBrowser.openInExternalBrowser()` and `openInSystemBrowser()` use Electron `shell.openExternal()`.
 - `InAppBrowser.openInWebView()` opens an Electron-owned browser window with events.
@@ -141,6 +143,8 @@ Rejected schemes return `{ completed: false }` without throwing. Script-like sch
 ## Platform behaviour
 
 `Browser.open()` uses an Electron-owned window. `InAppBrowser.openInExternalBrowser()`, `InAppBrowser.openInSystemBrowser()`, and AppLauncher external handoffs use `shell.openExternal()`.
+
+All Browser and AppLauncher methods are available on macOS, Windows, and Linux. `canOpenUrl()` is partial on every OS because Electron does not expose a reliable cross-platform installed-app query. See [platform-support.md](platform-support.md).
 
 ---
 

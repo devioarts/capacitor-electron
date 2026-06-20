@@ -26,7 +26,7 @@ plugins: {
 },
 ```
 
-See the [electron-builder publish docs](https://www.electron.build/configuration/publish) for S3, generic HTTP server, and other providers.
+See the [electron-builder publish docs](https://www.electron.build/docs/publish/) for S3, generic HTTP server, and other providers.
 
 ### 2. Enable the updater in `capacitor.config.ts`
 
