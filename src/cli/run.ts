@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execFileSync, execSync, spawn, type ChildProcess } from 'child_process';
+import { execFileSync, spawn, type ChildProcess } from 'child_process';
 import { detectPackageManager } from './pm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -103,10 +103,31 @@ function quoteWindowsArg(value: string): string {
   return `"${escaped}"`;
 }
 
-// On Windows, npm/pnpm/yarn are usually .cmd shims. Node spawn() cannot execute
-// those directly without a shell, but spawn(..., { shell: true, args }) triggers
-// DEP0190 on Node 24 because args are concatenated by the shell. Route only bare
-// commands through cmd.exe explicitly so .cmd resolution works without shell:true.
+function findNpmCli(): string | null {
+  const candidates = [
+    process.env['npm_execpath'],
+    path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    path.join(path.dirname(process.execPath), '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ].filter((p): p is string => typeof p === 'string' && p.endsWith('npm-cli.js'));
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+function npmCommand(args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
+  const npmCli = findNpmCli();
+  if (npmCli) return { cmd: process.execPath, args: [npmCli, ...args] };
+  if (process.platform === 'win32') return windowsShellCommand('npm', args, env);
+  return { cmd: 'npm', args };
+}
+
+// On Windows, pnpm/yarn/bun may be .cmd shims. Node spawn() cannot execute those
+// directly without a shell, but spawn(..., { shell: true, args }) triggers DEP0190
+// on Node 24. npm is handled above via npm-cli.js to avoid cmd.exe and its
+// "Terminate batch job" Ctrl+C prompt; this wrapper is only a fallback for other
+// bare package-manager commands.
 function windowsShellCommand(cmd: string, args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
   return {
     cmd: env['ComSpec'] ?? env['COMSPEC'] ?? 'cmd.exe',
@@ -115,11 +136,17 @@ function windowsShellCommand(cmd: string, args: string[], env: NodeJS.ProcessEnv
 }
 
 function spawnTarget(cmd: string, args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
+  if (cmd === 'npm') return npmCommand(args, env);
   if (process.platform !== 'win32') return { cmd, args };
   // Absolute/relative paths, including process.execPath and electron/cli.js, are
   // real executables or scripts and should not be re-wrapped through cmd.exe.
   if (path.isAbsolute(cmd) || cmd.includes('/') || cmd.includes('\\')) return { cmd, args };
   return windowsShellCommand(cmd, args, env);
+}
+
+function runNpmScript(script: string, cwd: string): void {
+  const target = npmCommand(['run', script], process.env);
+  execFileSync(target.cmd, target.args, { cwd, stdio: 'inherit' });
 }
 
 // Spawn in its own process group so we can kill the whole tree later.
@@ -157,7 +184,7 @@ if (!devRunning) {
 // ── 2. Electron initial build + watch ─────────────────────────────────────────
 
 try {
-  execSync('npm run build', { cwd: electronDir, stdio: 'inherit' });
+  runNpmScript('build', electronDir);
 } catch {
   console.error('[cap-electron] Electron source compilation failed.');
   await exitCleanly(1);

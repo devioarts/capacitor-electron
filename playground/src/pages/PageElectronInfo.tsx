@@ -28,11 +28,11 @@ export const PageElectronInfo: React.FC = () => {
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Bridge capabilities</p>
         <p className="text-xs text-slate-500">
-          Optional bridges are activated by config; their presence confirms the feature is wired up.
+          Renderer API availability. Some APIs remain present as no-ops when their native feature is disabled.
         </p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { label: "updater bridge", active: hasUpdater, note: "app.autoUpdater.enabled" },
+            { label: "updater API", active: hasUpdater, note: "no-op unless packaged and app.autoUpdater.enabled" },
             { label: "onDeepLink bridge", active: hasDeepLink, note: "app.deepLinkingScheme" },
             { label: "dialogs", active: hasBridge && typeof electron?.dialogs !== "undefined", note: "always available in Electron" },
             { label: "secureStorage", active: hasBridge && typeof electron?.secureStorage !== "undefined", note: "always available in Electron" },

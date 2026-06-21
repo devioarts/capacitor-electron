@@ -4,7 +4,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,16 +63,35 @@ function killUnix(): void {
 function killWindows(): void {
   let raw = '';
   try {
-    raw = execSync(
-      `wmic process where "CommandLine like '%${capacitorRoot.replace(/\\/g, '\\\\')}%'" get ProcessId /format:value`,
-      { encoding: 'utf-8' }
-    );
+    // wmic is absent on many current Windows installs. PowerShell + CIM is the
+    // supported replacement and lets us inspect CommandLine without shell
+    // interpolation of the project path.
+    raw = execFileSync('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-Command',
+      `
+param([string]$Root, [int]$SelfPid)
+$CurrentPid = $PID
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.CommandLine -and
+    $_.ProcessId -ne $SelfPid -and
+    $_.ProcessId -ne $CurrentPid -and
+    $_.CommandLine.IndexOf($Root, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+  } |
+  ForEach-Object { $_.ProcessId }
+`.trim(),
+      capacitorRoot,
+      String(selfPid),
+    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch { /* ignore */ }
 
   const pids = raw
     .split('\n')
-    .filter((l) => l.startsWith('ProcessId='))
-    .map((l) => parseInt(l.split('=')[1] ?? ''))
+    .map((l) => parseInt(l.trim(), 10))
     .filter((pid) => pid > 0 && pid !== selfPid && !isNaN(pid));
 
   if (pids.length === 0) {
@@ -83,7 +102,7 @@ function killWindows(): void {
   let killed = 0;
   for (const pid of pids) {
     try {
-      execSync(`taskkill /PID ${pid} /F`);
+      execFileSync('taskkill.exe', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' });
       console.log(`  ✓  killed pid ${pid}`);
       killed++;
     } catch { /* already gone */ }

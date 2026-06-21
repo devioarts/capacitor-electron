@@ -200,6 +200,12 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |
 | `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
 | `app.autoUpdater` | object | — | `electron-updater` settings |
+| `app.autoUpdater.enabled` | `boolean` | `false` | Enable `electron-updater`; only active in packaged production builds |
+| `app.autoUpdater.channel` | `'latest' \| 'beta' \| 'alpha'` | `'latest'` | Update channel to follow |
+| `app.autoUpdater.autoDownload` | `boolean` | `false` | Automatically download an update after it is found |
+| `app.autoUpdater.autoInstallOnQuit` | `boolean` | `true` | Install a downloaded update when the app quits |
+| `app.autoUpdater.allowPrerelease` | `boolean` | `false` | Include prerelease versions |
+| `app.autoUpdater.allowDowngrade` | `boolean` | `false` | Allow installing an older version |
 | `app.security.secureStorageKeys` | `'plain' \| 'hashed'` | `'plain'` | Store secureStorage JSON keys as original names or deterministic hashes |
 
 See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), [in-app browser](docs/in-app-browser.md), and [auto-updater](docs/auto-updater.md).
