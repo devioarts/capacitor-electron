@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Local Notifications scheduling and events.
 import React, { useEffect, useState } from "react";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Button } from "../components/Button.tsx";

@@ -1,3 +1,4 @@
+// Playground page for exercising Electron global shortcut registration and events.
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

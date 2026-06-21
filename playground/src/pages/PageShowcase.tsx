@@ -1,3 +1,4 @@
+// Playground page for checking shared UI controls and logger behavior.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, TextArea, Label } from "../components/Input.tsx";

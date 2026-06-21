@@ -1,3 +1,4 @@
+// Playground page for exercising encrypted key/value storage on Electron.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

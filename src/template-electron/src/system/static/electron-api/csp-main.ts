@@ -1,3 +1,4 @@
+// Content-Security-Policy setup for dev, production file mode, and production server mode.
 import { session } from 'electron';
 import type { ElectronConfig } from '../../shared/types';
 

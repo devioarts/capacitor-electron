@@ -1,3 +1,4 @@
+// Playground page for exercising native Electron open, save, message, and error dialogs.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

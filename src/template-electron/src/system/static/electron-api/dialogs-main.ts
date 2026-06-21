@@ -1,3 +1,4 @@
+// window.Electron.dialogs bridge around Electron's native dialog APIs.
 import { BrowserWindow, dialog, type IpcMainInvokeEvent } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

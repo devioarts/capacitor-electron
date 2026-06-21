@@ -1,3 +1,4 @@
+// Electron implementation of @capacitor/local-notifications using native Notification objects.
 import { Notification, BrowserWindow, app } from 'electron';
 import { emitPluginEvent, registerPlugin, type AnyRecord } from '../../shared/functions';
 

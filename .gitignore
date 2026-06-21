@@ -6,3 +6,6 @@ template-electron.tar.gz
 .DS_Store
 .idea/
 todo/
+docs_internal/
+playwright-report/
+test-results/

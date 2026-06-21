@@ -1,3 +1,4 @@
+// window.Electron.nativeTheme bridge for reading and controlling Electron theme state.
 import { BrowserWindow, nativeTheme } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

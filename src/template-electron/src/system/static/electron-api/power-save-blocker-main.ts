@@ -1,3 +1,4 @@
+// window.Electron powerSaveBlocker bridge with small validation around blocker ids and types.
 import { powerSaveBlocker } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 import type { PowerSaveBlockerType } from '../../shared/types';

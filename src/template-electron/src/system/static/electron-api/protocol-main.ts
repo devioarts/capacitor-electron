@@ -1,3 +1,4 @@
+// Custom protocol and shell.openExternal bridge with scheme allowlist validation.
 import { app, protocol, shell } from 'electron';
 import { loadConfig, trustedIpcHandle } from '../../shared/functions';
 

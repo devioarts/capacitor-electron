@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor App Launcher URL policy on Electron.
 import React, { useState } from "react";
 import { AppLauncher } from "@capacitor/app-launcher";
 import { Button } from "../components/Button.tsx";

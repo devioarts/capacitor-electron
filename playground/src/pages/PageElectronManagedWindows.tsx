@@ -1,3 +1,4 @@
+// Playground page for exercising trusted app windows and untrusted external managed windows.
 import React, { useState } from "react";
 import type { ManagedWindowInfo } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";
@@ -6,6 +7,8 @@ import { useLogger } from "../components/logger-context";
 
 export const PageElectronManagedWindows: React.FC = () => {
   const log = useLogger();
+  const [targetMode, setTargetMode] = useState<"appPath" | "url">("appPath");
+  const [appPath, setAppPath] = useState("#/");
   const [url, setUrl] = useState("https://capacitorjs.com/");
   const [title, setTitle] = useState("Managed test window");
   const [windows, setWindows] = useState<ManagedWindowInfo[]>([]);
@@ -24,15 +27,33 @@ export const PageElectronManagedWindows: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button type={targetMode === "appPath" ? "primary" : "neutral"} onClick={() => setTargetMode("appPath")}>
+          Internal appPath
+        </Button>
+        <Button type={targetMode === "url" ? "primary" : "neutral"} onClick={() => setTargetMode("url")}>
+          External URL
+        </Button>
+      </div>
+
       <div className="grid gap-2 md:grid-cols-2">
-        <Label label="Window URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} /></Label>
+        {targetMode === "appPath" ? (
+          <Label label="App route">
+            <Input value={appPath} onChange={(e) => setAppPath(e.target.value)} placeholder="#/" />
+          </Label>
+        ) : (
+          <Label label="Window URL">
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} />
+          </Label>
+        )}
         <Label label="Title"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Label>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={async () => {
           try {
-            const created = await window.Electron.windows.create({ url, title, width: 900, height: 700 });
+            const target = targetMode === "appPath" ? { appPath } : { url };
+            const created = await window.Electron.windows.create({ ...target, title, width: 900, height: 700 });
             setWindows((prev) => [...prev.filter((w) => w.id !== created.id), created]);
             setSelectedId(created.id);
             log.info("Windows", "create", created);
@@ -41,12 +62,14 @@ export const PageElectronManagedWindows: React.FC = () => {
           create()
         </Button>
         <Button type="neutral" onClick={refreshList}>list()</Button>
-        <Button type="neutral" onClick={async () => {
-          try { await window.Electron.windows.openExternal(url); log.info("Windows", "openExternal", url); }
-          catch (e) { log.error("Windows", "openExternal", e); }
-        }}>
-          openExternal()
-        </Button>
+        {targetMode === "url" && (
+          <Button type="neutral" onClick={async () => {
+            try { await window.Electron.windows.openExternal(url); log.info("Windows", "openExternal", url); }
+            catch (e) { log.error("Windows", "openExternal", e); }
+          }}>
+            openExternal()
+          </Button>
+        )}
       </div>
 
       {windows.length > 0 && (

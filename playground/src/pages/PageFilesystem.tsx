@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Filesystem CRUD and URI operations.
 import React, { useState } from "react";
 import { Filesystem } from "@capacitor/filesystem";
 import { Button } from "../components/Button.tsx";

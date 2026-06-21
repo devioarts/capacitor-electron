@@ -1,3 +1,4 @@
+// React logger context shared by pages and the logger panel.
 import React from "react";
 
 export type LoggerSink = "panel" | "console" | "both";

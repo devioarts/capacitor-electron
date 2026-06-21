@@ -1,3 +1,4 @@
+// Public template-system exports used by generated Electron plugin code.
 export * from './system/shared/types';
 export * from './system/shared/functions';
 export { setupUpdater } from './system/static/electron-api/updater-main';

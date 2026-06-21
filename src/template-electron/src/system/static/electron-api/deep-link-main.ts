@@ -1,3 +1,4 @@
+// Deep-link registration, cold-start URL capture, and renderer/App plugin event delivery.
 import { app, BrowserWindow } from 'electron';
 import { emitPluginEvent } from '../../shared/functions';
 

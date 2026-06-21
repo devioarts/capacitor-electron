@@ -1,3 +1,4 @@
+// Playground page for inspecting the Electron bridge and main-process error events.
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

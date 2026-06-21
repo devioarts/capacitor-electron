@@ -1,3 +1,4 @@
+// Playground page for inspecting Capacitor runtime/platform state.
 import React from "react";
 import { Capacitor } from "@capacitor/core";
 import { Button } from "../components/Button.tsx";

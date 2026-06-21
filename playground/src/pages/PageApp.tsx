@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor App lifecycle and metadata APIs.
 import React, { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Button } from "../components/Button.tsx";

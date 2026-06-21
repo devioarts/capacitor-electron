@@ -1,3 +1,4 @@
+// Shared Filesystem option constants for playground file operation forms.
 export const DIRECTORIES = [
   { value: '',                label: '(absolute path)' },
   { value: 'DOCUMENTS',      label: 'DOCUMENTS' },

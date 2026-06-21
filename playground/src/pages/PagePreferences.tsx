@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Preferences persistence on Electron.
 import React, { useState } from "react";
 import { Preferences } from "@capacitor/preferences";
 import { Button } from "../components/Button.tsx";

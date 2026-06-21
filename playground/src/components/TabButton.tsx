@@ -1,3 +1,4 @@
+// Tab selector button used by the playground navigation.
 import React from "react";
 
 export const TabButton: React.FC<React.PropsWithChildren<{

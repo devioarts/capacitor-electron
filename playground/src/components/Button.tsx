@@ -1,3 +1,4 @@
+// Shared playground button component with the small set of visual action styles.
 import React from "react";
 
 export const Button: React.FC<React.PropsWithChildren<{

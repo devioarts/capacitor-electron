@@ -1,3 +1,4 @@
+// Loads the static electron-init.js payload so CLI copy/update code can inject it into web builds.
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// cap-electron command dispatcher. Keeps each subcommand in its own file while exposing one bin.
 import { execFileSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';

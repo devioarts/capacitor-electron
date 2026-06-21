@@ -1,3 +1,4 @@
+// Preload bridge that exposes the safe window.Electron desktop API to renderer code.
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent, ContextMenuTarget, ShowContextMenuOptions } from '../../shared/types';
 

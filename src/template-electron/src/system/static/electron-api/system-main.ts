@@ -1,3 +1,4 @@
+// Core window/app controls exposed as top-level window.Electron methods.
 import { app, BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

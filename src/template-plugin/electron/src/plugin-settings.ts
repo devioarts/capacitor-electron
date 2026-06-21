@@ -1,3 +1,4 @@
+// Example Electron plugin descriptor consumed by cap-electron sync code generation.
 import type { PluginSettings } from '@devioarts/capacitor-electron';
 
 export const pluginSettings: PluginSettings = {

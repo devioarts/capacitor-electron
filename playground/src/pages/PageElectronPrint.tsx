@@ -1,3 +1,4 @@
+// Playground page for exercising Electron printing and print-to-PDF options.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

@@ -1,3 +1,4 @@
+// Playground page for exercising native app, context, Dock, and tray menu events.
 import React, { useEffect } from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

@@ -1,3 +1,4 @@
+// Main-process provider for renderer-side switches that choose native vs web Capacitor implementations.
 import { loadConfig, trustedIpcOn } from '../../shared/functions';
 
 type BuiltinCapacitorConfig = {

@@ -1,3 +1,4 @@
+// Playground page for exercising Electron screen/display queries and events.
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

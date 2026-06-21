@@ -1,3 +1,4 @@
+// Main-process entry point for the generated Electron app template.
 import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';

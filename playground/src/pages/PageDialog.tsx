@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Dialog alert, confirm, and prompt behavior.
 import React, { useState } from "react";
 import { Dialog } from "@capacitor/dialog";
 import { Button } from "../components/Button.tsx";

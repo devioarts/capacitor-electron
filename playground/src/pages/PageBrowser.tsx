@@ -1,3 +1,4 @@
+// Playground page for exercising the Capacitor Browser window implementation.
 import React, { useEffect, useState } from "react";
 import { Browser } from "@capacitor/browser";
 import { Button } from "../components/Button.tsx";

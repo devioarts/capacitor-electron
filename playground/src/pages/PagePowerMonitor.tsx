@@ -1,3 +1,4 @@
+// Playground page for exercising Electron power monitor and power save blocker APIs.
 import React, { useEffect, useState } from "react";
 import type { PowerSaveBlockerType } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";

@@ -1,3 +1,4 @@
+// Tiny localhost-only static server used when production serveMode is "server".
 import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -1,3 +1,4 @@
+// window.Electron.downloads bridge that coordinates renderer requests with Electron DownloadItem events.
 import { BrowserWindow, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import * as path from 'path';
 import { trustedIpcHandle, trustedIpcOn } from '../../shared/functions';
@@ -14,6 +15,11 @@ type DownloadState = {
 
 const pending = new Map<string, DownloadState[]>();
 const active = new Map<string, { item: DownloadItem; state: DownloadState }>();
+
+export function downloadDoneEventType(itemState: string): DownloadState['state'] | 'done' {
+  if (itemState === 'completed' || itemState === 'cancelled' || itemState === 'interrupted') return itemState;
+  return 'done';
+}
 
 function senderWindow(e: IpcMainInvokeEvent): BrowserWindow {
   const win = BrowserWindow.fromWebContents(e.sender);
@@ -60,7 +66,7 @@ function attachDownload(win: BrowserWindow, item: DownloadItem, initial: Downloa
     state.totalBytes = item.getTotalBytes();
     state.savePath = item.getSavePath();
     active.delete(state.id);
-    emit(win, 'done', state);
+    emit(win, downloadDoneEventType(itemState), state);
   });
 }
 

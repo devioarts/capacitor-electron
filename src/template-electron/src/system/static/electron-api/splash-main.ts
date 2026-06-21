@@ -1,3 +1,4 @@
+// Splash screen helper that shows a frameless loading window until the main window is ready.
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';

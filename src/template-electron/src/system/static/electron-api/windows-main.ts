@@ -1,3 +1,4 @@
+// Managed secondary BrowserWindow bridge for trusted app routes and untrusted external URLs.
 import { BrowserWindow, shell, type BrowserWindowConstructorOptions, type IpcMainInvokeEvent } from 'electron';
 import * as path from 'path';
 import { trustedIpcHandle } from '../../shared/functions';

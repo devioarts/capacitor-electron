@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Privacy Screen content protection.
 import React from "react";
 import { PrivacyScreen } from "@capacitor/privacy-screen";
 import { Button } from "../components/Button.tsx";

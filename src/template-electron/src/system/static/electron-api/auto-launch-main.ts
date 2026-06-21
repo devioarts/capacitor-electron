@@ -1,3 +1,4 @@
+// window.Electron.autoLaunch bridge backed by Electron login item settings.
 import { app } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

@@ -1,3 +1,4 @@
+// Playground page for exercising the optional electron-updater bridge.
 import React, { useEffect } from "react";
 import type { UpdaterEventName } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";

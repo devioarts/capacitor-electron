@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor File Transfer download/upload flows.
 import React, { useEffect, useState } from "react";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";

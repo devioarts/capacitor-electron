@@ -1,3 +1,4 @@
+// window.Electron screen/display bridge plus display change event broadcasting.
 import { screen, BrowserWindow, app } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 import type { ScreenEventName } from '../../shared/types';

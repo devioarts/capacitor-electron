@@ -1,7 +1,8 @@
 // E2E smoke tests — launch the playground Electron app and verify the bridge.
 //
 // Prerequisites (run once before these tests):
-//   cd playground && npm run build && npx cap-electron sync
+//   npm run build
+//   cd playground && npx cap-electron add && npm run build
 //
 // The playground must be running in dev mode (cap-electron run / cap-electron open)
 // OR the web dist must be served another way — isDev=true so app loads from localhost:5173.
@@ -15,6 +16,40 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ELECTRON_MAIN = path.join(__dirname, '../../playground/electron/dist/main.cjs');
 const ELECTRON_CWD  = path.join(__dirname, '../../playground/electron');
+
+type CapElectronBridge = {
+  invoke: (channel: string, options?: unknown) => Promise<unknown>;
+};
+
+type ManagedWindowInfo = {
+  id: number;
+  title: string;
+  isVisible: boolean;
+  isDestroyed: boolean;
+};
+
+type ElectronBridgeForE2E = {
+  autoLaunch: {
+    isEnabled: () => Promise<boolean>;
+    getSettings: () => Promise<unknown>;
+  };
+  getAllDisplays: () => Promise<unknown[]>;
+  getPowerMonitorIdleState: (idleThreshold: number) => Promise<string>;
+  getPowerMonitorIdleTime: () => Promise<number>;
+  session: {
+    getUserAgent: () => Promise<string>;
+    resolveProxy: (url: string) => Promise<string>;
+  };
+  windows: {
+    create: (options?: unknown) => Promise<ManagedWindowInfo>;
+    list: () => Promise<ManagedWindowInfo[]>;
+    close: (id: number) => Promise<void>;
+    hide: (id: number) => Promise<void>;
+    show: (id: number) => Promise<void>;
+    setBounds: (id: number, bounds: { x: number; y: number; width: number; height: number }) => Promise<void>;
+    openExternal: (url: string) => Promise<void>;
+  };
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -176,6 +211,162 @@ test('isEncryptionAvailable() returns a boolean', async () => {
       async () => (window as unknown as { Electron: { secureStorage: { isEncryptionAvailable: () => Promise<boolean> } } }).Electron.secureStorage.isEncryptionAvailable(),
     );
     expect(typeof available).toBe('boolean');
+  } finally {
+    await app.close();
+  }
+});
+
+// ── Managed windows ───────────────────────────────────────────────────────────
+
+test('managed internal app window can be created, listed, resized, hidden, shown, and closed', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const result = await page.evaluate(async () => {
+      const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
+      const created = await Electron.windows.create({
+        appPath: '#/',
+        title: 'E2E internal managed window',
+        width: 640,
+        height: 480,
+      });
+      await Electron.windows.setBounds(created.id, { x: 40, y: 40, width: 640, height: 480 });
+      await Electron.windows.hide(created.id);
+      const hidden = (await Electron.windows.list()).find((win) => win.id === created.id);
+      await Electron.windows.show(created.id);
+      const shown = (await Electron.windows.list()).find((win) => win.id === created.id);
+      await Electron.windows.close(created.id);
+      const remaining = await Electron.windows.list();
+      return {
+        created,
+        hidden,
+        shown,
+        stillListedAfterClose: remaining.some((win) => win.id === created.id),
+      };
+    });
+
+    expect(result.created.id).toBeGreaterThan(0);
+    expect(result.hidden?.isVisible).toBe(false);
+    expect(result.shown?.isVisible).toBe(true);
+    expect(result.stillListedAfterClose).toBe(false);
+  } finally {
+    await app.close();
+  }
+});
+
+test('managed external URL windows reject unsafe URL schemes', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const errors = await page.evaluate(async () => {
+      const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
+      const attempts = [
+        Electron.windows.create({ url: 'file:///etc/passwd' }),
+        Electron.windows.create({ url: 'javascript:alert(1)' }),
+        Electron.windows.openExternal('javascript:alert(1)'),
+      ];
+      return Promise.all(attempts.map((attempt) => attempt.then(
+        () => 'resolved',
+        (error) => String((error as Error).message ?? error),
+      )));
+    });
+
+    for (const message of errors) {
+      expect(message).toContain('Unsupported external URL protocol');
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+// ── Capacitor URL policy bridges ──────────────────────────────────────────────
+
+test('Browser bridge rejects unsafe URLs and exposes null snapshot', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const result = await page.evaluate(async () => {
+      const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
+      const snapshot = await api.invoke('Browser-getSnapshot', {});
+      const rejected = await api.invoke('Browser-open', { url: 'javascript:alert(1)' }).then(
+        () => 'resolved',
+        (error) => String((error as Error).message ?? error),
+      );
+      return { snapshot, rejected };
+    });
+
+    expect(result.snapshot).toBeNull();
+    expect(result.rejected).toContain('Browser.open only supports http/https URLs');
+  } finally {
+    await app.close();
+  }
+});
+
+test('AppLauncher bridge allows declared schemes and blocks dangerous schemes', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const result = await page.evaluate(async () => {
+      const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
+      const http = await api.invoke('AppLauncher-canOpenUrl', { url: 'https://example.com/' }) as { value: boolean };
+      const declared = await api.invoke('AppLauncher-canOpenUrl', { url: 'capelectron://test' }) as { value: boolean };
+      const blocked = await api.invoke('AppLauncher-canOpenUrl', { url: 'javascript:alert(1)' }) as { value: boolean };
+      const blockedOpen = await api.invoke('AppLauncher-openUrl', { url: 'javascript:alert(1)' }) as { completed: boolean };
+      return { http, declared, blocked, blockedOpen };
+    });
+
+    expect(result.http.value).toBe(true);
+    expect(result.declared.value).toBe(true);
+    expect(result.blocked.value).toBe(false);
+    expect(result.blockedOpen.completed).toBe(false);
+  } finally {
+    await app.close();
+  }
+});
+
+// ── Stable desktop bridge smoke tests ─────────────────────────────────────────
+
+test('session bridge exposes user agent and proxy resolution', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const result = await page.evaluate(async () => {
+      const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
+      return {
+        userAgent: await Electron.session.getUserAgent(),
+        proxy: await Electron.session.resolveProxy('https://example.com/'),
+      };
+    });
+
+    expect(result.userAgent).toContain('Electron');
+    expect(typeof result.proxy).toBe('string');
+  } finally {
+    await app.close();
+  }
+});
+
+test('autoLaunch, screen, and power monitor bridges return stable value shapes', async () => {
+  const app = await launchApp();
+  try {
+    const page = await getMainPage(app);
+    const result = await page.evaluate(async () => {
+      const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
+      return {
+        autoLaunchEnabled: await Electron.autoLaunch.isEnabled(),
+        autoLaunchSettings: await Electron.autoLaunch.getSettings(),
+        displays: await Electron.getAllDisplays(),
+        idleState: await Electron.getPowerMonitorIdleState(1),
+        idleTime: await Electron.getPowerMonitorIdleTime(),
+      };
+    });
+
+    expect(typeof result.autoLaunchEnabled).toBe('boolean');
+    expect(typeof result.autoLaunchSettings).toBe('object');
+    expect(Array.isArray(result.displays)).toBe(true);
+    expect(result.displays.length).toBeGreaterThan(0);
+    expect(['active', 'idle', 'locked', 'unknown']).toContain(result.idleState);
+    expect(Number.isInteger(result.idleTime)).toBe(true);
+    expect(result.idleTime).toBeGreaterThanOrEqual(0);
   } finally {
     await app.close();
   }

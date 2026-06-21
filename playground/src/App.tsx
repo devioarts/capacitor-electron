@@ -1,3 +1,4 @@
+// Root React shell that wires the logger controls around the playground UI.
 import React from "react";
 import { LoggerProvider, LogViewer, LoggerSinkSwitch } from "./components/Logger.tsx";
 import type { LoggerPosition, LoggerSize } from "./components/Logger.tsx";

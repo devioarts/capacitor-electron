@@ -1,3 +1,4 @@
+// Playground landing page with quick runtime checks and project context.
 import React from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

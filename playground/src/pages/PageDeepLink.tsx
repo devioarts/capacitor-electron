@@ -1,3 +1,4 @@
+// Playground page for observing deep link delivery through App and Electron events.
 import React, { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Button } from "../components/Button.tsx";

@@ -1,3 +1,4 @@
+// window.Electron.print bridge for native printing and print-to-PDF generation.
 import { BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';

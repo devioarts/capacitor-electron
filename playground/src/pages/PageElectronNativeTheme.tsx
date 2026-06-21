@@ -1,3 +1,4 @@
+// Playground page for exercising Electron native theme snapshots and updates.
 import React, { useEffect } from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

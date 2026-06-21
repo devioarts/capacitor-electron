@@ -1,3 +1,4 @@
+// Window bounds/maximized-state persistence helpers for the main BrowserWindow.
 import { app, BrowserWindow, screen } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';

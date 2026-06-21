@@ -1,3 +1,4 @@
+// Central registry of playground tabs, labels, rendered pages, and platform support notes.
 import type { ReactNode } from "react";
 import type { SupportStatus } from "./components/PlatformSupport.tsx";
 import { PageHome }          from "./pages/PageHome.tsx";

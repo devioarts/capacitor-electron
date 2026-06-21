@@ -1,3 +1,4 @@
+// Shared form controls used by playground pages for consistent inputs and labels.
 import React from "react";
 
 export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (

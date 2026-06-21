@@ -1,3 +1,4 @@
+// window.Electron.session bridge scoped to the sender window's Electron session.
 import { BrowserWindow, session, type IpcMainInvokeEvent } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

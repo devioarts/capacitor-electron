@@ -1,3 +1,4 @@
+// Optional electron-updater integration exposed through window.Electron.updater.
 import { app, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { trustedIpcHandle } from '../../shared/functions';

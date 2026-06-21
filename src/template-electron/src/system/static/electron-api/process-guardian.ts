@@ -1,3 +1,4 @@
+// Main-process error guardian that forwards uncaught failures to renderer diagnostics.
 import { BrowserWindow } from 'electron';
 
 function sendToAllWindows(payload: {

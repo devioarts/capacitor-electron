@@ -1,3 +1,4 @@
+// Platform support badges shown beside each playground tab.
 import React from "react";
 
 export type SupportLevel = "supported" | "partial" | "noop" | "unsupported";

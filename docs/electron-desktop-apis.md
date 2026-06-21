@@ -4,6 +4,17 @@ Desktop-only APIs are exposed under `window.Electron.*`. They are intentionally 
 
 For per-namespace macOS, Windows, and Linux support, see [platform-support.md](platform-support.md).
 
+## Window controls
+
+```ts
+await window.Electron.minimize();
+await window.Electron.toggleMaximize();
+await window.Electron.setFullscreen(true);
+const fullscreen = await window.Electron.isFullscreen();
+```
+
+These helpers operate on the sender window. `setBadgeCount()` and `getBadgeCount()` delegate to Electron's app badge APIs, which are fully useful on macOS and platform-dependent elsewhere.
+
 ## Native dialogs
 
 ```ts
@@ -71,7 +82,7 @@ const off = window.Electron.downloads.on(event => console.log(event));
 const download = await window.Electron.downloads.start({ url: 'https://example.com/file.zip' });
 ```
 
-Download events include `started`, `updated`, and `done`. Active downloads can be paused, resumed, or cancelled by id.
+Download events include `started`, `updated`, and one final outcome event: `completed`, `cancelled`, or `interrupted`. Active downloads can be paused, resumed, or cancelled by id.
 
 ## Print and PDF
 
@@ -113,6 +124,35 @@ await window.Electron.nativeTheme.setThemeSource('system');
 ```
 
 Supports `system`, `light`, and `dark` theme sources.
+
+## Global shortcuts
+
+```ts
+const ok = await window.Electron.registerShortcut('CmdOrCtrl+Shift+K', 'open-search');
+const off = window.Electron.onShortcut(({ event }) => console.log(event));
+await window.Electron.unregisterShortcut('CmdOrCtrl+Shift+K');
+```
+
+Renderer-registered shortcuts are app-lifetime registrations backed by Electron `globalShortcut`. Registration returns `false` when the OS or another app already owns the accelerator.
+
+## Native menus
+
+```ts
+await window.Electron.showContextMenu({ data: { rowId: '42' } });
+const off = window.Electron.onMenuAction(({ source, action, data }) => console.log(source, action, data));
+```
+
+The menu templates stay in user-owned files under `electron/src/user/menu/`. Renderer code can request the configured context menu and listen for actions from app, context, Dock, and tray menus.
+
+## Power and displays
+
+```ts
+const idle = await window.Electron.getPowerMonitorIdleState(30);
+const blockerId = await window.Electron.startPowerSaveBlocker('prevent-display-sleep');
+const displays = await window.Electron.getAllDisplays();
+```
+
+Power monitor events, power save blockers, and screen/display data wrap Electron `powerMonitor`, `powerSaveBlocker`, and `screen`. Event availability can vary by operating system and desktop environment.
 
 ## Process guardian
 

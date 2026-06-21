@@ -1,3 +1,4 @@
+// window.Electron.desktopCapture bridge for enumerating screen/window capture sources.
 import { desktopCapturer } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

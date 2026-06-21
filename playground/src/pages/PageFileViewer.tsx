@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor File Viewer document and media opening.
 import React, { useState } from "react";
 import { FileViewer } from "@capacitor/file-viewer";
 import { Button } from "../components/Button.tsx";

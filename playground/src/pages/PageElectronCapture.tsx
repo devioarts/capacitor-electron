@@ -1,3 +1,4 @@
+// Playground page for exercising Electron desktop capture source enumeration.
 import React, { useState } from "react";
 import type { DesktopCaptureSource } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";

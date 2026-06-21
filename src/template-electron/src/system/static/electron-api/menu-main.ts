@@ -1,3 +1,4 @@
+// Native app/context/Dock/tray menu setup plus renderer menu action bridge.
 import { app, Menu, BrowserWindow, type MenuItemConstructorOptions } from 'electron';
 import { trustedIpcHandle, trustedIpcOn } from '../../shared/functions';
 import type { AppMenuConfig, ContextMenuTarget, ContextMenuTrigger, ElectronConfig, MenuActionSource, ShowContextMenuOptions } from '../../shared/types';

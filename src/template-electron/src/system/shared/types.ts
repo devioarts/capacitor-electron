@@ -1,3 +1,4 @@
+// Shared configuration types for the Electron template and the published package API.
 export type CspConfig = string | Record<string, string | string[]> | false;
 
 export interface AppMenuConfig {

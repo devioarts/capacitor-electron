@@ -1,3 +1,4 @@
+// Encrypted key/value storage bridge backed by Electron safeStorage and a JSON store.
 import { app, safeStorage } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';

@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Clipboard text and image operations.
 import React, { useState } from "react";
 import { Clipboard } from "@capacitor/clipboard";
 import { Button } from "../components/Button.tsx";

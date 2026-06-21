@@ -1,3 +1,4 @@
+// Injects the Capacitor Electron bootstrap script into a built web index.html file.
 import * as fs from 'fs';
 import * as path from 'path';
 import { CAP_ELECTRON_INIT_JS } from './electron-init-content.js';

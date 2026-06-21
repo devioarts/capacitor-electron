@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Toast notification behavior.
 import React, { useState } from "react";
 import { Toast } from "@capacitor/toast";
 import { Button } from "../components/Button.tsx";

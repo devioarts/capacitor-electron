@@ -1,3 +1,4 @@
+// Playground page for exercising the Capacitor Action Sheet implementation.
 import React from "react";
 import { ActionSheet, ActionSheetButtonStyle } from "@capacitor/action-sheet";
 import { Button } from "../components/Button.tsx";

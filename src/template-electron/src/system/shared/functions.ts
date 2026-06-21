@@ -1,3 +1,4 @@
+// Shared main-process utilities for trusted IPC, config loading, and Capacitor plugin registration.
 import { ipcMain, BrowserWindow } from 'electron';
 import type { IpcMainEvent, IpcMainInvokeEvent, WebContents } from 'electron';
 import * as fs from 'fs';

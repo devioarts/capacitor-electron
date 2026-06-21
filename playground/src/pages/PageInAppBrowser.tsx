@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor InAppBrowser modes and events.
 import React, { useEffect, useState } from "react";
 import {
   AndroidViewStyle,

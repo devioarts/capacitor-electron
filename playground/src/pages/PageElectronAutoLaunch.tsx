@@ -1,3 +1,4 @@
+// Playground page for exercising the Electron auto-launch bridge.
 import React from "react";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";

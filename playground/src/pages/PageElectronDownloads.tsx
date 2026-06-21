@@ -1,3 +1,4 @@
+// Playground page for exercising Electron download start, progress, and control events.
 import React, { useEffect, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

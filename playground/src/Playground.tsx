@@ -1,3 +1,4 @@
+// Tabbed playground surface that renders every Capacitor and Electron demo page.
 import React, { useState, useRef, useEffect } from "react";
 // import { MyPlugin } from "@devioarts/capacitor-PLUGIN_NAME";
 import { PlatformSupport } from "./components/PlatformSupport.tsx";

@@ -1,3 +1,4 @@
+// Playground page for exercising protocol registration and external URL opening.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

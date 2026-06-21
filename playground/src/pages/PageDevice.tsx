@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Device metadata APIs.
 import React from "react";
 import { Device } from "@capacitor/device";
 import { Button } from "../components/Button.tsx";

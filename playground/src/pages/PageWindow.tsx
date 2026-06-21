@@ -1,3 +1,4 @@
+// Playground page for exercising Electron window controls and badge APIs.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

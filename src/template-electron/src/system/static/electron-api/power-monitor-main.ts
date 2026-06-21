@@ -1,3 +1,4 @@
+// Power monitor event broadcaster and idle-state bridge for window.Electron.
 import { powerMonitor, BrowserWindow } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 import type { PowerMonitorEventName } from '../../shared/types';

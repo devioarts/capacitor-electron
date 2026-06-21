@@ -25,19 +25,19 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 
 | Command | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `add` | `npx cap add @devioarts/capacitor-electron` on a clean project → Expected: `electron/` directory created with full file structure; `capacitor.config.ts` patched; `sync` runs automatically | ✅ | 🧪 | 🧪 | |
-| `scripts` | `npx cap run @devioarts/capacitor-electron scripts` after `add` → Expected: `electron:sync`, `electron:copy`, `electron:open` added to root `package.json` without overwriting existing scripts | ✅ | 🧪 | 🧪 | |
-| `copy` | Build web app → `npx cap copy @devioarts/capacitor-electron` → Expected: `webDir` output copied to `electron/app/`; `electron-init.js` injected into `index.html` | ✅ | 🧪 | 🧪 | |
-| `update` | `npx cap sync @devioarts/capacitor-electron update` → Expected: plugin bridges in `src/generated/` regenerated; global types injected; config synced; asset paths normalised | ✅ | 🧪 | 🧪 | |
-| `sync` | `npx cap sync @devioarts/capacitor-electron` → Expected: runs `copy` then `update`; if `copy` fails, `update` still runs | ✅ | 🧪 | 🧪 | |
-| `open` / `run` (dev) | `npx cap open @devioarts/capacitor-electron` → Expected: Vite dev server starts; Electron launches pointing to dev URL; app loads in window | ⚠️ | 🧪 | 🧪 | Process cleanup on Ctrl+C may leave orphans |
+| `add` | `npx cap-electron add` on a clean project → Expected: `electron/` directory created with full file structure; `capacitor.config.ts` patched; `sync` runs automatically | ✅ | 🧪 | 🧪 | |
+| `scripts` | `npx cap-electron scripts` after `add` → Expected: `electron:sync`, `electron:copy`, and `electron:open` added to root `package.json` without overwriting existing scripts | ✅ | 🧪 | 🧪 | |
+| `copy` | Build web app → `npx cap-electron copy` → Expected: `webDir` output copied to `electron/app/`; `electron-init.js` injected into `index.html` | ✅ | 🧪 | 🧪 | |
+| `update` | `npx cap-electron update` → Expected: plugin bridges in `src/generated/` regenerated; global types injected; config synced; asset paths normalised | ✅ | 🧪 | 🧪 | |
+| `sync` | `npx cap-electron sync` → Expected: runs `copy` then `update`; if `copy` fails, `update` still runs | ✅ | 🧪 | 🧪 | |
+| `open` / `run` (dev) | `npx cap-electron open` or `npx cap-electron run` → Expected: Vite dev server starts; Electron launches pointing to dev URL; app loads in window | ⚠️ | 🧪 | 🧪 | Process cleanup on Ctrl+C may leave orphans |
 | Hot-restart on main change | While `open` running → edit `electron/dist/main.cjs` → Expected: Electron main process restarts automatically; window reloads | ✅ | ✅ | 🧪 | |
 | Renderer reload on preload change | While `open` running → edit `electron/dist/preload.cjs` → Expected: renderer window reloads automatically | ✅ | ✅ | 🧪 | |
-| `build` | `npx cap build @devioarts/capacitor-electron` → Expected: Electron sources compiled; electron-builder packages for host OS; installer artifact created in `electron/dist/` | ✅ | 🧪 | 🧪 | |
+| `build` | `npx cap-electron build` → Expected: Electron sources compiled; electron-builder packages for host OS; installer artifact created in `electron/dist/` | ✅ | 🧪 | 🧪 | |
 | `build mac` | Run on macOS → Expected: `.dmg` created | ✅ | — | — | Gatekeeper requires code signing for unsigned-build warnings |
 | `build win` | Run on Windows → Expected: NSIS `.exe` installer created | — | 🧪 | — | |
 | `build linux` | Run on Linux → Expected: AppImage (or configured target) created | — | — | 🧪 | |
-| `kill` | With a running Electron instance → `npx cap run … kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 | |
+| `kill` | With a running Electron instance → `npx cap-electron kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 | |
 | `upgrade` | On existing project → Expected: `src/system/` updated from template; `src/user/` files left intact; generated files cleaned and regenerated | ✅ | 🧪 | 🧪 | |
 | `upgrade --all` | → Expected: also updates `electron-builder.js`, `tsconfig.json`; merges template deps/scripts into `package.json` | ✅ | 🧪 | 🧪 | |
 | `restore` | After failed upgrade → Expected: system files restored from template; user files unaffected | ✅ | 🧪 | 🧪 | |
@@ -198,8 +198,9 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 
 | Feature | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `create(url)` — valid HTTPS | Managed windows → enter `https://` URL → **create()** → Expected: new `BrowserWindow` opens; appears in `list()` result | 🧪 | 🧪 | 🧪 | |
-| `create(url)` — non-HTTP rejection | Enter `file:///etc/passwd` or `javascript:alert(1)` → **create()** → Expected: error returned; no window opened | 🧪 | 🧪 | 🧪 | Security guard — non-http(s) URLs must be rejected |
+| `create({ appPath })` — internal app route | Managed windows → choose internal route mode → enter `#/settings` or `/` → **create()** → Expected: new trusted app window opens with the Electron preload bridge available | 🧪 | 🧪 | 🧪 | Use hash routes when production `serveMode` is `file` |
+| `create({ url })` — valid HTTPS | Managed windows → choose external URL mode → enter `https://` URL → **create()** → Expected: new untrusted `BrowserWindow` opens without the preload bridge; appears in `list()` result | 🧪 | 🧪 | 🧪 | |
+| `create({ url })` — non-HTTP rejection | Enter `file:///etc/passwd` or `javascript:alert(1)` in external URL mode → **create()** → Expected: error returned; no window opened | 🧪 | 🧪 | 🧪 | Security guard — non-http(s) URLs must be rejected |
 | `list()` | After creating windows → **list()** → Expected: array of `ManagedWindowInfo` with `id`, `url`, `title`, `visible` for each | 🧪 | 🧪 | 🧪 | |
 | Window selection UI | **list()** → click a row → Expected: row highlighted; per-window action buttons appear | 🧪 | 🧪 | 🧪 | |
 | `focus(id)` | Select a window → **focus()** → Expected: that window comes to foreground | 🧪 | 🧪 | 🧪 | |

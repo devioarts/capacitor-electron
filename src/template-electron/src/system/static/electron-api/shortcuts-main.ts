@@ -1,3 +1,4 @@
+// Global shortcut registration for static user shortcuts and renderer-registered shortcuts.
 import { app, globalShortcut, BrowserWindow } from 'electron';
 import { trustedIpcHandle } from '../../shared/functions';
 

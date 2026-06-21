@@ -1,3 +1,4 @@
+// Playground page for exercising Electron session cache, proxy, storage, and cookies.
 import React, { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";

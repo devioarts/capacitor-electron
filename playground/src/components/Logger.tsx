@@ -1,3 +1,4 @@
+// Visual logger panel and sink controls for API call results in the playground.
 import React, { useEffect } from "react";
 import { type LoggerSink, type LogEntry, type LoggerCtx, LoggerCtxObj, useLogger } from "./logger-context";
 

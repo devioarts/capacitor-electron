@@ -1,3 +1,4 @@
+// Package-manager detection used by CLI commands before running install/build scripts.
 import * as fs from 'fs';
 import * as path from 'path';
 

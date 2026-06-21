@@ -1,3 +1,4 @@
+// Playground page for exercising Capacitor Network status and change events.
 import React, { useEffect, useState } from "react";
 import { Network } from "@capacitor/network";
 import { Button } from "../components/Button.tsx";

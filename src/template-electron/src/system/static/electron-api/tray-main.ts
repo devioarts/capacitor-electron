@@ -1,3 +1,4 @@
+// Tray icon lifecycle and user-owned tray menu integration.
 import { app, Tray, Menu, BrowserWindow, nativeImage, type MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
