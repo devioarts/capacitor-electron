@@ -5,7 +5,6 @@ import { vi, describe, it, expect, beforeAll, beforeEach, afterAll } from 'vites
 import * as realFs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { createHash } from 'crypto';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -173,7 +172,7 @@ describe('SecureStorage persistence', () => {
 
     const storePath = path.join(tmpDir, 'CapacitorStorage', 'secure-storage.json');
     const stat = realFs.statSync(storePath);
-    // eslint-disable-next-line no-bitwise
+     
     expect(stat.mode & 0o777).toBe(0o600);
   });
 });

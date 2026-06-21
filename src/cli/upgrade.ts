@@ -154,10 +154,10 @@ function mergePackageJson(templatePkgPath: string, existingPkgPath: string): boo
     name:    existing['name']    ?? tpl['name'],
     version: existing['version'] ?? tpl['version'],
     // Merge deps: existing first so user additions are kept, template versions win for shared keys
-    dependencies:    { ...(existing['dependencies']    as Pkg ?? {}), ...(tpl['dependencies']    as Pkg ?? {}) },
-    devDependencies: { ...(existing['devDependencies'] as Pkg ?? {}), ...(tpl['devDependencies'] as Pkg ?? {}) },
+    dependencies:    { ...(existing['dependencies'] ?? {}), ...(tpl['dependencies'] ?? {}) },
+    devDependencies: { ...(existing['devDependencies'] ?? {}), ...(tpl['devDependencies'] ?? {}) },
     // Merge scripts: template wins for system scripts, user custom scripts preserved
-    scripts: { ...(existing['scripts'] as Pkg ?? {}), ...(tpl['scripts'] as Pkg ?? {}) },
+    scripts: { ...(existing['scripts'] ?? {}), ...(tpl['scripts'] ?? {}) },
   };
 
   fs.writeFileSync(existingPkgPath, JSON.stringify(merged, null, 2) + '\n');

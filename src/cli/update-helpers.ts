@@ -27,6 +27,7 @@ export function assertSafeString(value: unknown, field: string, packageName: str
     typeof value !== 'string'
     || value.length === 0
     || value.length > MAX_PLUGIN_STRING_LENGTH
+    // eslint-disable-next-line no-control-regex
     || /[\x00-\x1f\x7f]/.test(value)
   ) {
     throw new Error(`${packageName}: ${field} must be a non-empty string without control characters`);

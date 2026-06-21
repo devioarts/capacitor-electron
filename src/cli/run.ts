@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync, spawn, ChildProcess } from 'child_process';
+import { execSync, spawn, type ChildProcess } from 'child_process';
 import { detectPackageManager } from './pm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

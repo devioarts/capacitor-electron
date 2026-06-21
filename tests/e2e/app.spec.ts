@@ -40,7 +40,7 @@ async function launchApp(): Promise<ElectronApplication> {
 async function getMainPage(app: ElectronApplication): Promise<Page> {
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
-    for (const win of await app.windows()) {
+    for (const win of app.windows()) {
       try {
         await win.waitForLoadState('domcontentloaded', { timeout: 3_000 });
         const ok = await win.evaluate(() => typeof (window as unknown as { Electron: unknown }).Electron !== 'undefined').catch(() => false);

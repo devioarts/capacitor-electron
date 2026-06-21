@@ -31,7 +31,7 @@ beforeAll(async () => {
   mockGetPath.mockImplementation(() => tmpDir);
   const mod = await import('../../src/template-electron/src/system/static/capacitor-api/filesystem-main.js');
   resolvePath = mod.resolvePath;
-  Filesystem  = mod.Filesystem as never;
+  Filesystem  = mod.Filesystem;
 });
 
 afterAll(() => { realFs.rmSync(tmpDir, { recursive: true, force: true }); });
@@ -241,7 +241,7 @@ describe('Filesystem.getUri', () => {
 
   it('returns file:// URI for an absolute path', async () => {
     const p = path.join(tmpDir, 'uri.txt');
-    const result = await fs.getUri({ path: p }) as { uri: string; path: string };
+    const result = await fs.getUri({ path: p });
     expect(result.uri).toMatch(/^file:\/\//);
     expect(result.path).toBe(p);
   });

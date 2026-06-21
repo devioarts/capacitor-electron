@@ -14,7 +14,7 @@ let resetNotificationsForTesting: () => void;
 
 beforeAll(async () => {
   const mod = await import('../../src/template-electron/src/system/static/capacitor-api/local-notifications-main.js');
-  LocalNotifications = mod.LocalNotifications as never;
+  LocalNotifications = mod.LocalNotifications;
   resetNotificationsForTesting = mod.resetNotificationsForTesting;
 });
 

@@ -1,6 +1,6 @@
 // Tests for IPC trust mechanism in functions.ts (H-1 fix)
 // These are the critical security functions that gate all system IPC handlers.
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import {
   setIpcSenderCheck,
