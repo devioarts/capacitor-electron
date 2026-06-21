@@ -39,7 +39,7 @@ let devServerOurs = false; // true = we started it, false = it was already runni
 let cleaningUp = false;
 
 // Kill entire process group (pid < 0) so grandchildren (esbuild, vite) die too.
-// Falls back to child.kill() on platforms where process groups aren't supported.
+// Windows cannot signal POSIX process groups, so use taskkill /T there instead.
 function killGroup(child: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
   if (child.pid == null) return;
   if (process.platform === 'win32') {
@@ -94,14 +94,43 @@ async function exitCleanly(code: number): Promise<never> {
 process.on('SIGINT',  () => { void exitCleanly(0); });
 process.on('SIGTERM', () => { void exitCleanly(0); });
 
+function quoteWindowsArg(value: string): string {
+  if (value.length === 0) return '""';
+  const escaped = value
+    .replace(/(\\*)"/g, '$1$1\\"')
+    .replace(/\\+$/g, '$&$&');
+  return `"${escaped}"`;
+}
+
+// On Windows, npm/pnpm/yarn are usually .cmd shims. Node spawn() cannot execute
+// those directly without a shell, but spawn(..., { shell: true, args }) triggers
+// DEP0190 on Node 24 because args are concatenated by the shell. Route only bare
+// commands through cmd.exe explicitly so .cmd resolution works without shell:true.
+function windowsShellCommand(cmd: string, args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
+  return {
+    cmd: env['ComSpec'] ?? env['COMSPEC'] ?? 'cmd.exe',
+    args: ['/d', '/c', [cmd, ...args].map(quoteWindowsArg).join(' ')],
+  };
+}
+
+function spawnTarget(cmd: string, args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
+  if (process.platform !== 'win32') return { cmd, args };
+  // Absolute/relative paths, including process.execPath and electron/cli.js, are
+  // real executables or scripts and should not be re-wrapped through cmd.exe.
+  if (path.isAbsolute(cmd) || cmd.includes('/') || cmd.includes('\\')) return { cmd, args };
+  return windowsShellCommand(cmd, args, env);
+}
+
 // Spawn in its own process group so we can kill the whole tree later.
 function spawnGroup(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env): ChildProcess {
-  const child = spawn(cmd, args, {
+  const target = spawnTarget(cmd, args, env);
+  const child = spawn(target.cmd, target.args, {
     cwd,
     stdio: 'inherit',
-    detached: true,
+    // detached gives us a POSIX process group on macOS/Linux. On Windows it can
+    // open a separate console window; taskkill /T handles cleanup there instead.
+    detached: process.platform !== 'win32',
     env,
-    shell: process.platform === 'win32',
   });
   child.on('error', (err) => {
     console.error(`[cap-electron] Failed to start "${cmd}": ${err.message}`);

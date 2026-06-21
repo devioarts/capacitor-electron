@@ -18,5 +18,6 @@
 - [ ] `npm test` passes
 - [ ] `npm run lint` passes
 - [ ] `npm run typecheck` passes
+- [ ] `npm run build` passes
 - [ ] Tests added for new or changed behaviour
 - [ ] Documentation updated (if relevant)
