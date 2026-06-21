@@ -24,6 +24,9 @@ to `package.json`. Nothing else.
 | `src/system/generated/plugins-main-auto.ts` | Main-process wiring — calls `ipcMain.handle` for every method |
 
 You write the plugin class with async methods. The IPC wiring is generated for you.
+For auto-registration, the package's `./electron` export must expose a symbol with the
+same name as `pluginClass`; `cap-electron sync` imports it as
+`import { PluginClass } from 'your-plugin/electron'`.
 
 ---
 
@@ -56,7 +59,7 @@ settings files are skipped by `cap-electron sync`.
 import type { PluginSettings } from '@devioarts/capacitor-electron';
 
 export const pluginSettings: PluginSettings = {
-  // Class name — must match electron/src/index.ts AND the Capacitor plugin name
+  // Class name — must match the export from my-plugin/electron AND the Capacitor plugin name
   pluginClass: 'MyPlugin',
 
   // Methods to bridge via IPC — must match method names in your class
@@ -67,12 +70,6 @@ export const pluginSettings: PluginSettings = {
 
   // Omit to use the default (auto-register). Set false only for manual wiring.
   // autoRegister: false,
-
-  // Import statement added to the generated electron-main-auto.ts
-  imports: ["import { MyPlugin } from 'my-plugin/electron'"],
-
-  // Runs before registerPlugin() — usually just app.whenReady()
-  beforeRegister: ['await app.whenReady()'],
 
   // If your plugin reads its own section from capacitor.config (e.g. plugins.MyPlugin),
   // list the section name(s) here. cap-electron sync will copy them automatically into
@@ -103,9 +100,12 @@ export class MyPlugin {
 ```
 
 **Rules:**
+- The package's `./electron` export must export a class/function with the same name as
+  `pluginClass`. For this example, `my-plugin/electron` must export `MyPlugin`.
 - Methods must be `async`.
 - Options come as plain JSON objects — no class instances, no functions, no `undefined`.
 - Errors thrown inside a method are caught by the IPC bridge and forwarded to the renderer.
+- Auto-registered plugins are registered after `app.whenReady()`.
 
 ---
 
@@ -254,8 +254,6 @@ Add `configSections` to your `plugin-settings.ts`:
 export const pluginSettings: PluginSettings = {
   pluginClass: 'CapacitorSQLite',
   pluginMethods: ['open', 'query', 'close'],
-  imports: ["import { CapacitorSQLite } from 'capacitor-community-sqlite/electron'"],
-  beforeRegister: ['await app.whenReady()'],
 
   // Tell cap-electron sync to copy plugins.CapacitorSQLite from capacitor.config
   // into electron/capacitor.config.json.
@@ -317,12 +315,13 @@ no extra setup is needed from the app developer's side.
 | `pluginMethods` | `string[]` | ✓ | Methods to expose via IPC |
 | `pluginEvents` | `string[]` | | Events emitted to renderer |
 | `autoRegister` | `boolean` | | Default: `true`. Set `false` to skip auto-wiring. |
-| `imports` | `string[]` | | Import lines added to `plugins-main-auto.ts` |
-| `beforeRegister` | `string[]` | | Statements run before `registerPlugin()` |
 | `configSections` | `string[]` | | `capacitor.config` plugin section names to copy into `electron/capacitor.config.json` |
 
 `plugin-settings.js` is loaded with CommonJS `require()`, so publish the
 compiled settings descriptor as CJS even if the rest of your package is ESM.
+The legacy `imports` and `beforeRegister` fields are ignored. `cap-electron sync`
+always imports `{ pluginClass }` from `${packageName}/electron` and registers
+auto plugins after `app.whenReady()`.
 
 ---
 

@@ -176,14 +176,16 @@ import type { PluginSettings } from '@devioarts/capacitor-electron';
 export const pluginSettings: PluginSettings = {
   pluginClass: 'CapacitorSQLite',
   pluginMethods: ['open', 'query', 'close'],
-  imports: ["import { CapacitorSQLite } from 'capacitor-community-sqlite/electron'"],
-  beforeRegister: ['await app.whenReady()'],
 
   // cap-electron sync will copy plugins.CapacitorSQLite from capacitor.config
   // into electron/capacitor.config.json automatically.
   configSections: ['CapacitorSQLite'],
 };
 ```
+
+For auto-registered npm plugins, `cap-electron sync` imports `{ pluginClass }`
+from `${packageName}/electron` and registers plugins after `app.whenReady()`.
+Legacy `imports` and `beforeRegister` settings are ignored.
 
 The app developer configures the plugin in their `capacitor.config.ts` as usual:
 

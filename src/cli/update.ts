@@ -9,8 +9,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
-import type { PluginSettings } from '../shared/plugin-settings.js';
 import { ensurePublicInit, ensureRootScriptTag } from './electron-init.js';
+import {
+  type PluginEntry,
+  assertPackageName,
+  validatePluginSettings,
+  isInsideDir,
+  generateElectronPluginsAuto,
+  generateElectronMainAuto,
+} from './update-helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,10 +37,6 @@ if (!fs.existsSync(electronDir)) {
 
 const depRequire = createRequire(import.meta.url);
 
-interface PluginEntry extends PluginSettings {
-  packageName: string;
-}
-
 type MutableRecord = Record<string, unknown>;
 
 function findPlugins(): PluginEntry[] {
@@ -45,8 +48,10 @@ function findPlugins(): PluginEntry[] {
   };
 
   const found: PluginEntry[] = [];
+  const seenPluginClasses = new Set<string>();
 
   for (const name of Object.keys(deps)) {
+    const packageName = assertPackageName(name);
     const depPkgPath = path.join(capacitorRoot, 'node_modules', name, 'package.json');
     if (!fs.existsSync(depPkgPath)) continue;
 
@@ -56,47 +61,34 @@ function findPlugins(): PluginEntry[] {
 
     if (!electronSrc?.src) continue;
 
-    const settingsPath = path.join(capacitorRoot, 'node_modules', name, electronSrc.src as string, 'dist', 'plugin-settings.js');
+    if (typeof electronSrc.src !== 'string') continue;
+
+    const packageRoot = path.join(capacitorRoot, 'node_modules', name);
+    const settingsPath = path.join(packageRoot, electronSrc.src, 'dist', 'plugin-settings.js');
+    if (!isInsideDir(packageRoot, settingsPath)) {
+      throw new Error(`${packageName}: capacitor.electron.src must stay inside the package`);
+    }
     if (!fs.existsSync(settingsPath)) continue;
 
-    let settings: PluginSettings;
+    let loaded: { pluginSettings?: unknown };
     try {
-      ({ pluginSettings: settings } = depRequire(settingsPath) as { pluginSettings: PluginSettings });
+      loaded = depRequire(settingsPath) as { pluginSettings?: unknown };
     } catch {
       console.warn(`  ⚠  ${name}: failed to load plugin-settings.js, skipping`);
       continue;
     }
 
-    if (!settings.pluginClass || !settings.pluginMethods?.length) continue;
+    const settings = validatePluginSettings(packageName, loaded.pluginSettings);
 
-    found.push({ packageName: name, ...settings });
+    if (seenPluginClasses.has(settings.pluginClass)) {
+      throw new Error(`${packageName}: duplicate Electron plugin class ${settings.pluginClass}`);
+    }
+    seenPluginClasses.add(settings.pluginClass);
+
+    found.push({ packageName, ...settings });
   }
 
   return found;
-}
-
-function generateElectronPluginsAuto(plugins: PluginEntry[]): string {
-  const lines = [
-    '// Auto-generated — do not edit.',
-    '// Regenerate with: cap-electron sync',
-    '',
-    'export const pluginsAuto = {',
-  ];
-
-  for (const { pluginClass, pluginMethods, pluginEvents } of plugins) {
-    lines.push(`  ${pluginClass}: {`);
-    lines.push(`    methods: [${pluginMethods.map((m) => `'${m}'`).join(', ')}],`);
-    if (pluginEvents?.length) {
-      lines.push(`    events: [${pluginEvents.map((e) => `'${e}'`).join(', ')}],`);
-    }
-    lines.push(`  },`);
-  }
-
-  if (plugins.length === 0) lines.push('  // no Capacitor Electron plugins found');
-
-  lines.push('} as const;', '', 'export type PluginAutoRegistry = typeof pluginsAuto;');
-
-  return lines.join('\n') + '\n';
 }
 
 function isRecord(value: unknown): value is MutableRecord {
@@ -105,11 +97,6 @@ function isRecord(value: unknown): value is MutableRecord {
 
 function cloneJsonObject(value: unknown): unknown {
   return JSON.parse(JSON.stringify(value)) as unknown;
-}
-
-function isInsideDir(parent: string, child: string): boolean {
-  const relative = path.relative(parent, child);
-  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 function copyProjectAssetToElectronAssets(rawValue: string, configPath: string): string {
@@ -172,61 +159,6 @@ function normalizeElectronAssetPaths(electronPlugin: unknown): unknown {
   return normalized;
 }
 
-
-function generateElectronMainAuto(plugins: PluginEntry[]): string {
-  const parts: string[] = [
-    '// Auto-generated — do not edit.',
-    '// Regenerate with: cap-electron sync',
-  ];
-
-  const autoPlugins = plugins.filter((p) => p.autoRegister !== false);
-
-  if (autoPlugins.length === 0) {
-    parts.push('', '// no Capacitor Electron plugins found');
-    return parts.join('\n') + '\n';
-  }
-
-  parts.push(
-    '',
-    // Keep `app` available for plugin beforeRegister snippets such as
-    // `await app.whenReady()`. The template tsconfig does not enable
-    // noUnusedLocals, so this is safe even when no discovered plugin uses it.
-    "import { app } from 'electron';",
-    "import { registerPlugin, AnyRecord } from '../shared/functions';",
-  );
-
-  const extraImports = new Set<string>();
-  for (const { imports } of autoPlugins) {
-    for (const imp of imports ?? []) extraImports.add(imp);
-  }
-  for (const imp of extraImports) parts.push(`${imp};`);
-
-  parts.push('');
-
-  const seen = new Set<string>();
-  const beforeRegisterLines: string[] = [];
-  for (const { beforeRegister } of autoPlugins) {
-    for (const line of beforeRegister ?? []) {
-      if (!seen.has(line)) { seen.add(line); beforeRegisterLines.push(line); }
-    }
-  }
-
-  const needsAsync = beforeRegisterLines.some((l) => l.includes('await'));
-  const i = needsAsync ? '  ' : '';
-
-  if (needsAsync) parts.push('void (async () => {');
-
-  for (const line of beforeRegisterLines) parts.push(`${i}${line};`);
-
-  for (const { pluginClass, pluginMethods } of autoPlugins) {
-    const methods = pluginMethods.map((m) => `'${m}'`).join(', ');
-    parts.push(`${i}registerPlugin('${pluginClass}', new ${pluginClass}() as unknown as AnyRecord, [${methods}]);`);
-  }
-
-  if (needsAsync) parts.push('})();');
-
-  return parts.join('\n') + '\n';
-}
 
 const GLOBALS_REFERENCE = '/// <reference types="@devioarts/capacitor-electron/globals" />';
 

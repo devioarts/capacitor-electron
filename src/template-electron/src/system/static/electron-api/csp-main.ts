@@ -15,7 +15,7 @@ const PROD_CSP = [
   "connect-src 'self'",
 ].join('; ');
 
-function buildCsp(directives: Record<string, string | string[]>): string {
+export function buildCsp(directives: Record<string, string | string[]>): string {
   return Object.entries(directives)
     .map(([key, val]) => `${key} ${Array.isArray(val) ? val.join(' ') : val}`)
     .join('; ');

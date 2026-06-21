@@ -87,7 +87,7 @@ function normalizeBackgroundColor(value: string): string {
   return '#ffffff';
 }
 
-function escapeHtmlAttr(value: string): string {
+export function escapeHtmlAttr(value: string): string {
   return value.replace(/[&"]/g, (ch) => ch === '&' ? '&amp;' : '&quot;');
 }
 

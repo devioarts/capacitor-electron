@@ -13,7 +13,7 @@ function urlFromArgv(argv: string[], scheme: string): string | undefined {
   return undefined;
 }
 
-function normalizeDeepLinkUrl(rawUrl: string, scheme: string): string | null {
+export function normalizeDeepLinkUrl(rawUrl: string, scheme: string): string | null {
   if (typeof rawUrl !== 'string' || rawUrl.length > MAX_DEEP_LINK_URL_LENGTH) return null;
   try {
     const url = new URL(rawUrl);

@@ -5,7 +5,7 @@ import { CAP_ELECTRON_INIT_JS } from './electron-init-content.js';
 const SCRIPT_TAG = '<script src="/electron-init.js"></script>';
 const BODY_OPEN_RE = /<body\b[^>]*>/i;
 
-function injectScriptAfterBodyOpen(html: string): string | null {
+export function injectScriptAfterBodyOpen(html: string): string | null {
   if (!BODY_OPEN_RE.test(html)) return null;
   return html.replace(BODY_OPEN_RE, (bodyTag) => `${bodyTag}\n    ${SCRIPT_TAG}`);
 }

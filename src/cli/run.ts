@@ -12,6 +12,7 @@ import * as net from 'net';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync, spawn, ChildProcess } from 'child_process';
+import { detectPackageManager } from './pm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const marker = `${path.sep}node_modules${path.sep}`;
@@ -205,14 +206,6 @@ try {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function detectPackageManager(root: string): string {
-  if (fs.existsSync(path.join(root, 'bun.lock')))       return 'bun';
-  if (fs.existsSync(path.join(root, 'bun.lockb')))      return 'bun';
-  if (fs.existsSync(path.join(root, 'pnpm-lock.yaml'))) return 'pnpm';
-  if (fs.existsSync(path.join(root, 'yarn.lock')))      return 'yarn';
-  return 'npm';
-}
 
 function findElectronCli(electronDir: string, capacitorRoot: string): string {
   const local   = path.join(electronDir,    'node_modules', 'electron', 'cli.js');

@@ -3,7 +3,7 @@ import { loadConfig, trustedIpcHandle } from '../../shared/functions';
 
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 
-function cleanScheme(raw: string): string {
+export function cleanScheme(raw: string): string {
   const scheme = String(raw ?? '').trim().toLowerCase().replace(/:\/\/$/, '').replace(/:$/, '');
   if (!SCHEME_RE.test(scheme)) throw new Error(`Invalid protocol scheme: ${raw}`);
   return scheme;

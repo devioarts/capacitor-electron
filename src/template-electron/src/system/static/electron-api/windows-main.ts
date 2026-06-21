@@ -58,7 +58,7 @@ function getManaged(id: number): BrowserWindow {
   return win;
 }
 
-function webUrl(rawUrl: string): string {
+export function webUrl(rawUrl: string): string {
   const url = new URL(rawUrl);
   if (!['http:', 'https:'].includes(url.protocol)) {
     throw new Error(`Unsupported external URL protocol: ${url.protocol}`);
@@ -66,7 +66,7 @@ function webUrl(rawUrl: string): string {
   return url.href;
 }
 
-function appPath(rawAppPath: unknown): string | undefined {
+export function appPath(rawAppPath: unknown): string | undefined {
   if (rawAppPath === undefined) return undefined;
   if (typeof rawAppPath !== 'string') throw new Error('appPath must be a string');
   if (rawAppPath.length > MAX_APP_PATH_LENGTH) throw new Error('appPath is too long');

@@ -7,12 +7,12 @@ type ConnectionStatus = { connected: boolean; connectionType: 'wifi' | 'cellular
 let currentStatus: ConnectionStatus | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-function getNetworkStatus(): ConnectionStatus {
+export function getNetworkStatus(): ConnectionStatus {
   const connected = net.isOnline();
   return { connected, connectionType: connected ? 'unknown' : 'none' };
 }
 
-function sameStatus(a: ConnectionStatus | null, b: ConnectionStatus): boolean {
+export function sameStatus(a: ConnectionStatus | null, b: ConnectionStatus): boolean {
   return !!a && a.connected === b.connected && a.connectionType === b.connectionType;
 }
 

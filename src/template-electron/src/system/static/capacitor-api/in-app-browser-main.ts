@@ -57,7 +57,7 @@ type BrowserEventNames = {
 
 let activeBrowser: ActiveBrowser | null = null;
 
-function parseWebUrl(rawUrl: unknown): string {
+export function parseWebUrl(rawUrl: unknown): string {
   const url = new URL(String(rawUrl ?? ''));
   if (!WEB_SCHEMES.has(url.protocol)) {
     throw new Error(`InAppBrowser only supports http/https URLs: ${url.href}`);
@@ -65,7 +65,7 @@ function parseWebUrl(rawUrl: unknown): string {
   return url.href;
 }
 
-function canOpenExternal(url: string): boolean {
+export function canOpenExternal(url: string): boolean {
   const protocol = protocolOf(url);
   return protocol !== null && !BLOCKED_SCHEMES.has(protocol);
 }
@@ -89,7 +89,7 @@ function stringValue(value: unknown, max = 200): string | undefined {
   return trimmed.length > 0 ? trimmed.slice(0, max) : undefined;
 }
 
-function sanitizeWindowOptions(raw: unknown): BrowserWindowConstructorOptions {
+export function sanitizeWindowOptions(raw: unknown): BrowserWindowConstructorOptions {
   if (!isPlainObject(raw)) return {};
 
   const out: BrowserWindowConstructorOptions = {};
@@ -180,7 +180,7 @@ a:hover{background:#eef2f7}
 </style></head><body><div class="bar ${options.toolbarPosition === 1 ? 'bottom' : ''}">${actions}${url}</div></body></html>`;
 }
 
-function normalizeCssColor(value: unknown): string | undefined {
+export function normalizeCssColor(value: unknown): string | undefined {
   const color = stringValue(value, 80);
   if (!color) return undefined;
   if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
@@ -247,7 +247,7 @@ function handleToolbarAction(active: ActiveBrowser, url: string): boolean {
   return true;
 }
 
-function extraHeaders(headers: unknown): string | undefined {
+export function extraHeaders(headers: unknown): string | undefined {
   if (!isPlainObject(headers)) return undefined;
   const lines = Object.entries(headers)
     .filter((entry): entry is [string, string] => typeof entry[0] === 'string' && typeof entry[1] === 'string')

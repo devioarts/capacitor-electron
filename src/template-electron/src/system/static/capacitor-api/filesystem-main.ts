@@ -16,7 +16,7 @@ const DIR_MAP: Record<string, Parameters<typeof app.getPath>[0]> = {
   EXTERNAL_STORAGE: 'downloads',
 };
 
-function resolvePath(filePath: string, directory?: string): string {
+export function resolvePath(filePath: string, directory?: string): string {
   // No directory = absolute path, an intentional desktop-only feature.
   if (!directory) return path.resolve(filePath);
   const base = path.resolve(app.getPath(DIR_MAP[directory] ?? 'userData'));
@@ -85,7 +85,7 @@ function targetDirectory(opts: AnyRecord, fromDirectory?: string): string | unde
  *   EXTERNAL / EXTERNAL_STORAGE → app.getPath('downloads')
  *   (no directory)   → path treated as absolute
  */
-class Filesystem {
+export class Filesystem {
   async checkPermissions(): Promise<{ publicStorage: string }> {
     return { publicStorage: 'granted' };
   }
@@ -140,8 +140,13 @@ class Filesystem {
 
   async rmdir(opts: AnyRecord): Promise<void> {
     const abs = resolvePath(opts['path'] as string, opts['directory'] as string | undefined);
+    const recursive = (opts['recursive'] as boolean | undefined) ?? false;
     try {
-      await fs.rm(abs, { recursive: (opts['recursive'] as boolean | undefined) ?? false, force: false });
+      if (recursive) {
+        await fs.rm(abs, { recursive: true, force: false });
+      } else {
+        await fs.rmdir(abs);
+      }
     } catch (e) { return mapError(e, 'rmdir'); }
   }
 

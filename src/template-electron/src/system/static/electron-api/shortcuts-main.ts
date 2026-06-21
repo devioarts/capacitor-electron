@@ -56,7 +56,7 @@ export type GlobalShortcutDef =
 
 type GetWin = () => BrowserWindow | null;
 
-function normalizeAccelerator(accelerator: unknown): string | null {
+export function normalizeAccelerator(accelerator: unknown): string | null {
   if (typeof accelerator !== 'string') return null;
   const normalized = accelerator.trim();
   if (normalized.length === 0 || normalized.length > 100) return null;

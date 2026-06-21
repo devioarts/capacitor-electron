@@ -15,7 +15,7 @@ function storePath(): string {
   return path.join(app.getPath('userData'), 'CapacitorStorage', 'secure-storage.json');
 }
 
-function storageKey(key: string): string {
+export function storageKey(key: string): string {
   if (keyMode === 'plain') return key;
   return createHash('sha256').update(`${appCfg.appId ?? app.getName()}:${key}`).digest('hex');
 }

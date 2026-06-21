@@ -93,6 +93,11 @@ Main process (Node.js)
 | `src/system/generated/plugins-preload-auto.ts` | Declares which methods and events the plugin exposes — used by the preload IPC bridge |
 | `src/system/generated/plugins-main-auto.ts` | Calls `registerPlugin()` for each discovered plugin in the main process |
 
+Plugin descriptors provide data, not raw code. The generator validates plugin class,
+method, event, and config-section names, imports `{ pluginClass }` from
+`${packageName}/electron`, and registers auto plugins once `app.whenReady()` resolves.
+Legacy `imports` and `beforeRegister` descriptor fields are ignored.
+
 ### Manual registration
 
 Users can also register plugins without `cap-electron sync` by editing the `user/` files directly. These files are never overwritten:

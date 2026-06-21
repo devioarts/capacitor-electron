@@ -4,8 +4,11 @@
  * Plugin authors publish this as `plugin-settings.js` in their package:
  *   export const pluginSettings: PluginSettings = { ... }
  *
- * The `npm run update` script in the electron/ folder reads this file
+ * `cap-electron sync` reads this file
  * and auto-generates the IPC bridge and main-process registrations.
+ *
+ * Auto-registration imports `{ pluginClass }` from `${packageName}/electron`
+ * and registers all auto plugins after `app.whenReady()`.
  */
 export interface PluginSettings {
   /** Name of the class that implements the plugin in the Electron main process. */
@@ -21,13 +24,13 @@ export interface PluginSettings {
    */
   autoRegister?: boolean;
   /**
-   * ESM import statements added at the top of the generated electron-main.ts.
-   * Example: ["import { MyPlugin } from '@org/my-plugin/electron'"]
+   * @deprecated Ignored by cap-electron sync. The import is generated as:
+   * `import { pluginClass } from '${packageName}/electron'`.
    */
   imports?: readonly string[];
   /**
-   * Statements executed once before plugin registration (inside app.whenReady).
-   * Example: ["await MyPlugin.initialize()"]
+   * @deprecated Ignored by cap-electron sync. Auto plugins are always registered
+   * after `await app.whenReady()`.
    */
   beforeRegister?: readonly string[];
   /**

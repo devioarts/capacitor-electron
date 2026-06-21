@@ -99,7 +99,13 @@ function cancelById(id: number): void {
  * - Android-only methods (`createChannel`, `deleteChannel`, `listChannels`) are
  *   stubbed as no-ops.
  */
-class LocalNotifications {
+export function resetNotificationsForTesting(): void {
+  for (const id of [...timers.keys()]) cancelById(id);
+  pending.clear();
+  delivered.splice(0);
+}
+
+export class LocalNotifications {
 
   async schedule(opts: Record<string, unknown>): Promise<{ notifications: NotifSchema[] }> {
     const notifications = (opts['notifications'] as NotifSchema[] | undefined) ?? [];
