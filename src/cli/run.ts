@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync, spawn, type ChildProcess } from 'child_process';
+import { execFileSync, execSync, spawn, type ChildProcess } from 'child_process';
 import { detectPackageManager } from './pm.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -42,6 +42,16 @@ let cleaningUp = false;
 // Falls back to child.kill() on platforms where process groups aren't supported.
 function killGroup(child: ChildProcess, signal: NodeJS.Signals = 'SIGTERM'): void {
   if (child.pid == null) return;
+  if (process.platform === 'win32') {
+    try {
+      const args = ['/PID', String(child.pid), '/T'];
+      if (signal === 'SIGKILL') args.push('/F');
+      execFileSync('taskkill', args, { stdio: 'ignore' });
+    } catch {
+      try { child.kill(signal); } catch { /* ignore */ }
+    }
+    return;
+  }
   try { process.kill(-child.pid, signal); } catch { try { child.kill(signal); } catch { /* ignore */ } }
 }
 
@@ -86,7 +96,13 @@ process.on('SIGTERM', () => { void exitCleanly(0); });
 
 // Spawn in its own process group so we can kill the whole tree later.
 function spawnGroup(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env): ChildProcess {
-  const child = spawn(cmd, args, { cwd, stdio: 'inherit', detached: true, env });
+  const child = spawn(cmd, args, {
+    cwd,
+    stdio: 'inherit',
+    detached: true,
+    env,
+    shell: process.platform === 'win32',
+  });
   child.on('error', (err) => {
     console.error(`[cap-electron] Failed to start "${cmd}": ${err.message}`);
     void exitCleanly(1);
