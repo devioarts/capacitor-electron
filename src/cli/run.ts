@@ -95,6 +95,7 @@ process.on('SIGINT',  () => { void exitCleanly(0); });
 process.on('SIGTERM', () => { void exitCleanly(0); });
 
 function quoteWindowsArg(value: string): string {
+  if (/^[A-Za-z0-9_./:@+-]+$/.test(value)) return value;
   if (value.length === 0) return '""';
   const escaped = value
     .replace(/(\\*)"/g, '$1$1\\"')
