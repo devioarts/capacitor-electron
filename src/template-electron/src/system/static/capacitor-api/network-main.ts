@@ -27,6 +27,8 @@ function pollAndEmit(force = false): void {
 function startNetworkPolling(): void {
   if (pollTimer) return;
   pollAndEmit(true);
+  // Electron exposes main-process network status as net.isOnline(), not as
+  // app-level online/offline events. Poll only while renderers are listening.
   pollTimer = setInterval(() => { pollAndEmit(false); }, 10_000);
 }
 

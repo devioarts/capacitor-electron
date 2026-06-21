@@ -91,9 +91,9 @@ The method is only present when `app.deepLinkingScheme` is configured — guard 
 | **Windows (cold start)** | URL is passed as a CLI argument in `process.argv`. Processed after the window is created. |
 | **Windows (app running)** | Second-instance lock fires with the URL in `argv`. The existing window is focused and the URL is forwarded. |
 | **Linux (app running)** | Second-instance lock fires with the URL in `argv`. Works the same as Windows. |
-| **Linux (cold start)** | Not supported — `app.on('open-url')` is macOS-only and Linux cold-start URL is not extracted from `process.argv`. Register the shortcut in your `.desktop` file and handle the URL on startup manually. |
+| **Linux (cold start)** | Partial. If the `.desktop` entry passes the URL as an argument (for example via `Exec=... %u`), the helper reads it from `process.argv` after the window is created. Linux desktop integration still has to register and pass the URL correctly. |
 
-In all cases the window is restored (if minimized or hidden), focused, and then the `deepLink` IPC event is sent to the renderer.
+When a URL reaches the helper, the window is restored (if minimized or hidden), focused, and then the `deepLink` IPC event is sent to the renderer.
 
 In development, protocol registration still calls Electron's `app.setAsDefaultProtocolClient()` for the configured scheme. Reusing the same scheme across multiple local projects can therefore move the OS handler between them. Prefer a unique development scheme when testing deep links.
 

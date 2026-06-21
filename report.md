@@ -98,13 +98,13 @@ Nalezeny a opraveny nesoulady:
 - `getLaunchUrl()` nebylo jednorazove a nemelo dobrou macOS cold-start vazbu.
 - Jeden externi electron-builder odkaz byl nefunkcni.
 
-## Otevrene body k rozhodnuti
+## Vyresene body k rozhodnuti
 
-- `App.getLaunchUrl()` bez URL: oficialni Capacitor typ uvadi `AppLaunchUrl | undefined`, aktualni Electron implementace i docs vraci `null`. Nechal jsem to kvuli kompatibilite se stavajici dokumentaci, ale pokud chceme striktni upstream kontrakt, zmenit na `undefined` a upravit docs.
-- `Filesystem.readFileInChunks()` neni implementovane. Upstream Capacitor API ho ma; doplneni vyzaduje rozsirit callback-style bridge pro vestavene pluginy, nejen pridat main-process metodu.
-- Deprecated `Filesystem.addListener('progress')` pro `Filesystem.downloadFile()` neni implementovany. Doporučení v docs smeruje na `@capacitor/file-transfer`, ktery progress udalosti ma.
-- Linux cold-start deep link handling zustava partial. Electron helper umi running-instance `second-instance` cestu, ale cold start zavisi na `.desktop` integraci a argumentech predanych OS.
-- Local Notifications jsou jen runtime/in-memory. Pokud aplikace potrebuje notifikace prezit restart, je treba perzistovat schedule v aplikaci a znovu volat `schedule()` po startu.
+- `App.getLaunchUrl()` bez URL: sjednoceno s oficialnim Capacitor kontraktem `AppLaunchUrl | undefined`; Electron implementace i docs ted vraci/popisuji `undefined` misto `null`.
+- `Filesystem.readFileInChunks()` zustava neimplementovane. Upstream Capacitor API ho ma, ale doplneni vyzaduje rozsirit bridge o method-specific callback stream s cleanupem a cancelaci, nejen pridat main-process metodu.
+- Deprecated `Filesystem.addListener('progress')` pro `Filesystem.downloadFile()` zustava neimplementovany. Docs vysvetluji, ze upstream tento tok deprecuje ve prospech `@capacitor/file-transfer`, ktery progress udalosti ma.
+- Linux cold-start deep link handling zustava partial podle integrace OS. Helper ted umi zpracovat URL z `process.argv` i na Linuxu, pokud ji `.desktop` entry preda; desktop registration ale zustava odpovednosti balicku/OS.
+- Local Notifications zustavaji runtime/in-memory. Docs doplnuji, ze pending timery nepreziji quit/crash/update/restart a restart-safe schedule musi perzistovat aplikace a znovu volat `schedule()` pri startu.
 
 ## Overeni
 

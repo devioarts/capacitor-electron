@@ -75,14 +75,14 @@ await App.minimizeApp();
 
 ### `getLaunchUrl()`
 
-Returns the deep-link URL that was used to launch the app (if any). Returns `null` when the app was opened normally.
+Returns the deep-link URL that was used to launch the app (if any). Returns `undefined` when the app was opened normally.
 
 ```typescript
 const result = await App.getLaunchUrl();
 if (result) console.log('Launched via', result.url);
 ```
 
-The startup URL is stored once and consumed by the first `getLaunchUrl()` call. Subsequent calls return `null` unless the app was launched again.
+The startup URL is stored once and consumed by the first `getLaunchUrl()` call. Subsequent calls return `undefined` unless the app was launched again.
 
 ### `getAppLanguage()`
 
@@ -167,7 +167,7 @@ No-op on Electron — Android activity result restoration has no desktop equival
 | `appUrlOpen` | Yes | Yes | Partial |
 | `toggleBackButtonHandler()`, `backButton`, `appRestoredResult` | No-op | No-op | No-op |
 
-Linux cold-start URL extraction is not implemented by the built-in helper. Running-instance Linux links can arrive through Electron's `second-instance` event when the desktop entry launches the app with the URL argument. See [deep-linking.md](deep-linking.md) and [platform-support.md](platform-support.md).
+Linux support is partial because Electron cannot make every desktop environment pass protocol URLs to the app. If the installed `.desktop` entry includes the URL argument (for example `Exec=... %u`), cold-start URLs are read from `process.argv` and can be returned by `getLaunchUrl()`. Running-instance Linux links can arrive through Electron's `second-instance` event when the desktop entry launches the app with the URL argument. See [deep-linking.md](deep-linking.md) and [platform-support.md](platform-support.md).
 
 ---
 

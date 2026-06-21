@@ -1,5 +1,6 @@
-import { app, ipcMain, BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import { trustedIpcHandle } from '../../shared/functions';
 import type { ElectronConfig } from '../../shared/types';
 
 // Variant B: exposed via window.Electron.updater namespace.
@@ -25,9 +26,9 @@ export function setupUpdater(cfg: ElectronConfig): void {
 
   if (!active) {
     // Register no-op handlers so renderer calls don't reject with "no handler" error
-    ipcMain.handle('updater:checkForUpdate', () => {});
-    ipcMain.handle('updater:downloadUpdate', () => {});
-    ipcMain.handle('updater:quitAndInstall', () => {});
+    trustedIpcHandle('updater:checkForUpdate', () => {});
+    trustedIpcHandle('updater:downloadUpdate', () => {});
+    trustedIpcHandle('updater:quitAndInstall', () => {});
     return;
   }
 
@@ -55,9 +56,9 @@ export function setupUpdater(cfg: ElectronConfig): void {
     autoUpdater.on('update-downloaded',    (info)     => broadcast('update-downloaded', info));
     autoUpdater.on('error',                (err)      => broadcast('error', { message: err?.message ?? String(err) }));
 
-    ipcMain.handle('updater:checkForUpdate', () => { autoUpdater.checkForUpdates().catch(() => {}); });
-    ipcMain.handle('updater:downloadUpdate', () => { autoUpdater.downloadUpdate().catch(() => {}); });
-    ipcMain.handle('updater:quitAndInstall', () => { autoUpdater.quitAndInstall(); });
+    trustedIpcHandle('updater:checkForUpdate', () => { autoUpdater.checkForUpdates().catch(() => {}); });
+    trustedIpcHandle('updater:downloadUpdate', () => { autoUpdater.downloadUpdate().catch(() => {}); });
+    trustedIpcHandle('updater:quitAndInstall', () => { autoUpdater.quitAndInstall(); });
   } catch (err) {
     // updater errors are non-fatal — main process continues normally
     console.error('[updater] setup failed:', err);

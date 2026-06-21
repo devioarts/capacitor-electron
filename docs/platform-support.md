@@ -18,9 +18,9 @@ Official API references:
 |---|---:|---:|---:|---|
 | `ActionSheet.showActions()` | Yes | Yes | Yes | Native Electron message box. Destructive styling is textual only. |
 | `App.getInfo()`, `getState()`, `exitApp()`, `minimizeApp()`, `getAppLanguage()` | Yes | Yes | Yes | `minimizeApp()` maps to the focused Electron window. |
-| `App.getLaunchUrl()` | Yes | Yes | Partial | macOS and Windows cold-start deep links are captured once. Linux cold-start URL extraction is not implemented. |
+| `App.getLaunchUrl()` | Yes | Yes | Partial | macOS and Windows cold-start deep links are captured once. Linux is supported when the desktop entry passes the URL in `argv`. |
 | `App` focus events (`appStateChange`, `resume`, `pause`) | Yes | Yes | Yes | Driven by Electron `BrowserWindow` focus/blur. |
-| `App.appUrlOpen` | Yes | Yes | Partial | Running-instance Linux links can arrive via `second-instance`; Linux cold-start handling depends on the app's desktop entry. |
+| `App.appUrlOpen` | Yes | Yes | Partial | Linux links can arrive via `argv`/`second-instance`; desktop entry registration controls whether the OS passes the URL. |
 | `App.toggleBackButtonHandler()`, `backButton`, `appRestoredResult` | No-op | No-op | No-op | Android-only behavior with no desktop equivalent. |
 | `Browser.open()`, `close()` | Yes | Yes | Yes | Opens an Electron-owned web window for `http`/`https` URLs. |
 | `Browser.getSnapshot()` | No | No | No | Implemented as `null`; snapshot capture is not implemented. |
@@ -32,8 +32,8 @@ Official API references:
 | `Filesystem.checkPermissions()` / `requestPermissions()` | Yes | Yes | Yes | Return `publicStorage: 'granted'`; no desktop permission prompt is shown. |
 | `Filesystem` file operations | Yes | Yes | Yes | Uses Node.js filesystem APIs and Electron `app.getPath()`. |
 | `Filesystem.downloadFile()` | Yes | Yes | Yes | Uses runtime `fetch`; supports `http`/`https`. |
-| `Filesystem.readFileInChunks()` | No | No | No | Not implemented by the current built-in callback bridge. |
-| `Filesystem.addListener('progress')` | No | No | No | Use `@capacitor/file-transfer` for progress events. |
+| `Filesystem.readFileInChunks()` | No | No | No | Requires a method-specific callback bridge, not just a main-process file reader. |
+| `Filesystem.addListener('progress')` | No | No | No | Deprecated upstream for `Filesystem.downloadFile()`; use `@capacitor/file-transfer` progress events. |
 | `Clipboard.write()` / `read()` | Yes | Yes | Yes | Text and image data URLs use Electron clipboard APIs. |
 | `Device` methods | Yes | Yes | Yes | Linux reports `operatingSystem: 'unknown'` because Capacitor has no Linux enum value. |
 | `Dialog.alert()` / `confirm()` | Yes | Yes | Yes | Native message boxes. |
@@ -54,7 +54,7 @@ Official API references:
 | Window controls (`minimize`, `maximize`, `fullscreen`, etc.) | Yes | Yes | Yes | Act on the sender window. |
 | Badge count | Yes | Partial | Partial | Delegates to `app.setBadgeCount()` / `getBadgeCount()`; unsupported platforms return Electron's result. |
 | `dialogs` | Yes | Yes | Yes | Native open/save/message/error dialogs. |
-| `secureStorage` | Yes | Yes | Partial | Linux availability depends on the desktop secret storage backend. |
+| `secureStorage` | Yes | Yes | Partial | Values use Electron `safeStorage`; JSON key names can be plain or hashed. Linux availability depends on the desktop secret storage backend. |
 | `protocols` | Yes | Yes | Partial | Registration uses Electron protocol APIs; Linux cold-start app routing depends on desktop integration. |
 | `session` | Yes | Yes | Yes | Wraps the sender window's Electron session. |
 | `downloads` | Yes | Yes | Yes | Uses Electron `will-download` and `DownloadItem`. |

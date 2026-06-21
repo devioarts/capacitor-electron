@@ -6,7 +6,7 @@ This document describes how `@devioarts/capacitor-electron` is structured — wh
 
 ## Overview
 
-The package is a **Capacitor community platform** — it plugs into Capacitor's multi-platform model and adds Electron as a supported target. It ships three things:
+The package is a **Capacitor community platform** — it plugs into Capacitor's multi-platform model and adds Electron as a supported target. It ships four artifacts:
 
 | Part | Location in package | Purpose |
 |---|---|---|
@@ -26,9 +26,13 @@ capacitor-electron/
 │   │   ├── index.ts      ← cap-electron entry point / command dispatcher
 │   │   ├── add.ts        ← cap-electron add
 │   │   ├── copy.ts       ← cap-electron copy
-│   │   ├── update.ts     ← cap-electron sync
-│   │   ├── open.ts       ← cap-electron open
+│   │   ├── update.ts     ← cap-electron update
+│   │   ├── sync.ts       ← cap-electron sync
+│   │   ├── run.ts        ← cap-electron run / open
+│   │   ├── build.ts      ← cap-electron build
+│   │   ├── open.ts       ← backwards-compatible open entry
 │   │   ├── kill.ts       ← cap-electron kill
+│   │   ├── upgrade.ts    ← cap-electron upgrade / restore
 │   │   └── scripts.ts    ← cap-electron scripts
 │   ├── shared/
 │   │   └── types.ts      ← exported TypeScript interfaces
@@ -57,12 +61,15 @@ Electron enforces a strict security boundary between the main process and the re
 ```
 Renderer (web app)
   │  window.Electron.*          ← system bridge (quit, minimize, updater…)
-  │  CapacitorCustomPlatform.*  ← plugin bridge (LocalNotifications, MyPlugin…)
+  │  window.Capacitor.PluginHeaders + nativePromise/nativeCallback
+  │                               ← built-in Capacitor plugins and header-routed third-party plugins
+  │  CapacitorCustomPlatform.plugins.*
+  │                               ← third-party plugins using the `electron:` factory
   │
   ↕  contextBridge (preload.cjs)
   │
 Main process (Node.js)
-  │  ipcMain.handle('system:*')       ← system-main.ts
+  │  trustedIpcHandle('system:*')     ← system-main.ts and other window.Electron modules
   │  ipcMain.handle('PluginName-method') ← registerPlugin() in functions.ts
   └─ ipcMain.on('event-add-*')        ← lazy event source lifecycle
 ```
@@ -70,6 +77,8 @@ Main process (Node.js)
 ### Why `contextBridge` + `invoke`?
 
 `contextBridge` with `contextIsolation: true` is Electron's recommended secure pattern since Electron 12. It prevents the renderer from accessing Node.js APIs directly while still allowing typed, async communication via `ipcRenderer.invoke` / `ipcMain.handle`.
+
+`main.ts` installs one IPC sender-origin check after the app URL is known. The plugin registry and all `window.Electron.*` system handlers use that same check, so privileged IPC is accepted only from the trusted app origin (`file:`, the dev server origin, or the local production server origin).
 
 ---
 
@@ -128,7 +137,8 @@ src/shared/types.ts     ──tsc→    dist/shared/types.d.ts
                         ──esbuild→ dist/shared/types.js  (ESM)
                         ──esbuild→ dist/shared/types.cjs (CJS)
 
-src/shared/globals.d.ts ──copy→   dist/shared/globals.d.ts  (ambient, no JS counterpart)
+src/template-electron/src/system/shared/bridge-types.ts
+                       ──generate→ dist/shared/globals.d.ts  (ambient, no JS counterpart)
 
 src/cli/*.ts  ──esbuild bundled→ dist/cli/*.js  (Node ESM, externals: all node_modules)
 
@@ -161,5 +171,6 @@ When `CAPACITOR_CONFIG` is not provided, `cap-electron sync` loads `capacitor.co
 
 - `contextIsolation: true` and `nodeIntegration: false` are enforced in all BrowserWindow instances — these are not configurable by the user.
 - The `browserWindow.webPreferences.sandbox` option is passed through to Electron. Leave it unset (Electron default `true`) unless a plugin's preload code specifically requires Node.js access.
+- `window.Electron.*` and plugin IPC handlers are protected by a shared sender-origin check. External managed windows opened with `url` do not receive the preload bridge, and any privileged IPC sent from an untrusted frame is rejected.
 - CSP is injected via response headers before the first window loads. In production, the default policy allows no external sources, no `eval`, and no inline scripts beyond styles.
 - The single-instance lock is on by default — a second launch focuses the existing window instead of creating a new process, which prevents UI state duplication.

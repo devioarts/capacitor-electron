@@ -65,6 +65,16 @@ export interface AutoUpdaterConfig {
   allowDowngrade?: boolean;
 }
 
+export interface ElectronAppSecurityConfig {
+  /**
+   * How `window.Electron.secureStorage` stores JSON object keys on disk.
+   * - `'plain'` keeps original key names. Values are still encrypted with Electron safeStorage.
+   * - `'hashed'` stores deterministic SHA-256 key hashes. Existing data is not migrated automatically.
+   * Default: 'plain'
+   */
+  secureStorageKeys?: 'plain' | 'hashed';
+}
+
 export interface ElectronDevConfig {
   /** URL of the dev server. cap-electron run reads this too. Default: http://localhost:5173 */
   url?: string;
@@ -90,6 +100,8 @@ export interface ElectronAppConfig {
   appLauncherSchemes?: string[];
   /** Auto-updater via electron-updater. Only active in production (app.isPackaged). */
   autoUpdater?: AutoUpdaterConfig;
+  /** App-level security/privacy options. */
+  security?: ElectronAppSecurityConfig;
 }
 
 export interface SafeWebPreferences {

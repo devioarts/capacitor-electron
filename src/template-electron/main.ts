@@ -2,7 +2,7 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, type ManagedWindowAppTarget } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -29,6 +29,24 @@ const iconImage = (() => {
   const img = nativeImage.createFromPath(p);
   return img.isEmpty() ? undefined : img;
 })();
+
+function resolveHttpAppPath(baseHref: string, appPath: string): ManagedWindowAppTarget {
+  const base = new URL(baseHref);
+  if (appPath.startsWith('/')) return { kind: 'url', url: new URL(appPath, base.origin).href };
+  if (appPath.startsWith('?')) base.search = appPath;
+  else if (appPath.startsWith('#')) base.hash = appPath.slice(1);
+  return { kind: 'url', url: base.href };
+}
+
+function resolveFileAppPath(indexHtml: string, appPath: string): ManagedWindowAppTarget {
+  const options: Electron.LoadFileOptions = {};
+  if (appPath.startsWith('?')) options.search = appPath;
+  else if (appPath.startsWith('#')) options.hash = appPath.slice(1);
+  else if (appPath.startsWith('/')) options.hash = appPath;
+  return Object.keys(options).length
+    ? { kind: 'file', filePath: indexHtml, options }
+    : { kind: 'file', filePath: indexHtml };
+}
 
 // Single instance lock — default on, opt-out with singleInstance: false
 if (appConfig.singleInstance !== false && !app.requestSingleInstanceLock()) {
@@ -87,11 +105,13 @@ function setup(): void {
     };
 
     win = new BrowserWindow(windowOptions);
+    setMainWindow(win);
 
     if (isDev) {
       const devUrl = devConfig.url ?? 'http://localhost:5173';
       const devOrigin = (() => { try { return new URL(devUrl).origin; } catch { return devUrl; } })();
       setIpcSenderCheck(url => { try { return new URL(url).origin === devOrigin; } catch { return false; } });
+      setManagedWindowAppResolver(appPath => resolveHttpAppPath(devUrl, appPath));
       win.loadURL(devUrl);
       if (devConfig.openDevTools !== false) win.webContents.openDevTools();
       watchPreloadSignal(win);
@@ -100,12 +120,15 @@ function setup(): void {
       startLocalServer(path.join(process.resourcesPath, 'app')).then((port) => {
         const serverOrigin = `http://127.0.0.1:${port}`;
         setIpcSenderCheck(url => { try { return new URL(url).origin === serverOrigin; } catch { return false; } });
+        setManagedWindowAppResolver(appPath => resolveHttpAppPath(`${serverOrigin}/index.html`, appPath));
         if (!w.isDestroyed()) w.loadURL(`${serverOrigin}/index.html`);
       });
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
     } else {
+      const indexHtml = path.join(process.resourcesPath, 'app', 'index.html');
       setIpcSenderCheck(url => url.startsWith('file:'));
-      win.loadFile(path.join(process.resourcesPath, 'app', 'index.html'));
+      setManagedWindowAppResolver(appPath => resolveFileAppPath(indexHtml, appPath));
+      win.loadFile(indexHtml);
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
     }
 
@@ -128,7 +151,7 @@ function setup(): void {
     }
     if (hookTrayWindow) hookTrayWindow(win);
 
-    win.on('closed', () => { win = null; });
+    win.on('closed', () => { setMainWindow(null); win = null; });
   }
 
   app.whenReady().then(() => {

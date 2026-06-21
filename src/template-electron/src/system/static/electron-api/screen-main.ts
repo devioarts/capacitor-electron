@@ -1,4 +1,5 @@
-import { screen, BrowserWindow, app, ipcMain } from 'electron';
+import { screen, BrowserWindow, app } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 import type { ScreenEventName } from '../../shared/types';
 
 function broadcast(type: ScreenEventName, data: unknown): void {
@@ -9,10 +10,10 @@ function broadcast(type: ScreenEventName, data: unknown): void {
 
 // screen can only be used after app is ready — these handlers are only invoked
 // from the renderer, which loads after ready, so direct access is safe here
-ipcMain.handle('screen:getAllDisplays',    () => screen.getAllDisplays());
-ipcMain.handle('screen:getPrimaryDisplay', () => screen.getPrimaryDisplay());
-ipcMain.handle('screen:getCursorScreenPoint', () => screen.getCursorScreenPoint());
-ipcMain.handle('screen:getCursorDisplay', () => {
+trustedIpcHandle('screen:getAllDisplays',    () => screen.getAllDisplays());
+trustedIpcHandle('screen:getPrimaryDisplay', () => screen.getPrimaryDisplay());
+trustedIpcHandle('screen:getCursorScreenPoint', () => screen.getCursorScreenPoint());
+trustedIpcHandle('screen:getCursorDisplay', () => {
   const point = screen.getCursorScreenPoint();
   return screen.getDisplayNearestPoint(point);
 });

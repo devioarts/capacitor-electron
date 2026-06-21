@@ -1,5 +1,4 @@
-import { ipcMain } from 'electron';
-import { loadConfig } from '../../shared/functions';
+import { loadConfig, trustedIpcOn } from '../../shared/functions';
 
 type BuiltinCapacitorConfig = {
   preferences: boolean;
@@ -13,6 +12,6 @@ function getBuiltinCapacitorConfig(): BuiltinCapacitorConfig {
   };
 }
 
-ipcMain.on('CapElectron-getBuiltinCapacitorConfig', (event) => {
+trustedIpcOn('CapElectron-getBuiltinCapacitorConfig', (event) => {
   event.returnValue = getBuiltinCapacitorConfig();
 });

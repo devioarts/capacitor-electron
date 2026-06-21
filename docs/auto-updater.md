@@ -129,7 +129,6 @@ interface DownloadProgress {
 
 ```typescript
 const updater = window.Electron.updater;
-if (!updater) return; // not enabled
 
 const listeners = [
   updater.on('checking-for-update', () => {

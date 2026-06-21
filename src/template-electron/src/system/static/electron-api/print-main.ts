@@ -1,6 +1,7 @@
-import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { trustedIpcHandle } from '../../shared/functions';
 
 function win(e: IpcMainInvokeEvent): BrowserWindow {
   const w = BrowserWindow.fromWebContents(e.sender);
@@ -8,16 +9,16 @@ function win(e: IpcMainInvokeEvent): BrowserWindow {
   return w;
 }
 
-ipcMain.handle('print:getPrinters', (e) => win(e).webContents.getPrintersAsync());
+trustedIpcHandle('print:getPrinters', (e) => win(e).webContents.getPrintersAsync());
 
-ipcMain.handle('print:print', (e, options: Electron.WebContentsPrintOptions) =>
+trustedIpcHandle('print:print', (e, options: Electron.WebContentsPrintOptions) =>
   new Promise<{ success: boolean; failureReason?: string }>((resolve) => {
     win(e).webContents.print(options ?? {}, (success, failureReason) => {
       resolve({ success, failureReason: failureReason || undefined });
     });
   }));
 
-ipcMain.handle('print:printToPDF', async (e, opts: { options?: Electron.PrintToPDFOptions; path?: string }) => {
+trustedIpcHandle('print:printToPDF', async (e, opts: { options?: Electron.PrintToPDFOptions; path?: string }) => {
   const data = await win(e).webContents.printToPDF(opts?.options ?? {});
   if (opts?.path) {
     const dest = path.resolve(opts.path);

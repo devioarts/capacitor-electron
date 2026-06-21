@@ -31,6 +31,11 @@ The Capacitor `Directory` enum maps to Electron paths:
 | `EXTERNAL_STORAGE`    | `app.getPath('downloads')` |
 | *(omitted)*           | `path` is treated as an absolute path |
 
+`Directory.CACHE` maps to Electron's `temp` path. Treat it as volatile storage:
+the operating system or cleanup tools may delete files there without app-level
+coordination. Use `Directory.DATA` / `Directory.LIBRARY` for app-owned data that
+must survive restarts.
+
 ---
 
 ## Basic usage
@@ -231,8 +236,23 @@ Common errors are mapped to Capacitor-compatible messages:
 | Feature | Status | Reason |
 |---------|--------|--------|
 | `requestPermissions()` prompt | Not shown | Node.js has direct filesystem access; the method returns `granted` for API compatibility |
-| `readFileInChunks()` | Not supported | Requires a callback-style native bridge that is not implemented for built-in Filesystem yet |
-| `addListener('progress')` for `Filesystem.downloadFile()` | Not supported | Use `@capacitor/file-transfer` for progress events |
+| `readFileInChunks()` | Not supported | Requires a method-specific callback bridge that can deliver multiple chunks for one method call |
+| `addListener('progress')` for `Filesystem.downloadFile()` | Not supported | Deprecated upstream for `Filesystem.downloadFile()`; use `@capacitor/file-transfer` for progress events |
 | Watching for file changes | Not supported | `@capacitor/filesystem` has no watch API |
 | URIs from `getUri()` in `<img src>` | May need CSP adjustment | `file://` URLs require `img-src: file:` in the CSP — see [content-security-policy.md](content-security-policy.md) |
 | Cross-volume `rename()` | Fails with `EXDEV` | OS limitation; use `copy()` + `deleteFile()` instead |
+
+`readFileInChunks()` is more than a normal promise method. Capacitor calls it with
+a callback that receives several chunk payloads over time, then a final completion
+or error. The current built-in Electron bridge has promise methods
+(`nativePromise`) and event listeners (`addListener` / `removeListener`), but it
+does not yet have a generic path for "one method call owns one temporary
+callback stream". Implementing this cleanly would require bridge work in preload,
+main-process dispatch, cancellation/cleanup, and tests for large files and closed
+renderer windows.
+
+The old `Filesystem.downloadFile()` progress listener is intentionally not added
+because Capacitor has deprecated that path in favor of `@capacitor/file-transfer`.
+This package implements `FileTransfer.downloadFile()` / `uploadFile()` with
+`progress` events, so new code should use that API for downloads that need
+progress reporting.

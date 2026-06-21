@@ -193,8 +193,35 @@ export interface ManagedWindowInfo {
   isDestroyed: boolean;
 }
 
+export interface ManagedWindowCreateOptions {
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  minWidth?: number;
+  minHeight?: number;
+  title?: string;
+  modal?: boolean;
+  alwaysOnTop?: boolean;
+  resizable?: boolean;
+  minimizable?: boolean;
+  maximizable?: boolean;
+  fullscreenable?: boolean;
+  backgroundColor?: string;
+  show?: boolean;
+  /**
+   * Internal app route/path. Trusted content; receives the full preload bridge.
+   * Use `#/settings` for routes that must also work in production file mode.
+   */
+  appPath?: string;
+  /**
+   * External http(s) URL. Untrusted content; opened without the preload bridge.
+   */
+  url?: string;
+}
+
 export interface WindowsBridge {
-  create(options?: unknown): Promise<ManagedWindowInfo>;
+  create(options?: ManagedWindowCreateOptions): Promise<ManagedWindowInfo>;
   list(): Promise<ManagedWindowInfo[]>;
   focus(id: number): Promise<void>;
   close(id: number): Promise<void>;
@@ -252,7 +279,7 @@ export interface ElectronBridge {
   closeDevTools():              Promise<void>;
   getAppVersion():              Promise<string>;
   /** Auto-updater bridge. No-op handlers when app.autoUpdater.enabled is false. */
-  updater?: UpdaterBridge;
+  updater: UpdaterBridge;
   dialogs: ElectronDialogsBridge;
   secureStorage: SecureStorageBridge;
   protocols: ProtocolBridge;

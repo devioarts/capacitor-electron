@@ -1,4 +1,5 @@
-import { ipcMain, powerSaveBlocker } from 'electron';
+import { powerSaveBlocker } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 import type { PowerSaveBlockerType } from '../../shared/types';
 
 const blockerTypes = new Set<PowerSaveBlockerType>([
@@ -18,17 +19,17 @@ function assertBlockerId(id: unknown): asserts id is number {
   }
 }
 
-ipcMain.handle('powerSaveBlocker:start', (_, type: PowerSaveBlockerType) => {
+trustedIpcHandle('powerSaveBlocker:start', (_, type: PowerSaveBlockerType) => {
   assertBlockerType(type);
   return powerSaveBlocker.start(type);
 });
 
-ipcMain.handle('powerSaveBlocker:stop', (_, id: number) => {
+trustedIpcHandle('powerSaveBlocker:stop', (_, id: number) => {
   assertBlockerId(id);
   return powerSaveBlocker.stop(id);
 });
 
-ipcMain.handle('powerSaveBlocker:isStarted', (_, id: number) => {
+trustedIpcHandle('powerSaveBlocker:isStarted', (_, id: number) => {
   assertBlockerId(id);
   return powerSaveBlocker.isStarted(id);
 });

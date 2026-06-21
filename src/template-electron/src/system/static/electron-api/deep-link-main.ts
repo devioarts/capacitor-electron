@@ -3,9 +3,24 @@ import { emitPluginEvent } from '../../shared/functions';
 
 let _pending: string | null = null;
 let _launchUrl: string | null = null;
+const MAX_DEEP_LINK_URL_LENGTH = 8192;
 
 function urlFromArgv(argv: string[], scheme: string): string | undefined {
-  return argv.find(arg => arg.startsWith(`${scheme}://`));
+  for (const arg of argv) {
+    const normalized = normalizeDeepLinkUrl(arg, scheme);
+    if (normalized) return normalized;
+  }
+  return undefined;
+}
+
+function normalizeDeepLinkUrl(rawUrl: string, scheme: string): string | null {
+  if (typeof rawUrl !== 'string' || rawUrl.length > MAX_DEEP_LINK_URL_LENGTH) return null;
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === `${scheme}:` ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function forward(url: string, getWin: () => BrowserWindow | null): void {
@@ -43,8 +58,10 @@ export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | n
   // macOS: system fires open-url when the app is launched via protocol URL
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    if (!app.isReady()) rememberLaunchUrl(url);
-    forward(url, getWin);
+    const normalized = normalizeDeepLinkUrl(url, scheme);
+    if (!normalized) return;
+    if (!app.isReady()) rememberLaunchUrl(normalized);
+    forward(normalized, getWin);
   });
 
   // Windows second-instance: the deep link URL is passed as a CLI argument.
@@ -64,11 +81,11 @@ export function setupDeepLinking(scheme: string, getWin: () => BrowserWindow | n
 }
 
 /**
- * Handle Windows startup URL and flush any URL that arrived before the window was ready.
+ * Handle startup URLs passed via argv and flush any URL that arrived before the window was ready.
  * Call after createWindow() inside app.whenReady().
  */
 export function flushDeepLink(scheme: string, getWin: () => BrowserWindow | null): void {
-  if (process.platform === 'win32') {
+  if (process.platform === 'win32' || process.platform === 'linux') {
     const url = urlFromArgv(process.argv, scheme);
     if (url) { rememberLaunchUrl(url); forward(url, getWin); return; }
   }

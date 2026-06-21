@@ -1,5 +1,6 @@
-import { BrowserWindow, ipcMain, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, type DownloadItem, type IpcMainInvokeEvent } from 'electron';
 import * as path from 'path';
+import { trustedIpcHandle, trustedIpcOn } from '../../shared/functions';
 
 type DownloadState = {
   id: string;
@@ -63,7 +64,7 @@ function attachDownload(win: BrowserWindow, item: DownloadItem, initial: Downloa
   });
 }
 
-ipcMain.handle('downloads:start', (e, opts: { url: string; savePath?: string }) => {
+trustedIpcHandle('downloads:start', (e, opts: { url: string; savePath?: string }) => {
   const win = senderWindow(e);
   const parsed = new URL(String(opts?.url ?? ''));
   if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('downloads.start only supports http/https URLs');
@@ -84,10 +85,10 @@ ipcMain.handle('downloads:start', (e, opts: { url: string; savePath?: string }) 
   return { ...state };
 });
 
-ipcMain.handle('downloads:pause', (_e, id: string) => { active.get(id)?.item.pause(); });
-ipcMain.handle('downloads:resume', (_e, id: string) => { active.get(id)?.item.resume(); });
-ipcMain.handle('downloads:cancel', (_e, id: string) => { active.get(id)?.item.cancel(); });
-ipcMain.handle('downloads:getActive', () => [...active.values()].map(({ state }) => ({ ...state })));
+trustedIpcHandle('downloads:pause', (_e, id: string) => { active.get(id)?.item.pause(); });
+trustedIpcHandle('downloads:resume', (_e, id: string) => { active.get(id)?.item.resume(); });
+trustedIpcHandle('downloads:cancel', (_e, id: string) => { active.get(id)?.item.cancel(); });
+trustedIpcHandle('downloads:getActive', () => [...active.values()].map(({ state }) => ({ ...state })));
 
 // Attach once to every new window lazily. The listener lives on the session
 // used by that window so partitioned sessions can still route their downloads.
@@ -105,7 +106,7 @@ function ensureSession(win: BrowserWindow): void {
   });
 }
 
-ipcMain.on('downloads:ensureSession', (e) => {
+trustedIpcOn('downloads:ensureSession', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   if (win) ensureSession(win);
 });

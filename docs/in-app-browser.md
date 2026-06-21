@@ -35,6 +35,8 @@ The upstream `SystemBrowserOptions` object is accepted for API compatibility but
 
 Opens the URL in an Electron-owned browser window. This mode supports close/load/navigation events and Electron-specific window/session options.
 
+`openInWebView()` is single-instance. Opening a new web view closes the currently active Electron web view first, emits `browserClosed`, and then creates the new window.
+
 ```ts
 import { DefaultWebViewOptions, InAppBrowser } from '@capacitor/inappbrowser';
 

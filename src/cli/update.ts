@@ -188,6 +188,9 @@ function generateElectronMainAuto(plugins: PluginEntry[]): string {
 
   parts.push(
     '',
+    // Keep `app` available for plugin beforeRegister snippets such as
+    // `await app.whenReady()`. The template tsconfig does not enable
+    // noUnusedLocals, so this is safe even when no discovered plugin uses it.
     "import { app } from 'electron';",
     "import { registerPlugin, AnyRecord } from '../shared/functions';",
   );

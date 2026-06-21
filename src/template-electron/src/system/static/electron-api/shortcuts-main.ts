@@ -1,4 +1,5 @@
-import { app, globalShortcut, BrowserWindow, ipcMain } from 'electron';
+import { app, globalShortcut, BrowserWindow } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 
 /**
  * Built-in main-process actions available for global shortcuts.
@@ -121,13 +122,13 @@ export function setupShortcuts(defs: GlobalShortcutDef[], getWin: GetWin): void 
 
   for (const def of defs) registerDef(def, getWin);
 
-  ipcMain.handle('shortcuts:register', (_e, def: { accelerator: string; event: string }) => {
+  trustedIpcHandle('shortcuts:register', (_e, def: { accelerator: string; event: string }) => {
     const event = typeof def?.event === 'string' ? def.event : '';
     if (!event) return false;
     return registerDef({ accelerator: def?.accelerator, event }, getWin);
   });
 
-  ipcMain.handle('shortcuts:unregister', (_e, accelerator: string) => {
+  trustedIpcHandle('shortcuts:unregister', (_e, accelerator: string) => {
     const normalized = normalizeAccelerator(accelerator);
     if (normalized) globalShortcut.unregister(normalized);
   });

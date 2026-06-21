@@ -1,18 +1,15 @@
 // Electron implementation of @capacitor/app
 import { app, BrowserWindow } from 'electron';
-import { registerPlugin, emitPluginEvent, loadConfig, type AnyRecord, type EventHooks } from '../../shared/functions';
+import { registerPlugin, emitPluginEvent, loadConfig, getMainWindow, onMainWindowChanged, type AnyRecord, type EventHooks } from '../../shared/functions';
 import { consumeLaunchUrl } from '../electron-api/deep-link-main';
 
-function getMainWindow(): BrowserWindow | undefined {
-  return BrowserWindow.getAllWindows()[0];
-}
-
-function parseLaunchUrl(): string | null {
+function parseLaunchUrl(): string | undefined {
   const argv = process.argv.slice(app.isPackaged ? 1 : 2);
   const deepLink = argv.find(a => /^[a-z][a-z0-9+\-.]*:\/\//i.test(a) && !a.startsWith('http'));
-  return deepLink ?? null;
-  // Intentionally NOT falling back to webContents.getURL() — getLaunchUrl() must return null
-  // on a normal launch (no deep link), matching Capacitor's documented behaviour.
+  // Intentionally NOT falling back to webContents.getURL() - getLaunchUrl() must
+  // return undefined on a normal launch (no deep link), matching Capacitor's
+  // documented behaviour.
+  return deepLink;
 }
 
 let fallbackLaunchUrlConsumed = false;
@@ -44,10 +41,10 @@ class App {
 
   async minimizeApp(): Promise<void> { getMainWindow()?.minimize(); }
 
-  async getLaunchUrl(): Promise<{ url: string } | null> {
-    const url = consumeLaunchUrl() ?? (fallbackLaunchUrlConsumed ? null : parseLaunchUrl());
+  async getLaunchUrl(): Promise<{ url: string } | undefined> {
+    const url = consumeLaunchUrl() ?? (fallbackLaunchUrlConsumed ? undefined : parseLaunchUrl());
     fallbackLaunchUrlConsumed = true;
-    return url ? { url } : null;
+    return url ? { url } : undefined;
   }
 
   async getAppLanguage(): Promise<{ value: string }> {
@@ -116,8 +113,9 @@ function detachWindowListeners(): void {
   detachFromWindow();
 }
 
-app.on('browser-window-created', (_event, win) => {
-  attachToWindow(win);
+onMainWindowChanged((win) => {
+  if (listenedWindow && listenedWindow !== win) detachFromWindow();
+  attachToWindow(win ?? undefined);
 });
 
 const events: EventHooks = {

@@ -1,4 +1,5 @@
-import { app, ipcMain, Menu, BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import { app, Menu, BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import { trustedIpcHandle, trustedIpcOn } from '../../shared/functions';
 import type { AppMenuConfig, ContextMenuTarget, ContextMenuTrigger, ElectronConfig, MenuActionSource, ShowContextMenuOptions } from '../../shared/types';
 
 export interface MenuContext {
@@ -178,13 +179,13 @@ function registerContextMenuIpc(): void {
   if (contextMenuIpcRegistered) return;
   contextMenuIpcRegistered = true;
 
-  ipcMain.on('menu:contextTarget', (event, raw: unknown) => {
+  trustedIpcOn('menu:contextTarget', (event, raw: unknown) => {
     const payload = normalizeContextTargetPayload(raw);
     if (!payload) return;
     latestContextTargets.set(event.sender.id, payload);
   });
 
-  ipcMain.handle('menu:showContextMenu', (event, raw: unknown): boolean => {
+  trustedIpcHandle('menu:showContextMenu', (event, raw: unknown): boolean => {
     const runtime = contextMenuRuntime;
     if (!runtime || runtime.cfg.ui?.contextMenu?.enabled !== true) return false;
 

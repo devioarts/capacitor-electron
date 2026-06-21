@@ -1,15 +1,16 @@
-import { app, ipcMain } from 'electron';
+import { app } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 
 function isSupportedPlatform(): boolean {
   return process.platform === 'darwin' || process.platform === 'win32';
 }
 
-ipcMain.handle('autoLaunch:isEnabled', () => isSupportedPlatform() && app.getLoginItemSettings().openAtLogin);
+trustedIpcHandle('autoLaunch:isEnabled', () => isSupportedPlatform() && app.getLoginItemSettings().openAtLogin);
 
-ipcMain.handle('autoLaunch:setEnabled', (_e, enabled: boolean) => {
+trustedIpcHandle('autoLaunch:setEnabled', (_e, enabled: boolean) => {
   if (!isSupportedPlatform()) return false;
   app.setLoginItemSettings({ openAtLogin: enabled === true });
   return app.getLoginItemSettings().openAtLogin;
 });
 
-ipcMain.handle('autoLaunch:getSettings', () => app.getLoginItemSettings());
+trustedIpcHandle('autoLaunch:getSettings', () => app.getLoginItemSettings());

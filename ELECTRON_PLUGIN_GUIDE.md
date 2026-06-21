@@ -48,6 +48,10 @@ your-plugin/
 
 This is the most important file — `cap-electron sync` reads it to generate the IPC bridge.
 
+The published `electron/dist/plugin-settings.js` must be loadable via CommonJS
+`require()`. The example Rollup config below emits this file as CJS; ESM-only
+settings files are skipped by `cap-electron sync`.
+
 ```typescript
 import type { PluginSettings } from '@devioarts/capacitor-electron';
 
@@ -316,6 +320,9 @@ no extra setup is needed from the app developer's side.
 | `imports` | `string[]` | | Import lines added to `plugins-main-auto.ts` |
 | `beforeRegister` | `string[]` | | Statements run before `registerPlugin()` |
 | `configSections` | `string[]` | | `capacitor.config` plugin section names to copy into `electron/capacitor.config.json` |
+
+`plugin-settings.js` is loaded with CommonJS `require()`, so publish the
+compiled settings descriptor as CJS even if the rest of your package is ESM.
 
 ---
 

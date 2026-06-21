@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import type { WebContents } from 'electron';
+import type { IpcMainEvent, IpcMainInvokeEvent, WebContents } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AppConfig, ElectronConfig } from './types';
@@ -10,6 +10,8 @@ export type EventHooks = Record<string, { onAdd?: () => void; onRemove?: () => v
 // IPC sender trust filter — default allows all (backwards-compatible).
 // Override with setIpcSenderCheck() from main.ts once the app URL is known.
 let _senderCheck: ((url: string) => boolean) | null = null;
+let _mainWindow: BrowserWindow | null = null;
+const _mainWindowListeners = new Set<(win: BrowserWindow | null) => void>();
 
 /**
  * Restrict all plugin IPC handlers to frames whose URL satisfies `fn`.
@@ -18,6 +20,60 @@ let _senderCheck: ((url: string) => boolean) | null = null;
  */
 export function setIpcSenderCheck(fn: (url: string) => boolean): void {
   _senderCheck = fn;
+}
+
+function ipcSenderUrl(event: IpcMainInvokeEvent | IpcMainEvent): string {
+  return event.senderFrame?.url ?? '';
+}
+
+export function isIpcSenderTrusted(event: IpcMainInvokeEvent | IpcMainEvent): boolean {
+  return !_senderCheck || _senderCheck(ipcSenderUrl(event));
+}
+
+export function assertTrustedIpcSender(event: IpcMainInvokeEvent | IpcMainEvent, channel: string): void {
+  if (isIpcSenderTrusted(event)) return;
+  const err = new Error(`IPC sender not trusted for ${channel}`);
+  (err as Error & { code?: string }).code = 'FORBIDDEN';
+  throw err;
+}
+
+/**
+ * Register a system IPC handler protected by the same sender-origin check as
+ * plugin IPC. Keep all window.Electron.* channels on this wrapper so a preload
+ * accidentally attached to untrusted content cannot call privileged main APIs.
+ */
+export function trustedIpcHandle<T extends unknown[]>(
+  channel: string,
+  listener: (event: IpcMainInvokeEvent, ...args: T) => unknown,
+): void {
+  ipcMain.handle(channel, (event, ...args) => {
+    assertTrustedIpcSender(event, channel);
+    return listener(event, ...(args as T));
+  });
+}
+
+export function trustedIpcOn<T extends unknown[]>(
+  channel: string,
+  listener: (event: IpcMainEvent, ...args: T) => void,
+): void {
+  ipcMain.on(channel, (event, ...args) => {
+    if (!isIpcSenderTrusted(event)) return;
+    listener(event, ...(args as T));
+  });
+}
+
+export function setMainWindow(win: BrowserWindow | null): void {
+  _mainWindow = win && !win.isDestroyed() ? win : null;
+  for (const listener of _mainWindowListeners) listener(_mainWindow);
+}
+
+export function getMainWindow(): BrowserWindow | null {
+  return _mainWindow && !_mainWindow.isDestroyed() ? _mainWindow : null;
+}
+
+export function onMainWindowChanged(listener: (win: BrowserWindow | null) => void): () => void {
+  _mainWindowListeners.add(listener);
+  return () => { _mainWindowListeners.delete(listener); };
 }
 
 function isPlainObject(v: unknown): v is AnyRecord {
@@ -104,6 +160,7 @@ export function registerPlugin(pluginClass: string, instance: AnyRecord, methods
     };
 
     ipcMain.on(`event-add-${pluginClass}`, (event, type: string) => {
+      if (!isIpcSenderTrusted(event)) return;
       if (!events[type]) return;
       const wc = event.sender;
       const before = totalListeners(type);
@@ -118,6 +175,7 @@ export function registerPlugin(pluginClass: string, instance: AnyRecord, methods
     });
     for (const [type, hooks] of Object.entries(events)) {
       ipcMain.on(`event-remove-${pluginClass}-${type}`, (event) => {
+        if (!isIpcSenderTrusted(event)) return;
         const perWindow = listenerCounts.get(type);
         if (!perWindow) return;
 

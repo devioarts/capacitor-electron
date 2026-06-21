@@ -1,5 +1,5 @@
-import { app, ipcMain, protocol, shell } from 'electron';
-import { loadConfig } from '../../shared/functions';
+import { app, protocol, shell } from 'electron';
+import { loadConfig, trustedIpcHandle } from '../../shared/functions';
 
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 
@@ -18,11 +18,11 @@ function configuredSchemes(): string[] {
     .map(cleanScheme);
 }
 
-ipcMain.handle('protocol:getConfiguredSchemes', () => [...new Set(configuredSchemes())]);
-ipcMain.handle('protocol:isProtocolHandled', (_e, scheme: string) => protocol.isProtocolHandled(cleanScheme(scheme)));
-ipcMain.handle('protocol:isDefaultProtocolClient', (_e, scheme: string) => app.isDefaultProtocolClient(cleanScheme(scheme)));
+trustedIpcHandle('protocol:getConfiguredSchemes', () => [...new Set(configuredSchemes())]);
+trustedIpcHandle('protocol:isProtocolHandled', (_e, scheme: string) => protocol.isProtocolHandled(cleanScheme(scheme)));
+trustedIpcHandle('protocol:isDefaultProtocolClient', (_e, scheme: string) => app.isDefaultProtocolClient(cleanScheme(scheme)));
 
-ipcMain.handle('protocol:setAsDefaultProtocolClient', (_e, scheme: string) => {
+trustedIpcHandle('protocol:setAsDefaultProtocolClient', (_e, scheme: string) => {
   const clean = cleanScheme(scheme);
   if (!configuredSchemes().includes(clean)) {
     throw new Error(`Refusing to register unconfigured protocol scheme: ${clean}`);
@@ -30,10 +30,10 @@ ipcMain.handle('protocol:setAsDefaultProtocolClient', (_e, scheme: string) => {
   return app.setAsDefaultProtocolClient(clean);
 });
 
-ipcMain.handle('protocol:removeAsDefaultProtocolClient', (_e, scheme: string) =>
+trustedIpcHandle('protocol:removeAsDefaultProtocolClient', (_e, scheme: string) =>
   app.removeAsDefaultProtocolClient(cleanScheme(scheme)));
 
-ipcMain.handle('protocol:openExternal', async (_e, url: string) => {
+trustedIpcHandle('protocol:openExternal', async (_e, url: string) => {
   const parsed = new URL(url);
   if (!['http:', 'https:', 'mailto:', ...configuredSchemes().map((s) => `${s}:`)].includes(parsed.protocol)) {
     throw new Error(`Protocol is not allowed for openExternal: ${parsed.protocol}`);

@@ -4,7 +4,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { createRequire } from 'module';
+import { execFileSync, execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const marker = `${path.sep}node_modules${path.sep}`;
@@ -51,8 +52,11 @@ if (!fs.existsSync(appDir)) {
   console.warn('[cap-electron] electron/app/ not found — run: npx cap-electron copy first (packaging may fail).');
 }
 
-const eb = path.join('node_modules', '.bin', 'electron-builder');
-if (!fs.existsSync(path.join(electronDir, 'node_modules', '.bin', 'electron-builder'))) {
+let electronBuilderCli: string;
+try {
+  const electronRequire = createRequire(path.join(electronDir, 'package.json'));
+  electronBuilderCli = electronRequire.resolve('electron-builder/cli.js');
+} catch {
   console.error('[cap-electron] electron-builder not found — run npm install in electron/');
   process.exit(1);
 }
@@ -67,7 +71,9 @@ try {
 
 console.log(`[cap-electron] Packaging (${platform})...`);
 try {
-  execSync(`${eb} ${flags.join(' ')}`, { cwd: electronDir, stdio: 'inherit', shell: true });
+  // Run the JS entrypoint through Node instead of the .bin shim: this avoids
+  // shell parsing and works cross-platform, including Windows .cmd shims.
+  execFileSync(process.execPath, [electronBuilderCli, ...flags], { cwd: electronDir, stdio: 'inherit' });
 } catch {
   console.error('[cap-electron] electron-builder packaging failed.');
   process.exit(1);

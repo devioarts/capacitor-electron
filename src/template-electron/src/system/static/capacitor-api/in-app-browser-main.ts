@@ -153,7 +153,7 @@ async function prepareSession(ses: Session, options: WebViewOptions): Promise<vo
   const electron = electronOptions(options);
   if (options.clearCache || electron.session?.clearCache) await ses.clearCache();
   if (options.clearSessionCache || electron.session?.clearStorage) {
-    await ses.clearStorageData({ dataTypes: ['cookies', 'localStorage', 'sessionStorage', 'cache'] });
+    await ses.clearData({ dataTypes: ['cookies', 'localStorage', 'indexedDB', 'serviceWorkers', 'webSQL', 'cache'] });
   }
 }
 
@@ -267,6 +267,8 @@ export async function openElectronWebView(opts: AnyRecord, events: BrowserEventN
     const ses = browserSession(options);
     await prepareSession(ses, options);
 
+    // Capacitor's InAppBrowser model has one active web view. Opening a new one
+    // replaces the existing Electron window and emits the normal close event.
     closeElectronWebView();
 
     const toolbarHeight = options.showToolbar === false ? 0 : TOOLBAR_HEIGHT;

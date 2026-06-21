@@ -21,7 +21,23 @@ await window.Electron.secureStorage.set('token', 'secret');
 const token = await window.Electron.secureStorage.get('token');
 ```
 
-Values are encrypted with Electron `safeStorage` and stored in `userData/CapacitorStorage/secure-storage.json`. Check `isEncryptionAvailable()` and `getSelectedStorageBackend()` on Linux because some environments may fall back to weaker storage.
+Values are encrypted with Electron `safeStorage` and stored in `userData/CapacitorStorage/secure-storage.json`. By default the JSON object keys are stored as the original key names. Set `plugins.Electron.app.security.secureStorageKeys: 'hashed'` before writing data to store deterministic SHA-256 key hashes instead.
+
+```ts
+plugins: {
+  Electron: {
+    app: {
+      security: {
+        secureStorageKeys: 'hashed',
+      },
+    },
+  },
+}
+```
+
+Choose the key mode before the first write. Switching between `'plain'` and `'hashed'` does not migrate existing data; applications that change modes later must migrate their own records. In `'hashed'` mode, `secureStorage.keys()` returns the stored hash keys because the original names are not saved. Values remain encrypted by Electron `safeStorage` in both modes.
+
+Check `isEncryptionAvailable()` and `getSelectedStorageBackend()` on Linux because some environments may fall back to weaker storage.
 
 Official reference: Electron [safeStorage](https://electronjs.org/docs/latest/api/safe-storage).
 
@@ -111,18 +127,28 @@ The guardian intentionally owns Node's `process.setUncaughtExceptionCaptureCallb
 ## Managed windows
 
 ```ts
-const child = await window.Electron.windows.create({
+const settings = await window.Electron.windows.create({
+  appPath: '#/settings',
+  width: 900,
+  height: 700,
+});
+
+const external = await window.Electron.windows.create({
   url: 'https://example.com/',
   width: 900,
   height: 700,
 });
 
-await window.Electron.windows.focus(child.id);
+await window.Electron.windows.focus(settings.id);
 ```
 
-Managed windows use the same secure preload defaults as the main app window and can be listed, focused, shown, hidden, resized, and closed.
+Managed windows can be listed, focused, shown, hidden, resized, and closed.
 
-Renderer-created managed windows accept only `http` and `https` URLs and a whitelist of normal window options. They cannot override `webPreferences`.
+Use `appPath` for internal application windows. These windows load the app's own renderer content and receive the full preload bridge, including `window.Electron` and built-in Capacitor plugin IPC. `appPath` must be app-relative (`#/settings`, `?window=settings`, or `/settings`) and cannot be an absolute URL. `#/...` routes are recommended when the production app uses `serveMode: 'file'`; `/...` routes work naturally in dev/server mode and are mapped to a hash route in file mode.
+
+Use `url` for external `http` / `https` content. External URL windows are opened without the preload bridge, so the loaded page does not receive `window.Electron`. `appPath` and `url` are mutually exclusive.
+
+Renderer-created managed windows accept a whitelist of normal window options. They cannot override `webPreferences`.
 
 Official reference: Electron [BrowserWindow](https://electronjs.org/docs/latest/api/browser-window).
 

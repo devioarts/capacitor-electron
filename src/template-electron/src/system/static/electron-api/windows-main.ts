@@ -1,7 +1,15 @@
-import { BrowserWindow, ipcMain, shell, type BrowserWindowConstructorOptions, type IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, shell, type BrowserWindowConstructorOptions, type IpcMainInvokeEvent } from 'electron';
 import * as path from 'path';
+import { trustedIpcHandle } from '../../shared/functions';
 
 const managed = new Map<number, BrowserWindow>();
+const MAX_APP_PATH_LENGTH = 2048;
+
+export type ManagedWindowAppTarget =
+  | { kind: 'url'; url: string }
+  | { kind: 'file'; filePath: string; options?: Electron.LoadFileOptions };
+type ManagedWindowContentTarget = ManagedWindowAppTarget | { kind: 'external'; url: string };
+
 type ManagedWindowOptions = Pick<BrowserWindowConstructorOptions,
   | 'width'
   | 'height'
@@ -18,7 +26,13 @@ type ManagedWindowOptions = Pick<BrowserWindowConstructorOptions,
   | 'fullscreenable'
   | 'backgroundColor'
   | 'show'
-> & { url?: string };
+> & { url?: string; appPath?: string };
+
+let appResolver: ((appPath: string) => ManagedWindowAppTarget) | null = null;
+
+export function setManagedWindowAppResolver(resolver: (appPath: string) => ManagedWindowAppTarget): void {
+  appResolver = resolver;
+}
 
 function currentWindow(e: IpcMainInvokeEvent): BrowserWindow | null {
   return BrowserWindow.fromWebContents(e.sender);
@@ -52,8 +66,25 @@ function webUrl(rawUrl: string): string {
   return url.href;
 }
 
+function appPath(rawAppPath: unknown): string | undefined {
+  if (rawAppPath === undefined) return undefined;
+  if (typeof rawAppPath !== 'string') throw new Error('appPath must be a string');
+  if (rawAppPath.length > MAX_APP_PATH_LENGTH) throw new Error('appPath is too long');
+  if (/^[a-z][a-z0-9+\-.]*:/i.test(rawAppPath) || rawAppPath.startsWith('//')) {
+    throw new Error('appPath must be app-relative, not an absolute URL');
+  }
+  if (rawAppPath !== '' && !rawAppPath.startsWith('/') && !rawAppPath.startsWith('?') && !rawAppPath.startsWith('#')) {
+    throw new Error('appPath must start with "/", "?", or "#"');
+  }
+  return rawAppPath;
+}
+
 function windowOptions(raw: ManagedWindowOptions | undefined): ManagedWindowOptions {
   const opts = raw ?? {};
+  const url = opts.url;
+  const internalPath = appPath(opts.appPath);
+  if (url && internalPath !== undefined) throw new Error('Use either url or appPath, not both');
+
   const allowed: ManagedWindowOptions = {
     width: opts.width,
     height: opts.height,
@@ -70,7 +101,8 @@ function windowOptions(raw: ManagedWindowOptions | undefined): ManagedWindowOpti
     fullscreenable: opts.fullscreenable,
     backgroundColor: opts.backgroundColor,
     show: opts.show,
-    url: opts.url,
+    url,
+    appPath: internalPath,
   };
 
   for (const key of Object.keys(allowed) as Array<keyof ManagedWindowOptions>) {
@@ -80,9 +112,33 @@ function windowOptions(raw: ManagedWindowOptions | undefined): ManagedWindowOpti
   return allowed;
 }
 
-ipcMain.handle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined) => {
+function resolveManagedContent(opts: ManagedWindowOptions): ManagedWindowContentTarget | null {
+  if (opts.appPath !== undefined) {
+    if (!appResolver) throw new Error('Managed app windows are not ready yet');
+    return appResolver(opts.appPath);
+  }
+
+  return opts.url ? { kind: 'external', url: webUrl(opts.url) } : null;
+}
+
+function loadManagedContent(win: BrowserWindow, target: ManagedWindowContentTarget | null): void {
+  if (!target) return;
+  if (target.kind === 'file') {
+    void win.loadFile(target.filePath, target.options);
+    return;
+  }
+
+  void win.loadURL(target.url);
+}
+
+trustedIpcHandle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined) => {
   const opts = windowOptions(rawOpts);
+  const contentTarget = resolveManagedContent(opts);
   const parent = currentWindow(e) ?? undefined;
+  // Internal appPath windows are trusted app UI and get the preload bridge.
+  // External url windows are untrusted web content and must not receive it.
+  const usePreload = !opts.url;
+  const { url: _url, appPath: _appPath, ...browserOptions } = opts;
   const win = new BrowserWindow({
     width: 900,
     height: 700,
@@ -92,24 +148,22 @@ ipcMain.handle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined) 
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      preload: path.join(__dirname, 'preload.cjs'),
+      ...(usePreload ? { preload: path.join(__dirname, 'preload.cjs') } : {}),
     },
-    ...opts,
+    ...browserOptions,
   });
   managed.set(win.id, win);
   win.once('closed', () => managed.delete(win.id));
 
-  if (opts?.url) {
-    void win.loadURL(webUrl(opts.url));
-  }
+  loadManagedContent(win, contentTarget);
 
   return serialize(win);
 });
 
-ipcMain.handle('windows:list', () => BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed()).map(serialize));
-ipcMain.handle('windows:focus', (_e, id: number) => { getManaged(id).focus(); });
-ipcMain.handle('windows:close', (_e, id: number) => { getManaged(id).close(); });
-ipcMain.handle('windows:show', (_e, id: number) => { getManaged(id).show(); });
-ipcMain.handle('windows:hide', (_e, id: number) => { getManaged(id).hide(); });
-ipcMain.handle('windows:setBounds', (_e, opts: { id: number; bounds: Electron.Rectangle }) => { getManaged(opts.id).setBounds(opts.bounds); });
-ipcMain.handle('windows:openExternal', async (_e, url: string) => { await shell.openExternal(webUrl(url)); });
+trustedIpcHandle('windows:list', () => BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed()).map(serialize));
+trustedIpcHandle('windows:focus', (_e, id: number) => { getManaged(id).focus(); });
+trustedIpcHandle('windows:close', (_e, id: number) => { getManaged(id).close(); });
+trustedIpcHandle('windows:show', (_e, id: number) => { getManaged(id).show(); });
+trustedIpcHandle('windows:hide', (_e, id: number) => { getManaged(id).hide(); });
+trustedIpcHandle('windows:setBounds', (_e, opts: { id: number; bounds: Electron.Rectangle }) => { getManaged(opts.id).setBounds(opts.bounds); });
+trustedIpcHandle('windows:openExternal', async (_e, url: string) => { await shell.openExternal(webUrl(url)); });

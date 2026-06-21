@@ -1,4 +1,5 @@
-import { BrowserWindow, ipcMain, nativeTheme } from 'electron';
+import { BrowserWindow, nativeTheme } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 
 function snapshot(): { shouldUseDarkColors: boolean; themeSource: typeof nativeTheme.themeSource; shouldUseHighContrastColors: boolean; shouldUseInvertedColorScheme: boolean } {
   return {
@@ -16,8 +17,8 @@ nativeTheme.on('updated', () => {
   }
 });
 
-ipcMain.handle('nativeTheme:get', () => snapshot());
-ipcMain.handle('nativeTheme:setThemeSource', (_e, source: typeof nativeTheme.themeSource) => {
+trustedIpcHandle('nativeTheme:get', () => snapshot());
+trustedIpcHandle('nativeTheme:setThemeSource', (_e, source: typeof nativeTheme.themeSource) => {
   if (!['system', 'light', 'dark'].includes(source)) throw new Error(`Invalid theme source: ${source}`);
   nativeTheme.themeSource = source;
   return snapshot();

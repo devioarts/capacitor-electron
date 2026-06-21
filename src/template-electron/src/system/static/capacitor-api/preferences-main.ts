@@ -1,6 +1,7 @@
 // Electron implementation of @capacitor/preferences
 import { app } from 'electron';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
+import * as fssync from 'fs';
 import * as path from 'path';
 import { registerPlugin, loadConfig, type AnyRecord } from '../../shared/functions';
 
@@ -17,18 +18,29 @@ if (cfg.capacitorPlugins?.preferences !== false) {
   const storePath  = path.join(storeDir, 'preferences.json');
   const webPrefix  = 'CapacitorStorage.';
   const oldPrefix  = '_cap_';
+  let persistQueue: Promise<void> = Promise.resolve();
 
-  fs.mkdirSync(storeDir, { recursive: true });
+  fssync.mkdirSync(storeDir, { recursive: true });
 
   try {
-    const raw = JSON.parse(fs.readFileSync(storePath, 'utf-8')) as Record<string, unknown>;
+    const raw = JSON.parse(fssync.readFileSync(storePath, 'utf-8')) as Record<string, unknown>;
     for (const [k, v] of Object.entries(raw)) {
       if (typeof v === 'string') store.set(k, v);
     }
   } catch { /* file absent or corrupted on first run */ }
 
-  function persist(): void {
-    fs.writeFileSync(storePath, JSON.stringify(Object.fromEntries(store)), 'utf-8');
+  function persist(): Promise<void> {
+    const payload = JSON.stringify(Object.fromEntries(store));
+    const tmpPath = `${storePath}.${process.pid}.${Date.now()}.tmp`;
+
+    // Async writes avoid blocking Electron's main process. The queue preserves
+    // write order so older snapshots cannot land after newer Preferences changes.
+    const write = persistQueue.then(async () => {
+      await fs.writeFile(tmpPath, payload, 'utf-8');
+      await fs.rename(tmpPath, storePath);
+    });
+    persistQueue = write.catch(() => undefined);
+    return write;
   }
 
   // ── Plugin class ────────────────────────────────────────────────────────────
@@ -55,17 +67,17 @@ if (cfg.capacitorPlugins?.preferences !== false) {
 
     async set(opts: AnyRecord): Promise<void> {
       store.set(opts['key'] as string, opts['value'] as string);
-      persist();
+      await persist();
     }
 
     async remove(opts: AnyRecord): Promise<void> {
       store.delete(opts['key'] as string);
-      persist();
+      await persist();
     }
 
     async clear(): Promise<void> {
       store.clear();
-      persist();
+      await persist();
     }
 
     async keys(): Promise<{ keys: string[] }> {
@@ -103,7 +115,7 @@ if (cfg.capacitorPlugins?.preferences !== false) {
         }
       }
 
-      if (migrated.length > 0) persist();
+      if (migrated.length > 0) await persist();
 
       return { migrated, existing };
     }

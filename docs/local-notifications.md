@@ -198,9 +198,24 @@ Works. Icon is not supported.
 
 ---
 
+## Persistence model
+
+Scheduled notifications are stored only in the Electron main process as
+`setTimeout` / `setInterval` timers. That means pending notifications work while
+the app process is alive, but they are not handed off to an operating-system
+scheduler. When the app quits, crashes, updates, or the machine restarts, those
+timers are gone.
+
+If your app needs notifications to survive restart, store your own schedule in
+durable app data (for example Preferences, a local database, or your own file)
+and call `LocalNotifications.schedule()` again during app startup. This keeps the
+Electron implementation honest: it does not pretend to provide OS-level delivery
+that Electron itself does not guarantee across macOS, Windows, and Linux.
+
+---
+
 ## Notes
 
 - The `@capacitor/local-notifications` **config block** in `capacitor.config.ts` (`smallIcon`, `iconColor`, `sound`, `presentationOptions`) has no effect on Electron — all of those options are Android- or iOS-specific.
 - Pending timers (`setTimeout` / `setInterval`) are automatically cleared on `will-quit`.
-- Notifications that were scheduled and are pending but have not yet fired will disappear when the user quits the app — this is expected behaviour for a desktop app.
-- If you need notifications that survive restarts, persist the schedule yourself and re-call `schedule()` on startup using the data you saved.
+- Notifications that were scheduled and are pending but have not yet fired will disappear when the user quits the app. Persist and restore the schedule in app code if restart-safe delivery is required.

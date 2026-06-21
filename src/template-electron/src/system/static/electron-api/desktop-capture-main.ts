@@ -1,6 +1,7 @@
-import { desktopCapturer, ipcMain } from 'electron';
+import { desktopCapturer } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 
-ipcMain.handle('desktopCapture:getSources', async (_e, opts: {
+trustedIpcHandle('desktopCapture:getSources', async (_e, opts: {
   types?: Array<'window' | 'screen'>;
   thumbnailSize?: { width: number; height: number };
   fetchWindowIcons?: boolean;

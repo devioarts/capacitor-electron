@@ -8,7 +8,7 @@ Capacitor platform plugin that adds Electron support to any Capacitor app. Provi
 
 - Node.js ≥ 24
 - Capacitor ≥ 8
-- Electron 42
+- Electron ≥ 42
 
 ## Installation
 
@@ -119,6 +119,9 @@ const config: CapacitorConfig = {
         serveMode: 'file',
         singleInstance: true,
         persistWindowState: true,
+        security: {
+          secureStorageKeys: 'plain',
+        },
       },
       browserWindow: {
         width: 1400,
@@ -197,6 +200,7 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |
 | `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
 | `app.autoUpdater` | object | — | `electron-updater` settings |
+| `app.security.secureStorageKeys` | `'plain' \| 'hashed'` | `'plain'` | Store secureStorage JSON keys as original names or deterministic hashes |
 
 See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), [in-app browser](docs/in-app-browser.md), and [auto-updater](docs/auto-updater.md).
 
@@ -521,7 +525,7 @@ Additional desktop namespaces are exposed under `window.Electron`:
 | Namespace | Description |
 |---|---|
 | `dialogs` | Native open/save/message/error dialogs |
-| `secureStorage` | Encrypted local key-value storage via Electron `safeStorage` |
+| `secureStorage` | Encrypted local key-value storage via Electron `safeStorage`; key names can be stored plain or hashed |
 | `protocols` | Configured protocol/default-client helpers |
 | `session` | Cache, storage, cookies, proxy, user agent |
 | `downloads` | Electron download manager with progress events |
@@ -529,7 +533,7 @@ Additional desktop namespaces are exposed under `window.Electron`:
 | `desktopCapture` | Screen/window capture source listing |
 | `autoLaunch` | Login item / start-at-login settings |
 | `nativeTheme` | System theme state and theme source override |
-| `windows` | Managed secondary windows |
+| `windows` | Managed secondary windows; internal `appPath` gets preload, external `url` does not |
 
 See [docs/electron-desktop-apis.md](docs/electron-desktop-apis.md) for the full desktop API surface.
 

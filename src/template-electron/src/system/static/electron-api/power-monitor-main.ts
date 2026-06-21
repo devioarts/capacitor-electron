@@ -1,4 +1,5 @@
-import { powerMonitor, BrowserWindow, ipcMain } from 'electron';
+import { powerMonitor, BrowserWindow } from 'electron';
+import { trustedIpcHandle } from '../../shared/functions';
 import type { PowerMonitorEventName } from '../../shared/types';
 
 function broadcast(type: PowerMonitorEventName): void {
@@ -15,9 +16,9 @@ powerMonitor.on('on-battery',    () => broadcast('on-battery'));
 powerMonitor.on('on-ac',         () => broadcast('on-ac'));
 powerMonitor.on('shutdown',      () => broadcast('shutdown'));
 
-ipcMain.handle('powerMonitor:getSystemIdleState', (_, seconds: number) =>
+trustedIpcHandle('powerMonitor:getSystemIdleState', (_, seconds: number) =>
   powerMonitor.getSystemIdleState(seconds),
 );
-ipcMain.handle('powerMonitor:getSystemIdleTime', () =>
+trustedIpcHandle('powerMonitor:getSystemIdleTime', () =>
   powerMonitor.getSystemIdleTime(),
 );

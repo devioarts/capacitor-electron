@@ -1,13 +1,23 @@
-import { app, ipcMain, safeStorage } from 'electron';
+import { app, safeStorage } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createHash } from 'crypto';
+import { loadConfig, trustedIpcHandle } from '../../shared/functions';
 
 type SecureStore = Record<string, string>;
+type SecureStorageKeyMode = 'plain' | 'hashed';
 
 let storeQueue: Promise<void> = Promise.resolve();
+const { appCfg, cfg } = loadConfig();
+const keyMode: SecureStorageKeyMode = cfg.app?.security?.secureStorageKeys === 'hashed' ? 'hashed' : 'plain';
 
 function storePath(): string {
   return path.join(app.getPath('userData'), 'CapacitorStorage', 'secure-storage.json');
+}
+
+function storageKey(key: string): string {
+  if (keyMode === 'plain') return key;
+  return createHash('sha256').update(`${appCfg.appId ?? app.getName()}:${key}`).digest('hex');
 }
 
 async function readStore(): Promise<SecureStore> {
@@ -52,42 +62,42 @@ async function decrypt(value: string): Promise<string> {
   return safeStorage.decryptString(buf);
 }
 
-ipcMain.handle('secureStorage:isEncryptionAvailable', () => safeStorage.isEncryptionAvailable());
-ipcMain.handle('secureStorage:getSelectedStorageBackend', () => backend());
+trustedIpcHandle('secureStorage:isEncryptionAvailable', () => safeStorage.isEncryptionAvailable());
+trustedIpcHandle('secureStorage:getSelectedStorageBackend', () => backend());
 
-ipcMain.handle('secureStorage:set', async (_e, opts: { key: string; value: string }) => {
+trustedIpcHandle('secureStorage:set', async (_e, opts: { key: string; value: string }) => {
   if (!opts?.key) throw new Error('secureStorage.set requires a key');
   await withStore(async () => {
     const store = await readStore();
-    store[opts.key] = await encrypt(String(opts.value ?? ''));
+    store[storageKey(opts.key)] = await encrypt(String(opts.value ?? ''));
     await writeStore(store);
   });
 });
 
-ipcMain.handle('secureStorage:get', async (_e, key: string) => {
+trustedIpcHandle('secureStorage:get', async (_e, key: string) => {
   if (!key) throw new Error('secureStorage.get requires a key');
   return withStore(async () => {
     const store = await readStore();
-    const value = store[key];
+    const value = store[storageKey(key)];
     return value == null ? null : await decrypt(value);
   });
 });
 
-ipcMain.handle('secureStorage:remove', async (_e, key: string) => {
+trustedIpcHandle('secureStorage:remove', async (_e, key: string) => {
   await withStore(async () => {
     const store = await readStore();
-    delete store[key];
+    delete store[storageKey(key)];
     await writeStore(store);
   });
 });
 
-ipcMain.handle('secureStorage:clear', async () => {
+trustedIpcHandle('secureStorage:clear', async () => {
   await withStore(async () => {
     await writeStore({});
   });
 });
 
-ipcMain.handle('secureStorage:keys', async () => withStore(async () => Object.keys(await readStore())));
+trustedIpcHandle('secureStorage:keys', async () => withStore(async () => Object.keys(await readStore())));
 
-ipcMain.handle('secureStorage:encryptString', async (_e, value: string) => encrypt(String(value ?? '')));
-ipcMain.handle('secureStorage:decryptString', async (_e, value: string) => decrypt(String(value ?? '')));
+trustedIpcHandle('secureStorage:encryptString', async (_e, value: string) => encrypt(String(value ?? '')));
+trustedIpcHandle('secureStorage:decryptString', async (_e, value: string) => decrypt(String(value ?? '')));

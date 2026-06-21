@@ -54,6 +54,7 @@ async function cleanup(): Promise<void> {
   cleaningUp = true;
 
   for (const w of watchers) try { w.close(); } catch { /* ignore */ }
+  try { fs.rmSync(path.join(electronDir, 'dist', '.dev-reload'), { force: true }); } catch { /* ignore */ }
 
   if (children.length === 0) return;
 
@@ -206,6 +207,7 @@ try {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function detectPackageManager(root: string): string {
+  if (fs.existsSync(path.join(root, 'bun.lock')))       return 'bun';
   if (fs.existsSync(path.join(root, 'bun.lockb')))      return 'bun';
   if (fs.existsSync(path.join(root, 'pnpm-lock.yaml'))) return 'pnpm';
   if (fs.existsSync(path.join(root, 'yarn.lock')))      return 'yarn';
