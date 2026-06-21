@@ -109,7 +109,7 @@ function quoteWindowsArg(value: string): string {
 function windowsShellCommand(cmd: string, args: string[], env: NodeJS.ProcessEnv): { cmd: string; args: string[] } {
   return {
     cmd: env['ComSpec'] ?? env['COMSPEC'] ?? 'cmd.exe',
-    args: ['/d', '/c', [cmd, ...args].map(quoteWindowsArg).join(' ')],
+    args: ['/d', '/c', [cmd, ...args.map(quoteWindowsArg)].join(' ')],
   };
 }
 
