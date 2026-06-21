@@ -23,24 +23,24 @@
 
 Run all commands from the Capacitor project root. Requires a valid Capacitor project with `@devioarts/capacitor-electron` installed.
 
-| Command | Steps / Expected | macOS | win | lin | Notes |
-|---------|-----------------|-------|-----|-----|-------|
-| `add` | `npx cap-electron add` on a clean project → Expected: `electron/` directory created with full file structure; `capacitor.config.ts` patched; `sync` runs automatically | ✅ | 🧪 | 🧪 | |
-| `scripts` | `npx cap-electron scripts` after `add` → Expected: `electron:sync`, `electron:copy`, and `electron:open` added to root `package.json` without overwriting existing scripts | ✅ | 🧪 | 🧪 | |
-| `copy` | Build web app → `npx cap-electron copy` → Expected: `webDir` output copied to `electron/app/`; `electron-init.js` injected into `index.html` | ✅ | 🧪 | 🧪 | |
-| `update` | `npx cap-electron update` → Expected: plugin bridges in `src/generated/` regenerated; global types injected; config synced; asset paths normalised | ✅ | 🧪 | 🧪 | |
-| `sync` | `npx cap-electron sync` → Expected: runs `copy` then `update`; if `copy` fails, `update` still runs | ✅ | 🧪 | 🧪 | |
-| `open` / `run` (dev) | `npx cap-electron open` or `npx cap-electron run` → Expected: Vite dev server starts; Electron launches pointing to dev URL; app loads in window | ⚠️ | 🧪 | 🧪 | Process cleanup on Ctrl+C may leave orphans |
-| Hot-restart on main change | While `open` running → edit `electron/dist/main.cjs` → Expected: Electron main process restarts automatically; window reloads | ✅ | ✅ | 🧪 | |
-| Renderer reload on preload change | While `open` running → edit `electron/dist/preload.cjs` → Expected: renderer window reloads automatically | ✅ | ✅ | 🧪 | |
-| `build` | `npx cap-electron build` → Expected: Electron sources compiled; electron-builder packages for host OS; installer artifact created in `electron/dist/` | ✅ | 🧪 | 🧪 | |
+| Command | Steps / Expected | macOS | win | lin | Notes                                                        |
+|---------|-----------------|-------|-----|-----|--------------------------------------------------------------|
+| `add` | `npx cap-electron add` on a clean project → Expected: `electron/` directory created with full file structure; `capacitor.config.ts` patched; `sync` runs automatically | ✅ | ✅ | 🧪 |                                                              |
+| `scripts` | `npx cap-electron scripts` after `add` → Expected: `electron:sync`, `electron:copy`, and `electron:open` added to root `package.json` without overwriting existing scripts | ✅ | ✅ | 🧪 |                                                              |
+| `copy` | Build web app → `npx cap-electron copy` → Expected: `webDir` output copied to `electron/app/`; `electron-init.js` injected into `index.html` | ✅ | ✅ | 🧪 |                                                              |
+| `update` | `npx cap-electron update` → Expected: plugin bridges in `src/generated/` regenerated; global types injected; config synced; asset paths normalised | ✅ | ✅ | 🧪 |                                                              |
+| `sync` | `npx cap-electron sync` → Expected: runs `copy` then `update`; if `copy` fails, `update` still runs | ✅ | ✅ | 🧪 |                                                              |
+| `open` / `run` (dev) | `npx cap-electron open` or `npx cap-electron run` → Expected: Vite dev server starts; Electron launches pointing to dev URL; app loads in window | ✅ | ✅ | 🧪 |                                                              |
+| Hot-restart on main change | While `open` running → edit `electron/dist/main.cjs` → Expected: Electron main process restarts automatically; window reloads | ✅ | ✅ | 🧪 |                                                              |
+| Renderer reload on preload change | While `open` running → edit `electron/dist/preload.cjs` → Expected: renderer window reloads automatically | ✅ | ✅ | 🧪 |                                                              |
+| `build` | `npx cap-electron build` → Expected: Electron sources compiled; electron-builder packages for host OS; installer artifact created in `electron/dist/` | ✅ | 🧪 | 🧪 |                                                              |
 | `build mac` | Run on macOS → Expected: `.dmg` created | ✅ | — | — | Gatekeeper requires code signing for unsigned-build warnings |
-| `build win` | Run on Windows → Expected: NSIS `.exe` installer created | — | 🧪 | — | |
-| `build linux` | Run on Linux → Expected: AppImage (or configured target) created | — | — | 🧪 | |
-| `kill` | With a running Electron instance → `npx cap-electron kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 | |
-| `upgrade` | On existing project → Expected: `src/system/` updated from template; `src/user/` files left intact; generated files cleaned and regenerated | ✅ | 🧪 | 🧪 | |
-| `upgrade --all` | → Expected: also updates `electron-builder.js`, `tsconfig.json`; merges template deps/scripts into `package.json` | ✅ | 🧪 | 🧪 | |
-| `restore` | After failed upgrade → Expected: system files restored from template; user files unaffected | ✅ | 🧪 | 🧪 | |
+| `build win` | Run on Windows → Expected: NSIS `.exe` installer created | — | 🧪 | — |                                                              |
+| `build linux` | Run on Linux → Expected: AppImage (or configured target) created | — | — | 🧪 |                                                              |
+| `kill` | With a running Electron instance → `npx cap-electron kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 |                                                              |
+| `upgrade` | On existing project → Expected: `src/system/` updated from template; `src/user/` files left intact; generated files cleaned and regenerated | ✅ | ✅ | 🧪 |                                                              |
+| `upgrade --all` | → Expected: also updates `electron-builder.js`, `tsconfig.json`; merges template deps/scripts into `package.json` | ✅ | ✅ | 🧪 |                                                              |
+| `restore` | After failed upgrade → Expected: system files restored from template; user files unaffected | ✅ | ✅ | 🧪 | need run sync after                                          |
 
 ---
 
@@ -64,74 +64,74 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | `getAppVersion()` | Electron Info tab → **getAppVersion** button → Expected: version string matching `package.json` version field | ✅ | ✅ | 🧪 | |
 | `openDevTools()` | Window → DevTools → **openDevTools()** → Expected: Chrome DevTools panel opens | ✅ | ✅ | 🧪 | |
 | `closeDevTools()` | With DevTools open → **closeDevTools()** → Expected: DevTools panel closes | ✅ | ✅ | 🧪 | |
-| `setBadgeCount(n)` | Window → Badge count → enter number → **setBadgeCount()** → Expected: numeric badge shown on Dock / taskbar icon | 🧪 | 🧪 | — | macOS: Dock badge · Windows: requires app identity · Linux: unsupported |
-| `getBadgeCount()` | After `setBadgeCount(5)` → **getBadgeCount()** → Expected: returns `5` | 🧪 | 🧪 | — | |
-| Badge clear (`setBadgeCount(0)`) | After setting badge → **Clear badge** → Expected: badge removed from icon | 🧪 | 🧪 | — | |
+| `setBadgeCount(n)` | Window → Badge count → enter number → **setBadgeCount()** → Expected: numeric badge shown on Dock / taskbar icon | 🧪 | ✅ | — | macOS: Dock badge · Windows: requires app identity · Linux: unsupported |
+| `getBadgeCount()` | After `setBadgeCount(5)` → **getBadgeCount()** → Expected: returns `5` | 🧪 | ✅ | — | |
+| Badge clear (`setBadgeCount(0)`) | After setting badge → **Clear badge** → Expected: badge removed from icon | 🧪 | ✅ | — | |
 | `onElectronError` listener | Electron Info → Events → **enable onElectronError** → trigger an uncaught error in main process → Expected: event logged with message and stack | 🧪 | 🧪 | 🧪 | Requires deliberate main-process error or test hook |
 | Bridge capabilities grid | Electron Info → Expected: green dot for all 10 core bridges (dialogs, secureStorage, protocols, session, downloads, print, desktopCapture, autoLaunch, nativeTheme, windows); updater dot red/absent if `app.autoUpdater.enabled: false`; onDeepLink dot red/absent if `app.deepLinkingScheme` not set | 🧪 | 🧪 | 🧪 | |
-| Inspect bridge keys | Electron Info → **inspect bridge keys** → Expected: sorted list of all keys on `window.Electron` logged | 🧪 | 🧪 | 🧪 | |
+| Inspect bridge keys | Electron Info → **inspect bridge keys** → Expected: sorted list of all keys on `window.Electron` logged | 🧪 | ✅ | 🧪 | |
 
 ### Dialogs — Playground: **Dialogs tab**
 
 | Feature | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `showOpenDialog` — single file | Dialogs → Open dialog → single mode → **Open** → select one file → Expected: `{ filePaths: ["<path>"] }` | 🧪 | 🧪 | 🧪 | |
-| `showOpenDialog` — multi-select | Enable multi-select → **Open** → select multiple files → Expected: array with multiple paths | 🧪 | 🧪 | 🧪 | |
-| `showOpenDialog` — directory | Enable directory picker → **Open** → select folder → Expected: `{ filePaths: ["<dir>"] }` | 🧪 | 🧪 | 🧪 | |
-| `showOpenDialog` — cancel | Open dialog → press **Cancel** → Expected: `{ filePaths: [] }` or `undefined` (no selection) | 🧪 | 🧪 | 🧪 | |
-| `showOpenDialog` — filter preset | Select a filter preset (Images / Documents / Videos / Archives) → **Open** → Expected: file picker shows only matching extensions | 🧪 | 🧪 | 🧪 | |
-| `showOpenDialog` — custom extensions | Enter custom extensions (e.g. `json,yaml`) → **Open** → Expected: file picker filters to those extensions only | 🧪 | 🧪 | 🧪 | |
-| `showSaveDialog` — basic | Dialogs → Save dialog → enter default filename → **Save** → Expected: OS save dialog opens; chosen path returned | 🧪 | 🧪 | 🧪 | |
-| `showSaveDialog` — cancel | Save dialog → **Cancel** → Expected: `undefined` returned | 🧪 | 🧪 | 🧪 | |
-| `showSaveDialog` — filter preset | Select filter preset → **Save** → Expected: save dialog filters extensions | 🧪 | 🧪 | 🧪 | |
-| `showMessageBox` — info | Dialogs → Message boxes → **showMessageBox info** → Expected: info dialog; clicking OK returns `{ response: 0 }` | 🧪 | 🧪 | 🧪 | |
-| `showMessageBox` — question (multi-button) | **showMessageBox question** (2+ buttons) → click second button → Expected: `{ response: 1 }` | 🧪 | 🧪 | 🧪 | |
-| `showMessageBox` — cancelId | showMessageBox with cancelId set → press Escape → Expected: `{ response: <cancelId> }` | 🧪 | 🧪 | 🧪 | Escape behaviour may vary by OS |
-| `showErrorBox` | Dialogs → **showErrorBox** → Expected: error dialog with title + body; click OK to dismiss | 🧪 | 🧪 | 🧪 | |
+| `showOpenDialog` — single file | Dialogs → Open dialog → single mode → **Open** → select one file → Expected: `{ filePaths: ["<path>"] }` | 🧪 | ✅ | 🧪 | |
+| `showOpenDialog` — multi-select | Enable multi-select → **Open** → select multiple files → Expected: array with multiple paths | 🧪 | ✅ | 🧪 | |
+| `showOpenDialog` — directory | Enable directory picker → **Open** → select folder → Expected: `{ filePaths: ["<dir>"] }` | 🧪 | ✅ | 🧪 | |
+| `showOpenDialog` — cancel | Open dialog → press **Cancel** → Expected: `{ filePaths: [] }` or `undefined` (no selection) | 🧪 | ✅ | 🧪 | |
+| `showOpenDialog` — filter preset | Select a filter preset (Images / Documents / Videos / Archives) → **Open** → Expected: file picker shows only matching extensions | 🧪 | ✅ | 🧪 | |
+| `showOpenDialog` — custom extensions | Enter custom extensions (e.g. `json,yaml`) → **Open** → Expected: file picker filters to those extensions only | 🧪 | ✅ | 🧪 | |
+| `showSaveDialog` — basic | Dialogs → Save dialog → enter default filename → **Save** → Expected: OS save dialog opens; chosen path returned | 🧪 | ✅ | 🧪 | |
+| `showSaveDialog` — cancel | Save dialog → **Cancel** → Expected: `undefined` returned | 🧪 | ✅ | 🧪 | |
+| `showSaveDialog` — filter preset | Select filter preset → **Save** → Expected: save dialog filters extensions | 🧪 | ✅ | 🧪 | |
+| `showMessageBox` — info | Dialogs → Message boxes → **showMessageBox info** → Expected: info dialog; clicking OK returns `{ response: 0 }` | 🧪 | ✅ | 🧪 | |
+| `showMessageBox` — question (multi-button) | **showMessageBox question** (2+ buttons) → click second button → Expected: `{ response: 1 }` | 🧪 | ✅ | 🧪 | |
+| `showMessageBox` — cancelId | showMessageBox with cancelId set → press Escape → Expected: `{ response: <cancelId> }` | 🧪 | ✅ | 🧪 | Escape behaviour may vary by OS |
+| `showErrorBox` | Dialogs → **showErrorBox** → Expected: error dialog with title + body; click OK to dismiss | 🧪 | ✅ | 🧪 | |
 
 ### Secure Storage — Playground: **Secure storage tab**
 
 | Feature | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `set(key, value)` | Secure storage → enter key + value → **set()** → Expected: no error; value persisted | 🧪 | 🧪 | 🧪 | macOS: Keychain · Windows: DPAPI · Linux: secret-service |
-| `get(key)` existing | After `set()` → **get(same key)** → Expected: returns exact stored value | 🧪 | 🧪 | 🧪 | |
-| `get(key)` nonexistent | **get()** on unknown key → Expected: returns `null` or `undefined` | 🧪 | 🧪 | 🧪 | |
-| `keys()` | Store multiple keys → **keys()** → Expected: array listing all stored key names | 🧪 | 🧪 | 🧪 | |
-| `remove(key)` | After `set()` → **remove(key)** → `get(key)` → Expected: `null` | 🧪 | 🧪 | 🧪 | |
-| `clear()` | Store multiple entries → **clear()** → `keys()` → Expected: empty array | 🧪 | 🧪 | 🧪 | |
-| Persistence across restarts | `set(key, value)` → quit app → relaunch → `get(key)` → Expected: value still present | 🧪 | 🧪 | 🧪 | |
-| `isEncryptionAvailable()` | Secure storage → **isEncryptionAvailable()** → Expected: `true` on macOS and Windows; `true` or `false` on Linux | 🧪 | 🧪 | 🧪 | Linux: may be `false` in headless / minimal env |
-| `getSelectedStorageBackend()` | → Expected: `safeStorage` on macOS / Windows; `safeStorage` or `basic_text` on Linux | 🧪 | 🧪 | 🧪 | |
-| `encryptString(value)` | Enter plaintext → **encryptString()** → Expected: opaque hex / base64 string returned | 🧪 | 🧪 | 🧪 | |
-| `decryptString(encrypted)` | After `encryptString()` → **decryptString(result)** → Expected: original plaintext returned | 🧪 | 🧪 | 🧪 | |
+| `set(key, value)` | Secure storage → enter key + value → **set()** → Expected: no error; value persisted | 🧪 | ✅ | 🧪 | macOS: Keychain · Windows: DPAPI · Linux: secret-service |
+| `get(key)` existing | After `set()` → **get(same key)** → Expected: returns exact stored value | 🧪 | ✅ | 🧪 | |
+| `get(key)` nonexistent | **get()** on unknown key → Expected: returns `null` or `undefined` | 🧪 | ✅ | 🧪 | |
+| `keys()` | Store multiple keys → **keys()** → Expected: array listing all stored key names | 🧪 | ✅ | 🧪 | |
+| `remove(key)` | After `set()` → **remove(key)** → `get(key)` → Expected: `null` | 🧪 | ✅ | 🧪 | |
+| `clear()` | Store multiple entries → **clear()** → `keys()` → Expected: empty array | 🧪 | ✅ | 🧪 | |
+| Persistence across restarts | `set(key, value)` → quit app → relaunch → `get(key)` → Expected: value still present | 🧪 | ✅ | 🧪 | |
+| `isEncryptionAvailable()` | Secure storage → **isEncryptionAvailable()** → Expected: `true` on macOS and Windows; `true` or `false` on Linux | 🧪 | ✅ | 🧪 | Linux: may be `false` in headless / minimal env |
+| `getSelectedStorageBackend()` | → Expected: `safeStorage` on macOS / Windows; `safeStorage` or `basic_text` on Linux | 🧪 | ✅ | 🧪 | |
+| `encryptString(value)` | Enter plaintext → **encryptString()** → Expected: opaque hex / base64 string returned | 🧪 | ✅ | 🧪 | |
+| `decryptString(encrypted)` | After `encryptString()` → **decryptString(result)** → Expected: original plaintext returned | 🧪 | ✅ | 🧪 | |
 
 ### Protocols — Playground: **Protocols tab**
 
 | Feature | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `getConfiguredSchemes()` | Protocols → **getConfiguredSchemes()** → Expected: array of custom scheme names from config | 🧪 | 🧪 | 🧪 | |
+| `getConfiguredSchemes()` | Protocols → **getConfiguredSchemes()** → Expected: array of custom scheme names from config | 🧪 | ✅ | 🧪 | |
 | `isProtocolHandled(scheme)` | Enter scheme → **isProtocolHandled()** → Expected: `true` if intercepted by app; `false` otherwise | 🧪 | 🧪 | 🧪 | |
-| `isDefaultProtocolClient(scheme)` | → Expected: `true` if this app is OS-level default handler | 🧪 | 🧪 | 🧪 | Windows: packaged build required |
-| `setAsDefaultProtocolClient(scheme)` | → Expected: returns `true`; OS routes scheme to this app | 🧪 | 🧪 | 🧪 | Windows: packaged build required · Linux: depends on DE |
+| `isDefaultProtocolClient(scheme)` | → Expected: `true` if this app is OS-level default handler | 🧪 | ✅ | 🧪 | Windows: packaged build required |
+| `setAsDefaultProtocolClient(scheme)` | → Expected: returns `true`; OS routes scheme to this app | 🧪 | ✅ | 🧪 | Windows: packaged build required · Linux: depends on DE |
 | `removeAsDefaultProtocolClient(scheme)` | After `setAsDefault` → **remove** → Expected: returns `true`; OS handler removed | 🧪 | 🧪 | 🧪 | |
-| `openExternal(url)` | Enter URL → **openExternal()** → Expected: URL opens in system default browser | 🧪 | 🧪 | 🧪 | |
+| `openExternal(url)` | Enter URL → **openExternal()** → Expected: URL opens in system default browser | 🧪 | ✅ | 🧪 | |
 
 ### Session — Playground: **Session tab**
 
 | Feature | Steps / Expected | macOS | win | lin | Notes |
 |---------|-----------------|-------|-----|-----|-------|
-| `getUserAgent()` | Session → User agent section → **getUserAgent()** → Expected: current UA string logged | 🧪 | 🧪 | 🧪 | |
-| `setUserAgent(string)` | Enter custom UA → **setUserAgent()** → `getUserAgent()` → Expected: returns new UA | 🧪 | 🧪 | 🧪 | |
-| `resolveProxy(url)` | Enter URL → **resolveProxy()** → Expected: PAC proxy string returned (e.g. `DIRECT`) | 🧪 | 🧪 | 🧪 | |
-| `setProxy(rules)` | Enter proxy rules → **setProxy()** → `resolveProxy()` → Expected: proxy rules reflected | 🧪 | 🧪 | 🧪 | |
-| `setProxy({})` (reset) | After `setProxy(rules)` → **reset proxy** → `resolveProxy()` → Expected: returns `DIRECT` | 🧪 | 🧪 | 🧪 | |
-| `closeAllConnections()` | Session → **closeAllConnections()** → Expected: returns without error | 🧪 | 🧪 | 🧪 | |
-| `clearCache()` | Session → Clear cache section → **clearCache()** → Expected: returns without error | 🧪 | 🧪 | 🧪 | |
-| `clearStorageData()` — all | No storage type selected → **clearStorageData()** → Expected: all storage types cleared | 🧪 | 🧪 | 🧪 | |
-| `clearStorageData()` — per-type | Toggle one or more type chips (cookies / indexdb / localstorage / serviceworkers / cachestorage / filesystem / shadercache / websql) → **clearStorageData()** → Expected: only selected types cleared | 🧪 | 🧪 | 🧪 | |
-| `setCookie(details)` | Cookies section → enter URL + name + value → **setCookie()** → Expected: no error | 🧪 | 🧪 | 🧪 | |
-| `getCookies(filter)` | After `setCookie()` → enter URL filter → **getCookies()** → Expected: array contains the set cookie | 🧪 | 🧪 | 🧪 | |
-| `removeCookie(url, name)` | After `setCookie()` → **removeCookie()** → `getCookies()` → Expected: cookie absent from result | 🧪 | 🧪 | 🧪 | |
+| `getUserAgent()` | Session → User agent section → **getUserAgent()** → Expected: current UA string logged | 🧪 | ✅ | 🧪 | |
+| `setUserAgent(string)` | Enter custom UA → **setUserAgent()** → `getUserAgent()` → Expected: returns new UA | 🧪 | ✅ | 🧪 | |
+| `resolveProxy(url)` | Enter URL → **resolveProxy()** → Expected: PAC proxy string returned (e.g. `DIRECT`) | 🧪 | ✅ | 🧪 | |
+| `setProxy(rules)` | Enter proxy rules → **setProxy()** → `resolveProxy()` → Expected: proxy rules reflected | 🧪 | ✅ | 🧪 | |
+| `setProxy({})` (reset) | After `setProxy(rules)` → **reset proxy** → `resolveProxy()` → Expected: returns `DIRECT` | 🧪 | ✅ | 🧪 | |
+| `closeAllConnections()` | Session → **closeAllConnections()** → Expected: returns without error | 🧪 | ✅ | 🧪 | |
+| `clearCache()` | Session → Clear cache section → **clearCache()** → Expected: returns without error | 🧪 | ✅ | 🧪 | |
+| `clearStorageData()` — all | No storage type selected → **clearStorageData()** → Expected: all storage types cleared | 🧪 | ✅ | 🧪 | |
+| `clearStorageData()` — per-type | Toggle one or more type chips (cookies / indexdb / localstorage / serviceworkers / cachestorage / filesystem / shadercache / websql) → **clearStorageData()** → Expected: only selected types cleared | 🧪 | ✅ | 🧪 | |
+| `setCookie(details)` | Cookies section → enter URL + name + value → **setCookie()** → Expected: no error | 🧪 | ✅ | 🧪 | |
+| `getCookies(filter)` | After `setCookie()` → enter URL filter → **getCookies()** → Expected: array contains the set cookie | 🧪 | ✅ | 🧪 | |
+| `removeCookie(url, name)` | After `setCookie()` → **removeCookie()** → `getCookies()` → Expected: cookie absent from result | 🧪 | ✅ | 🧪 | |
 
 ### Downloads — Playground: **Downloads tab**
 
