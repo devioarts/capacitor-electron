@@ -27,7 +27,7 @@ if (!fs.existsSync(path.join(electronDir, 'package.json'))) {
 const PLATFORM_FLAGS: Record<string, string[]> = {
   mac:   ['--mac', '--x64', '--arm64'],
   win:   ['--win', '--x64', '--arm64'],
-  linux: ['--linux', '--x64'],
+  linux: ['--linux', '--x64', '--arm64'],
 };
 
 const AUTO_PLATFORM: Partial<Record<string, string>> = {

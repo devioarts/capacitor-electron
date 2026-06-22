@@ -757,7 +757,7 @@ From the `electron/` directory:
 ```bash
 npm run dist:mac    # macOS — x64 + arm64 DMG
 npm run dist:win    # Windows — x64 NSIS installer
-npm run dist:linux  # Linux — x64 AppImage
+npm run dist:linux  # Linux — x64 + arm64 AppImage
 ```
 
 Place `assets/icon.png` (**1024×1024** recommended) in `electron/assets/`.

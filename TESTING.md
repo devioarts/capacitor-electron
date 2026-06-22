@@ -13,7 +13,7 @@
 | 🚧 | In progress / not complete |
 | — | Not applicable on this platform |
 
-**Column headers:** `macOS` = Apple Silicon · `win` = Windows x64 · `lin` = Linux x64
+**Column headers:** `macOS` = Apple Silicon · `win` = Windows x64 · `lin` = Linux
 
 **Steps / Expected column:** describes the minimal sequence to exercise the feature and the correct observable outcome. Write deviations and remarks directly into the result cell (e.g. `⚠️ dialog opens but title is wrong`).
 

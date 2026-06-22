@@ -102,7 +102,7 @@ const defaultConfig = {
   },
   linux: {
     icon: iconPng,
-    target: [{ target: 'AppImage', arch: ['x64'] }],
+    target: [{ target: 'AppImage', arch: ['x64', 'arm64'] }],
     category: 'Utility',
   },
   nsis: {

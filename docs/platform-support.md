@@ -76,9 +76,9 @@ Official API references:
 |---|---:|---:|---:|---|
 | `npx cap-electron build mac` | Yes | Cross-build limited | Cross-build limited | Passes `--mac --x64 --arm64` to electron-builder. |
 | `npx cap-electron build win` | Cross-build limited | Yes | Cross-build limited | Passes `--win --x64 --arm64`. Signing and native tooling may still require platform-specific setup. |
-| `npx cap-electron build linux` | Cross-build limited | Cross-build limited | Yes | Passes `--linux --x64`. |
+| `npx cap-electron build linux` | Cross-build limited | Cross-build limited | Yes | Passes `--linux --x64 --arm64`. |
 | Template `npm run dist:mac` | Yes | Cross-build limited | Cross-build limited | Builds x64 and arm64 DMG. |
 | Template `npm run dist:win` | Cross-build limited | Yes | Cross-build limited | Builds x64 NSIS only; use `dist:win:arm64` for arm64. |
-| Template `npm run dist:linux` | Cross-build limited | Cross-build limited | Yes | Builds x64 AppImage. |
+| Template `npm run dist:linux` | Cross-build limited | Cross-build limited | Yes | Builds x64 and arm64 AppImage. |
 
 See the [electron-builder CLI docs](https://www.electron.build/docs/cli/) for current platform and architecture packaging rules.
