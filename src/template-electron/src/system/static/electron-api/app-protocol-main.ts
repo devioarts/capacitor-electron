@@ -8,13 +8,18 @@ import type { ElectronAppProtocolConfig } from '../../shared/types';
 export interface ResolvedAppProtocolConfig {
   scheme: string;
   hostname: string;
+  handler: 'handle' | 'buffer';
+  debug: boolean;
 }
 
 const DEFAULT_PROTOCOL: ResolvedAppProtocolConfig = {
   scheme: 'capacitor-electron',
   hostname: 'localhost',
+  handler: 'handle',
+  debug: false,
 };
 
+const DEBUG_PATH = '/__cap_electron_protocol_debug';
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 const HOSTNAME_RE = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i;
 
@@ -51,7 +56,10 @@ export function resolveAppProtocolConfig(config?: ElectronAppProtocolConfig): Re
   const hostname = String(config?.hostname ?? DEFAULT_PROTOCOL.hostname).trim().toLowerCase();
   if (!HOSTNAME_RE.test(hostname)) throw new Error(`Invalid app protocol hostname: ${config?.hostname ?? hostname}`);
 
-  return { scheme, hostname };
+  const handler = config?.handler ?? DEFAULT_PROTOCOL.handler;
+  if (handler !== 'handle' && handler !== 'buffer') throw new Error(`Invalid app protocol handler: ${String(handler)}`);
+
+  return { scheme, hostname, handler, debug: config?.debug === true };
 }
 
 export function appProtocolUrl(config: ResolvedAppProtocolConfig, appPath = '/index.html'): string {
@@ -122,6 +130,12 @@ interface AppProtocolFileTarget {
   injectBase: boolean;
 }
 
+interface AppProtocolResponse {
+  statusCode: number;
+  data: Buffer;
+  headers: Record<string, string>;
+}
+
 async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
   const requestedPath = resolveAppProtocolFilePath(distDir, requestUrl, config);
   if (!requestedPath) return null;
@@ -142,58 +156,149 @@ async function fileOrIndex(distDir: string, requestUrl: string, config: Resolved
   }
 }
 
-export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig): void {
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readDirSafe(dir: string): Promise<string[]> {
+  try {
+    return (await fs.promises.readdir(dir)).slice(0, 100);
+  } catch {
+    return [];
+  }
+}
+
+async function protocolDebugResponse(distDir: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolResponse> {
+  const base = path.resolve(distDir);
+  const indexPath = path.join(base, 'index.html');
+  const payload = {
+    mode: config.handler,
+    protocol: {
+      scheme: config.scheme,
+      hostname: config.hostname,
+      debug: config.debug,
+      rootUrl: appProtocolUrl(config, '/'),
+    },
+    distDir: base,
+    indexPath,
+    indexExists: await pathExists(indexPath),
+    rootFiles: await readDirSafe(base),
+    assetsFiles: await readDirSafe(path.join(base, 'assets')),
+  };
+
+  return {
+    statusCode: 200,
+    data: Buffer.from(JSON.stringify(payload, null, 2)),
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  };
+}
+
+function errorResponse(err: unknown, requestUrl: string, config: ResolvedAppProtocolConfig): AppProtocolResponse {
+  const message = err instanceof Error ? err.message : 'Internal app protocol error';
+  const body = config.debug
+    ? [
+      'cap-electron protocol error',
+      `url: ${requestUrl}`,
+      `mode: ${config.handler}`,
+      `error: ${message}`,
+    ].join('\n')
+    : message;
+
+  return {
+    statusCode: 500,
+    data: Buffer.from(body),
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  };
+}
+
+async function resolveAppProtocolResponse(
+  distDir: string,
+  requestUrl: string,
+  method: string,
+  config: ResolvedAppProtocolConfig,
+): Promise<AppProtocolResponse> {
+  if (method !== 'GET' && method !== 'HEAD') {
+    return {
+      statusCode: 405,
+      data: Buffer.alloc(0),
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    };
+  }
+
+  let pathname = '';
+  try {
+    pathname = new URL(requestUrl).pathname;
+  } catch { /* invalid URLs fall through to normal 404 */ }
+
+  if (config.debug && pathname === DEBUG_PATH) {
+    return protocolDebugResponse(distDir, config);
+  }
+
+  const target = await fileOrIndex(distDir, requestUrl, config);
+  if (!target) {
+    return {
+      statusCode: 404,
+      data: Buffer.from(config.debug ? `Not found\nurl: ${requestUrl}` : 'Not found'),
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    };
+  }
+
+  const { filePath } = target;
+  const ext = path.extname(filePath).toLowerCase();
+  const contentType = MIME[ext] ?? 'application/octet-stream';
+  const headers = { 'Content-Type': contentType };
+
+  if (method === 'HEAD') return { statusCode: 200, data: Buffer.alloc(0), headers };
+
+  if (target.injectBase && ext === '.html') {
+    const html = await fs.promises.readFile(filePath, 'utf-8');
+    return { statusCode: 200, data: Buffer.from(injectAppProtocolBase(html, config)), headers };
+  }
+
+  return { statusCode: 200, data: await fs.promises.readFile(filePath), headers };
+}
+
+function toFetchResponse(response: AppProtocolResponse): Response {
+  return new Response(new Uint8Array(response.data), {
+    status: response.statusCode,
+    headers: response.headers,
+  });
+}
+
+function setupAppProtocolHandle(distDir: string, config: ResolvedAppProtocolConfig): void {
+  protocol.handle(config.scheme, async (request) => {
+    try {
+      return toFetchResponse(await resolveAppProtocolResponse(distDir, request.url, request.method, config));
+    } catch (err) {
+      return toFetchResponse(errorResponse(err, request.url, config));
+    }
+  });
+}
+
+function setupAppProtocolBuffer(distDir: string, config: ResolvedAppProtocolConfig): void {
   const ok = protocol.registerBufferProtocol(config.scheme, (request, callback) => {
     void (async () => {
       try {
-        if (request.method !== 'GET' && request.method !== 'HEAD') {
-          callback({
-            statusCode: 405,
-            data: Buffer.alloc(0),
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-          });
-          return;
-        }
-
-        const target = await fileOrIndex(distDir, request.url, config);
-        if (!target) {
-          callback({
-            statusCode: 404,
-            data: Buffer.from('Not found'),
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-          });
-          return;
-        }
-
-        const { filePath } = target;
-        const ext = path.extname(filePath).toLowerCase();
-        const contentType = MIME[ext] ?? 'application/octet-stream';
-        const headers = { 'Content-Type': contentType };
-        if (request.method === 'HEAD') {
-          callback({ statusCode: 200, data: Buffer.alloc(0), headers });
-          return;
-        }
-
-        if (target.injectBase && ext === '.html') {
-          const html = await fs.promises.readFile(filePath, 'utf-8');
-          callback({
-            statusCode: 200,
-            data: Buffer.from(injectAppProtocolBase(html, config)),
-            headers,
-          });
-          return;
-        }
-
-        callback({ statusCode: 200, data: await fs.promises.readFile(filePath), headers });
+        callback(await resolveAppProtocolResponse(distDir, request.url, request.method, config));
       } catch (err) {
-        callback({
-          statusCode: 500,
-          data: Buffer.from(err instanceof Error ? err.message : 'Internal app protocol error'),
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-        });
+        callback(errorResponse(err, request.url, config));
       }
     })();
   });
 
   if (!ok) throw new Error(`Failed to register app protocol: ${config.scheme}`);
+}
+
+export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig): void {
+  if (config.handler === 'buffer') {
+    setupAppProtocolBuffer(distDir, config);
+    return;
+  }
+
+  setupAppProtocolHandle(distDir, config);
 }

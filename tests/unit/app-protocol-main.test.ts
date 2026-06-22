@@ -5,17 +5,16 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { mockProtocolHandle } = vi.hoisted(() => ({
-  mockProtocolHandle: vi.fn(),
+const { mockHandle, mockRegisterBufferProtocol } = vi.hoisted(() => ({
+  mockHandle: vi.fn(),
+  mockRegisterBufferProtocol: vi.fn((_scheme, _handler) => true),
 }));
 
 vi.mock('electron', () => ({
   protocol: {
     registerSchemesAsPrivileged: vi.fn(),
-    registerBufferProtocol: vi.fn((_scheme, handler) => {
-      mockProtocolHandle(_scheme, handler);
-      return true;
-    }),
+    handle: mockHandle,
+    registerBufferProtocol: mockRegisterBufferProtocol,
   },
 }));
 
@@ -31,7 +30,8 @@ import {
 let tempDirs: string[] = [];
 
 afterEach(async () => {
-  mockProtocolHandle.mockClear();
+  mockHandle.mockClear();
+  mockRegisterBufferProtocol.mockClear();
   await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
   tempDirs = [];
 });
@@ -51,15 +51,25 @@ type BufferProtocolHandler = (
   callback: (response: Buffer | BufferProtocolResponse) => void,
 ) => void;
 
-function registeredHandler(): BufferProtocolHandler {
-  const handler = mockProtocolHandle.mock.calls[0]?.[1] as BufferProtocolHandler | undefined;
+function registeredHandleHandler(): (request: Request) => Promise<Response> {
+  const handler = mockHandle.mock.calls[0]?.[1] as ((request: Request) => Promise<Response>) | undefined;
   if (!handler) throw new Error('protocol handler was not registered');
   return handler;
 }
 
-function invokeHandler(url: string, method = 'GET'): Promise<BufferProtocolResponse> {
+function registeredBufferHandler(): BufferProtocolHandler {
+  const handler = mockRegisterBufferProtocol.mock.calls[0]?.[1] as BufferProtocolHandler | undefined;
+  if (!handler) throw new Error('buffer protocol handler was not registered');
+  return handler;
+}
+
+function invokeHandle(url: string, method = 'GET'): Promise<Response> {
+  return registeredHandleHandler()(new Request(url, { method }));
+}
+
+function invokeBuffer(url: string, method = 'GET'): Promise<BufferProtocolResponse> {
   return new Promise((resolve) => {
-    registeredHandler()({ method, url }, (response) => {
+    registeredBufferHandler()({ method, url }, (response) => {
       resolve(Buffer.isBuffer(response) ? { data: response } : response);
     });
   });
@@ -70,11 +80,13 @@ describe('resolveAppProtocolConfig', () => {
     expect(resolveAppProtocolConfig()).toEqual({
       scheme: 'capacitor-electron',
       hostname: 'localhost',
+      handler: 'handle',
+      debug: false,
     });
   });
 
   it('normalizes custom scheme and hostname', () => {
-    expect(resolveAppProtocolConfig({ scheme: 'My-App:', hostname: 'LOCALHOST' })).toEqual({
+    expect(resolveAppProtocolConfig({ scheme: 'My-App:', hostname: 'LOCALHOST' })).toMatchObject({
       scheme: 'my-app',
       hostname: 'localhost',
     });
@@ -86,6 +98,10 @@ describe('resolveAppProtocolConfig', () => {
 
   it('rejects invalid hostnames', () => {
     expect(() => resolveAppProtocolConfig({ hostname: 'local/host' })).toThrow('Invalid app protocol hostname');
+  });
+
+  it('accepts buffer fallback mode', () => {
+    expect(resolveAppProtocolConfig({ handler: 'buffer' })).toMatchObject({ handler: 'buffer' });
   });
 });
 
@@ -161,16 +177,25 @@ describe('resolveAppProtocolFilePath', () => {
 });
 
 describe('setupAppProtocol', () => {
-  it('serves assets with the correct content type', async () => {
+  it('uses protocol.handle by default', async () => {
     const config = resolveAppProtocolConfig();
     const distDir = await createDist();
     setupAppProtocol(distDir, config);
 
-    const response = await invokeHandler('capacitor-electron://localhost/assets/index.css');
+    expect(mockHandle).toHaveBeenCalledWith('capacitor-electron', expect.any(Function));
+    expect(mockRegisterBufferProtocol).not.toHaveBeenCalled();
+  });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.headers?.['Content-Type']).toBe('text/css');
-    expect(response.data?.toString()).toBe('body{}');
+  it('serves assets with the correct content type through protocol.handle', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await invokeHandle('capacitor-electron://localhost/assets/index.css');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('text/css');
+    expect(await response.text()).toBe('body{}');
   });
 
   it('returns 404 for missing asset-like paths instead of index.html', async () => {
@@ -178,9 +203,9 @@ describe('setupAppProtocol', () => {
     const distDir = await createDist();
     setupAppProtocol(distDir, config);
 
-    const response = await invokeHandler('capacitor-electron://localhost/assets/missing.css');
+    const response = await invokeHandle('capacitor-electron://localhost/assets/missing.css');
 
-    expect(response.statusCode).toBe(404);
+    expect(response.status).toBe(404);
   });
 
   it('falls back to index.html with protocol base for route-like paths', async () => {
@@ -188,9 +213,35 @@ describe('setupAppProtocol', () => {
     const distDir = await createDist();
     setupAppProtocol(distDir, config);
 
-    const response = await invokeHandler('capacitor-electron://localhost/orders/123');
+    const response = await invokeHandle('capacitor-electron://localhost/orders/123');
 
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('<base href="capacitor-electron://localhost/">');
+  });
+
+  it('exposes visible diagnostics when debug is enabled', async () => {
+    const config = resolveAppProtocolConfig({ debug: true });
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await invokeHandle('capacitor-electron://localhost/__cap_electron_protocol_debug');
+    const body = await response.json() as { mode: string; indexExists: boolean };
+
+    expect(response.status).toBe(200);
+    expect(body.mode).toBe('handle');
+    expect(body.indexExists).toBe(true);
+  });
+
+  it('can use the buffer compatibility fallback', async () => {
+    const config = resolveAppProtocolConfig({ handler: 'buffer' });
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await invokeBuffer('capacitor-electron://localhost/assets/index.css');
+
+    expect(mockHandle).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(200);
-    expect(response.data?.toString()).toContain('<base href="capacitor-electron://localhost/">');
+    expect(response.headers?.['Content-Type']).toBe('text/css');
+    expect(response.data?.toString()).toBe('body{}');
   });
 });
