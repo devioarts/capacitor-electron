@@ -1,9 +1,8 @@
 // Internal app protocol for production builds that need web-style absolute paths
 // (`/assets/logo.png`) without running the embedded localhost server.
-import { net, protocol } from 'electron';
+import { protocol } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { pathToFileURL } from 'url';
 import type { ElectronAppProtocolConfig } from '../../shared/types';
 
 export interface ResolvedAppProtocolConfig {
@@ -145,28 +144,37 @@ async function fileOrIndex(distDir: string, requestUrl: string, config: Resolved
 
 export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig): void {
   protocol.handle(config.scheme, async (request) => {
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      return new Response(null, { status: 405 });
-    }
+    try {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response(null, { status: 405 });
+      }
 
-    const target = await fileOrIndex(distDir, request.url, config);
-    if (!target) {
-      return new Response('Not found', {
-        status: 404,
+      const target = await fileOrIndex(distDir, request.url, config);
+      if (!target) {
+        return new Response('Not found', {
+          status: 404,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+
+      const { filePath } = target;
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType = MIME[ext] ?? 'application/octet-stream';
+      const headers = { 'Content-Type': contentType };
+      if (request.method === 'HEAD') return new Response(null, { status: 200, headers });
+
+      if (target.injectBase && ext === '.html') {
+        const html = await fs.promises.readFile(filePath, 'utf-8');
+        return new Response(injectAppProtocolBase(html, config), { status: 200, headers });
+      }
+
+      const data = await fs.promises.readFile(filePath);
+      return new Response(new Blob([data], { type: contentType }), { status: 200, headers });
+    } catch (err) {
+      return new Response(err instanceof Error ? err.message : 'Internal app protocol error', {
+        status: 500,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     }
-
-    const { filePath } = target;
-    const ext = path.extname(filePath).toLowerCase();
-    const headers = { 'Content-Type': MIME[ext] ?? 'application/octet-stream' };
-    if (request.method === 'HEAD') return new Response(null, { status: 200, headers });
-
-    if (target.injectBase && ext === '.html') {
-      const html = await fs.promises.readFile(filePath, 'utf-8');
-      return new Response(injectAppProtocolBase(html, config), { status: 200, headers });
-    }
-
-    return net.fetch(pathToFileURL(filePath).toString());
   });
 }

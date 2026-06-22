@@ -76,7 +76,6 @@ export const safeStorage = {
 
 export const net = {
   isOnline: () => true,
-  fetch: async (_url: string) => new Response(''),
 };
 
 export const nativeTheme = {
