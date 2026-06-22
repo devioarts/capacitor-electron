@@ -134,6 +134,7 @@ interface AppProtocolResponse {
   statusCode: number;
   data: Buffer;
   headers: Record<string, string>;
+  text?: string;
 }
 
 async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
@@ -195,6 +196,7 @@ async function protocolDebugResponse(distDir: string, config: ResolvedAppProtoco
     statusCode: 200,
     data: Buffer.from(JSON.stringify(payload, null, 2)),
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    text: JSON.stringify(payload, null, 2),
   };
 }
 
@@ -213,6 +215,7 @@ function errorResponse(err: unknown, requestUrl: string, config: ResolvedAppProt
     statusCode: 500,
     data: Buffer.from(body),
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    text: body,
   };
 }
 
@@ -227,6 +230,7 @@ async function resolveAppProtocolResponse(
       statusCode: 405,
       data: Buffer.alloc(0),
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      text: '',
     };
   }
 
@@ -245,6 +249,7 @@ async function resolveAppProtocolResponse(
       statusCode: 404,
       data: Buffer.from(config.debug ? `Not found\nurl: ${requestUrl}` : 'Not found'),
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      text: config.debug ? `Not found\nurl: ${requestUrl}` : 'Not found',
     };
   }
 
@@ -253,18 +258,27 @@ async function resolveAppProtocolResponse(
   const contentType = MIME[ext] ?? 'application/octet-stream';
   const headers = { 'Content-Type': contentType };
 
-  if (method === 'HEAD') return { statusCode: 200, data: Buffer.alloc(0), headers };
+  if (method === 'HEAD') return { statusCode: 200, data: Buffer.alloc(0), headers, text: '' };
 
   if (target.injectBase && ext === '.html') {
     const html = await fs.promises.readFile(filePath, 'utf-8');
-    return { statusCode: 200, data: Buffer.from(injectAppProtocolBase(html, config)), headers };
+    const text = injectAppProtocolBase(html, config);
+    return { statusCode: 200, data: Buffer.from(text), headers, text };
+  }
+
+  if (contentType.startsWith('text/')
+    || contentType.startsWith('application/javascript')
+    || contentType.startsWith('application/json')
+    || contentType.startsWith('image/svg+xml')) {
+    const text = await fs.promises.readFile(filePath, 'utf-8');
+    return { statusCode: 200, data: Buffer.from(text), headers, text };
   }
 
   return { statusCode: 200, data: await fs.promises.readFile(filePath), headers };
 }
 
 function toFetchResponse(response: AppProtocolResponse): Response {
-  return new Response(new Uint8Array(response.data), {
+  return new Response(response.text ?? new Uint8Array(response.data), {
     status: response.statusCode,
     headers: response.headers,
   });
