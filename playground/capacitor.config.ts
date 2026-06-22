@@ -16,6 +16,23 @@ const config: CapacitorConfig = {
         deepLinkingScheme: 'capelectron',
         appLauncherSchemes: ['capelectron'],
       },
+      builder: {
+        protocols: {
+          name: 'CapacitorJS Playground',
+          schemes: ['capelectron'],
+        },
+        linux: {
+          target: [
+            { target: 'deb', arch: ['x64', 'arm64'] },
+            { target: 'AppImage', arch: ['x64', 'arm64'] },
+          ],
+          desktop: {
+            entry: {
+              MimeType: 'x-scheme-handler/capelectron;',
+            },
+          },
+        },
+      },
       browserWindow: {
         width:  1200,
         height: 800,
