@@ -59,6 +59,28 @@ describe('collectElectronPackageMetadata', () => {
       },
     });
   });
+
+  it('prefers appName when the root package name is generic app', () => {
+    const root = tempProject();
+    writeFileSync(join(root, 'capacitor.config.json'), JSON.stringify({
+      appId: 'com.example.tofik',
+      appName: 'Tofík',
+    }));
+    writeFileSync(join(root, 'package.json'), JSON.stringify({
+      name: 'app',
+      version: '1.0.0',
+    }));
+
+    expect(collectElectronPackageMetadata(root)).toMatchObject({
+      appMeta: { appId: 'com.example.tofik', appName: 'Tofík' },
+      packageName: 'tofik',
+      packageJson: {
+        name: 'tofik',
+        productName: 'Tofík',
+        desktopName: 'tofik',
+      },
+    });
+  });
 });
 
 describe('syncElectronPackageMetadata', () => {

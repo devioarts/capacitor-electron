@@ -4,6 +4,7 @@ import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions }
 import * as path from 'path';
 import * as fs from 'fs';
 import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
+import { resolveUserDataPath } from './src/system/shared/app-identity';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -25,6 +26,8 @@ if (appProtocol) registerAppProtocolPrivileges(appProtocol);
 
 // Set app identity before app.ready so Windows Action Center and macOS dock
 // show the correct name. On Windows, AUMID must also be set before ready.
+const userDataPath = resolveUserDataPath(app.getPath('appData'), loadPackageMetadata(), appCfg.appName);
+if (userDataPath && !app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', userDataPath);
 if (appCfg.appName) app.setName(appCfg.appName);
 if (process.platform === 'win32' && appCfg.appId) app.setAppUserModelId(appCfg.appId);
 
@@ -35,6 +38,14 @@ const iconImage = (() => {
   const img = nativeImage.createFromPath(p);
   return img.isEmpty() ? undefined : img;
 })();
+
+function loadPackageMetadata(): unknown {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+  } catch {
+    return null;
+  }
+}
 
 function resolveUrlAppPath(baseHref: string, appPath: string): ManagedWindowAppTarget {
   const base = new URL(baseHref);

@@ -65,9 +65,11 @@ export function readAppMeta(root: string): AppMeta {
 export function collectElectronPackageMetadata(root: string): ElectronPackageMetadata {
   const rootPkg = readJson(path.join(root, 'package.json')) ?? {};
   const appMeta = readAppMeta(root);
+  const rootPackageName = stringOrUndefined(rootPkg['name']);
   const packageName = toNpmPackageName(
-    stringOrUndefined(rootPkg['name']),
-    appMeta.appName,
+    ...(isGenericAppPackageName(rootPackageName)
+      ? [appMeta.appName, rootPackageName]
+      : [rootPackageName, appMeta.appName]),
     appMeta.appId,
   );
 
@@ -169,4 +171,8 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function stringOrUndefined(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function isGenericAppPackageName(value: string | undefined): boolean {
+  return value === 'app';
 }

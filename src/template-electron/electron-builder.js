@@ -109,6 +109,7 @@ const defaultConfig = {
   files: [
     'dist/**',
     '!dist/**/*.map',
+    'package.json',
     'capacitor.config.json',
     // assets/ is included so splash image and window icon are available at runtime.
     // See: plugins.Electron.browserWindow.icon and plugins.Electron.ui.splashScreen.image.
