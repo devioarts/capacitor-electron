@@ -1,8 +1,9 @@
 // Internal app protocol for production builds that need web-style absolute paths
 // (`/assets/logo.png`) without running the embedded localhost server.
-import { protocol } from 'electron';
+import { net, protocol } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import type { ElectronAppProtocolConfig } from '../../shared/types';
 
 export interface ResolvedAppProtocolConfig {
@@ -59,6 +60,17 @@ export function appProtocolUrl(config: ResolvedAppProtocolConfig, appPath = '/in
   return `${config.scheme}://${config.hostname}${pathname}`;
 }
 
+export function injectAppProtocolBase(html: string, config: ResolvedAppProtocolConfig): string {
+  if (/<base(?:\s|>)/i.test(html)) return html;
+
+  const baseTag = `<base href="${appProtocolUrl(config, '/')}">`;
+  if (/<head(?:\s[^>]*)?>/i.test(html)) {
+    return html.replace(/<head(?:\s[^>]*)?>/i, (head) => `${head}${baseTag}`);
+  }
+
+  return `${baseTag}${html}`;
+}
+
 export function isAppProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConfig): boolean {
   try {
     const url = new URL(rawUrl);
@@ -106,19 +118,26 @@ export function resolveAppProtocolFilePath(distDir: string, requestUrl: string, 
   return filePath;
 }
 
-async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<string | null> {
+interface AppProtocolFileTarget {
+  filePath: string;
+  injectBase: boolean;
+}
+
+async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
   const requestedPath = resolveAppProtocolFilePath(distDir, requestUrl, config);
   if (!requestedPath) return null;
 
   try {
     const stat = await fs.promises.stat(requestedPath);
-    if (stat.isFile()) return requestedPath;
+    if (stat.isFile()) return { filePath: requestedPath, injectBase: path.basename(requestedPath).toLowerCase() === 'index.html' };
   } catch { /* fall back to index.html */ }
+
+  if (path.extname(requestedPath)) return null;
 
   const indexPath = path.join(path.resolve(distDir), 'index.html');
   try {
     const stat = await fs.promises.stat(indexPath);
-    return stat.isFile() ? indexPath : null;
+    return stat.isFile() ? { filePath: indexPath, injectBase: true } : null;
   } catch {
     return null;
   }
@@ -130,19 +149,24 @@ export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolCon
       return new Response(null, { status: 405 });
     }
 
-    const filePath = await fileOrIndex(distDir, request.url, config);
-    if (!filePath) {
+    const target = await fileOrIndex(distDir, request.url, config);
+    if (!target) {
       return new Response('Not found', {
         status: 404,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     }
 
+    const { filePath } = target;
     const ext = path.extname(filePath).toLowerCase();
     const headers = { 'Content-Type': MIME[ext] ?? 'application/octet-stream' };
     if (request.method === 'HEAD') return new Response(null, { status: 200, headers });
 
-    const data = await fs.promises.readFile(filePath);
-    return new Response(new Uint8Array(data), { status: 200, headers });
+    if (target.injectBase && ext === '.html') {
+      const html = await fs.promises.readFile(filePath, 'utf-8');
+      return new Response(injectAppProtocolBase(html, config), { status: 200, headers });
+    }
+
+    return net.fetch(pathToFileURL(filePath).toString());
   });
 }

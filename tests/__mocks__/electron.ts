@@ -74,7 +74,10 @@ export const safeStorage = {
   decryptString: (b: Buffer) => b.toString(),
 };
 
-export const net = { isOnline: () => true };
+export const net = {
+  isOnline: () => true,
+  fetch: async (_url: string) => new Response(''),
+};
 
 export const nativeTheme = {
   themeSource: 'system' as const,

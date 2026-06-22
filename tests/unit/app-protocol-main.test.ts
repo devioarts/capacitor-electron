@@ -1,20 +1,58 @@
 // Tests for app-protocol-main.ts — production protocol serving maps web-style
 // absolute app paths to packaged files without exposing arbitrary filesystem paths.
-import { describe, expect, it, vi } from 'vitest';
+import { mkdtemp, mkdir, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const { mockNetFetch, mockProtocolHandle } = vi.hoisted(() => ({
+  mockNetFetch: vi.fn(async () => new Response('asset')),
+  mockProtocolHandle: vi.fn(),
+}));
 
 vi.mock('electron', () => ({
+  net: {
+    fetch: mockNetFetch,
+  },
   protocol: {
     registerSchemesAsPrivileged: vi.fn(),
-    handle: vi.fn(),
+    handle: mockProtocolHandle,
   },
 }));
 
 import {
   appProtocolUrl,
+  injectAppProtocolBase,
   isAppProtocolUrl,
   resolveAppProtocolConfig,
   resolveAppProtocolFilePath,
+  setupAppProtocol,
 } from '../../src/template-electron/src/system/static/electron-api/app-protocol-main.js';
+
+let tempDirs: string[] = [];
+
+afterEach(async () => {
+  mockNetFetch.mockClear();
+  mockProtocolHandle.mockClear();
+  await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
+  tempDirs = [];
+});
+
+async function createDist(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'cap-electron-protocol-'));
+  tempDirs.push(dir);
+  await mkdir(join(dir, 'assets'));
+  await writeFile(join(dir, 'index.html'), '<html><head><title>x</title></head><body></body></html>');
+  await writeFile(join(dir, 'assets', 'index.css'), 'body{}');
+  return dir;
+}
+
+function registeredHandler(): (request: Request) => Promise<Response> {
+  const handler = mockProtocolHandle.mock.calls[0]?.[1] as ((request: Request) => Promise<Response>) | undefined;
+  if (!handler) throw new Error('protocol handler was not registered');
+  return handler;
+}
 
 describe('resolveAppProtocolConfig', () => {
   it('uses the default scheme and host when omitted', () => {
@@ -48,6 +86,24 @@ describe('appProtocolUrl', () => {
   it('adds a leading slash when needed', () => {
     expect(appProtocolUrl(resolveAppProtocolConfig(), 'assets/logo.png'))
       .toBe('capacitor-electron://localhost/assets/logo.png');
+  });
+
+  it('builds the protocol root URL', () => {
+    expect(appProtocolUrl(resolveAppProtocolConfig(), '/')).toBe('capacitor-electron://localhost/');
+  });
+});
+
+describe('injectAppProtocolBase', () => {
+  const config = resolveAppProtocolConfig();
+
+  it('injects base href into html without an existing base tag', () => {
+    expect(injectAppProtocolBase('<html><head><title>x</title></head><body></body></html>', config))
+      .toContain('<head><base href="capacitor-electron://localhost/">');
+  });
+
+  it('preserves an existing base tag', () => {
+    const html = '<html><head><base href="/custom/"><title>x</title></head></html>';
+    expect(injectAppProtocolBase(html, config)).toBe(html);
   });
 });
 
@@ -90,5 +146,41 @@ describe('resolveAppProtocolFilePath', () => {
   it('blocks encoded backslash path traversal', () => {
     expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/%5C..%5Csecret.txt', config))
       .toBeNull();
+  });
+});
+
+describe('setupAppProtocol', () => {
+  it('serves assets through net.fetch(file://...)', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await registeredHandler()(new Request('capacitor-electron://localhost/assets/index.css'));
+
+    expect(response.status).toBe(200);
+    expect(mockNetFetch).toHaveBeenCalledWith(pathToFileURL(join(distDir, 'assets', 'index.css')).toString());
+  });
+
+  it('returns 404 for missing asset-like paths instead of index.html', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await registeredHandler()(new Request('capacitor-electron://localhost/assets/missing.css'));
+
+    expect(response.status).toBe(404);
+    expect(mockNetFetch).not.toHaveBeenCalled();
+  });
+
+  it('falls back to index.html with protocol base for route-like paths', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config);
+
+    const response = await registeredHandler()(new Request('capacitor-electron://localhost/orders/123'));
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('<base href="capacitor-electron://localhost/">');
+    expect(mockNetFetch).not.toHaveBeenCalled();
   });
 });
