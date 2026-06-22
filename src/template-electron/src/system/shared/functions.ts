@@ -63,6 +63,24 @@ export function trustedIpcOn<T extends unknown[]>(
   });
 }
 
+export function trustedIpcOnSync<T extends unknown[]>(
+  channel: string,
+  listener: (event: IpcMainEvent, ...args: T) => unknown,
+): void {
+  ipcMain.on(channel, (event, ...args) => {
+    if (!isIpcSenderTrusted(event)) {
+      event.returnValue = false;
+      return;
+    }
+
+    try {
+      event.returnValue = listener(event, ...(args as T));
+    } catch {
+      event.returnValue = false;
+    }
+  });
+}
+
 export function setMainWindow(win: BrowserWindow | null): void {
   _mainWindow = win && !win.isDestroyed() ? win : null;
   for (const listener of _mainWindowListeners) listener(_mainWindow);

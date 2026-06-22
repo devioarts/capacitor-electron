@@ -7,14 +7,14 @@ import type { MenuItemConstructorOptions } from 'electron';
 import type { ContextMenuContext } from '../../system/static/electron-api/menu-main';
 
 export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions[] | null {
-  if (ctx.target?.id === 'settings-card') {
+  if (isSettingsTarget(ctx)) {
     return [
       { label: 'Open Settings', click: () => ctx.send('open-settings', ctx.target) },
       { role: 'copy' },
     ];
   }
 
-  if (ctx.target?.classList?.includes('context-row')) {
+  if (isRowTarget(ctx)) {
     return [
       { label: 'Open Row', click: () => ctx.send('open-row', ctx.target?.dataset) },
       { label: 'Archive Row', click: () => ctx.send('archive-row', ctx.target?.dataset) },
@@ -49,4 +49,14 @@ export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions
       } satisfies MenuItemConstructorOptions]
       : []),
   ];
+}
+
+function isSettingsTarget(ctx: ContextMenuContext): boolean {
+  return ctx.target?.id === 'settings-card'
+    || ctx.target?.dataset?.menuKind === 'settings';
+}
+
+function isRowTarget(ctx: ContextMenuContext): boolean {
+  return ctx.target?.classList?.includes('context-row') === true
+    || typeof ctx.target?.dataset?.rowId === 'string';
 }

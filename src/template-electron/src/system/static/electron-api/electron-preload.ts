@@ -5,11 +5,17 @@ import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEvent
 ipcRenderer.send('downloads:ensureSession');
 
 window.addEventListener('contextmenu', (event) => {
-  ipcRenderer.send('menu:contextTarget', {
+  const payload = {
     x: Math.round(event.clientX),
     y: Math.round(event.clientY),
     target: contextMenuTarget(event),
-  });
+  };
+
+  try {
+    ipcRenderer.sendSync('menu:contextTargetSync', payload);
+  } catch {
+    ipcRenderer.send('menu:contextTarget', payload);
+  }
 }, { capture: true });
 
 const bridge: ElectronBridge = {

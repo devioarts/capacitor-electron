@@ -1,6 +1,6 @@
 // Native app/context/Dock/tray menu setup plus renderer menu action bridge.
 import { app, Menu, BrowserWindow, type MenuItemConstructorOptions } from 'electron';
-import { trustedIpcHandle, trustedIpcOn } from '../../shared/functions';
+import { trustedIpcHandle, trustedIpcOn, trustedIpcOnSync } from '../../shared/functions';
 import type { AppMenuConfig, ContextMenuTarget, ContextMenuTrigger, ElectronConfig, MenuActionSource, ShowContextMenuOptions } from '../../shared/types';
 
 export interface MenuContext {
@@ -39,7 +39,10 @@ type LatestContextTarget = {
 
 let contextMenuRuntime: ContextMenuRuntime | null = null;
 let contextMenuIpcRegistered = false;
+let contextTargetIpcRegistered = false;
 const latestContextTargets = new Map<number, LatestContextTarget>();
+
+registerContextTargetIpc();
 
 /**
  * Configure the native application menu (menu bar).
@@ -103,7 +106,7 @@ export function setupContextMenu(
       userMenu,
       trigger: 'right-click',
       params,
-      target: matchingContextTarget(win.webContents.id, params.x, params.y),
+      target: matchingContextTarget(win.webContents.id),
     });
   });
 
@@ -180,12 +183,6 @@ function registerContextMenuIpc(): void {
   if (contextMenuIpcRegistered) return;
   contextMenuIpcRegistered = true;
 
-  trustedIpcOn('menu:contextTarget', (event, raw: unknown) => {
-    const payload = normalizeContextTargetPayload(raw);
-    if (!payload) return;
-    latestContextTargets.set(event.sender.id, payload);
-  });
-
   trustedIpcHandle('menu:showContextMenu', (event, raw: unknown): boolean => {
     const runtime = contextMenuRuntime;
     if (!runtime || runtime.cfg.ui?.contextMenu?.enabled !== true) return false;
@@ -211,6 +208,24 @@ function registerContextMenuIpc(): void {
         y: options.y,
       },
     });
+  });
+}
+
+function registerContextTargetIpc(): void {
+  if (contextTargetIpcRegistered) return;
+  contextTargetIpcRegistered = true;
+
+  trustedIpcOn('menu:contextTarget', (event, raw: unknown) => {
+    const payload = normalizeContextTargetPayload(raw);
+    if (!payload) return;
+    latestContextTargets.set(event.sender.id, payload);
+  });
+
+  trustedIpcOnSync('menu:contextTargetSync', (event, raw: unknown) => {
+    const payload = normalizeContextTargetPayload(raw);
+    if (!payload) return false;
+    latestContextTargets.set(event.sender.id, payload);
+    return true;
   });
 }
 
@@ -245,11 +260,10 @@ function showContextMenu(options: {
   return true;
 }
 
-function matchingContextTarget(webContentsId: number, x: number, y: number): ContextMenuTarget | undefined {
+function matchingContextTarget(webContentsId: number): ContextMenuTarget | undefined {
   const latest = latestContextTargets.get(webContentsId);
   if (!latest) return undefined;
   if (Date.now() - latest.at > 1000) return undefined;
-  if (Math.abs(latest.x - x) > 3 || Math.abs(latest.y - y) > 3) return undefined;
   return latest.target;
 }
 
