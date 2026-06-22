@@ -216,9 +216,23 @@ function normalizeShowContextMenuOptions(options?: ShowContextMenuOptions): Show
 
 function contextMenuTarget(event: MouseEvent): ContextMenuTarget | undefined {
   const path = event.composedPath();
-  const element = path.find((item): item is Element => item instanceof Element);
+  const element = contextMenuTargetElement(path);
   if (!element) return undefined;
   return normalizeTarget(readTarget(element));
+}
+
+function contextMenuTargetElement(path: EventTarget[]): Element | undefined {
+  const elements = path.filter((item): item is Element => item instanceof Element);
+  if (elements.length === 0) return undefined;
+
+  const semanticTarget = elements.find((element) => {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element.id) return true;
+    if (Object.keys(element.dataset).length > 0) return true;
+    return Array.from(element.classList).some(isContextMenuClass);
+  });
+
+  return semanticTarget ?? elements[0];
 }
 
 function readTarget(element: Element): ContextMenuTarget {
@@ -241,6 +255,10 @@ function readTarget(element: Element): ContextMenuTarget {
     src: media?.src,
     value: form?.value,
   };
+}
+
+function isContextMenuClass(className: string): boolean {
+  return /(^|[-_:])(context|menu)([-_:]|$)/i.test(className);
 }
 
 function normalizeTarget(raw: Partial<ContextMenuTarget>): ContextMenuTarget {
