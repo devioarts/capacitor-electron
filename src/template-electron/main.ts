@@ -113,6 +113,10 @@ function setup(): void {
 
     win = new BrowserWindow(windowOptions);
     setMainWindow(win);
+    restoreConfiguredImmersiveMode(win, {
+      kiosk: windowOptions.kiosk === true,
+      fullscreen: windowOptions.fullscreen === true,
+    });
 
     if (isDev) {
       const devUrl = devConfig.url ?? 'http://localhost:5173';
@@ -239,6 +243,25 @@ function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig
     if (dev) console.warn('[cap-electron] Blocked permission request:', permission);
     callback(false);
   });
+}
+
+function restoreConfiguredImmersiveMode(win: BrowserWindow, mode: { kiosk: boolean; fullscreen: boolean }): void {
+  if (!mode.kiosk && !mode.fullscreen) return;
+
+  const restore = () => {
+    setTimeout(() => {
+      if (win.isDestroyed() || win.isMinimized()) return;
+      if (mode.kiosk && !win.isKiosk()) {
+        win.setKiosk(true);
+      } else if (mode.fullscreen && !win.isFullScreen()) {
+        win.setFullScreen(true);
+      }
+    }, 0);
+  };
+
+  win.on('restore', restore);
+  win.on('show', restore);
+  win.on('focus', restore);
 }
 
 /**
