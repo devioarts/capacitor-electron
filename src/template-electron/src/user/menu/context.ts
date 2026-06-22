@@ -7,13 +7,6 @@ import type { MenuItemConstructorOptions } from 'electron';
 import type { ContextMenuContext } from '../../system/static/electron-api/menu-main';
 
 export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions[] | null {
-  if (ctx.trigger === 'renderer') {
-    return [
-      { label: 'Renderer action', click: () => ctx.send('renderer-context-action', ctx.data) },
-      { label: 'Show Window', click: () => ctx.showWindow() },
-    ];
-  }
-
   if (ctx.target?.id === 'settings-card') {
     return [
       { label: 'Open Settings', click: () => ctx.send('open-settings', ctx.target) },
@@ -25,6 +18,13 @@ export function contextMenu(ctx: ContextMenuContext): MenuItemConstructorOptions
     return [
       { label: 'Open Row', click: () => ctx.send('open-row', ctx.target?.dataset) },
       { label: 'Archive Row', click: () => ctx.send('archive-row', ctx.target?.dataset) },
+    ];
+  }
+
+  if (ctx.trigger === 'renderer') {
+    return [
+      { label: 'Renderer action', click: () => ctx.send('renderer-context-action', ctx.data) },
+      { label: 'Show Window', click: () => ctx.showWindow() },
     ];
   }
 

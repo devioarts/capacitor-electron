@@ -10,6 +10,8 @@ export const PagePowerMonitor: React.FC = () => {
   const { info } = log;
   const [listening, setListening] = useState(false);
   const [idleThreshold, setIdleThreshold] = useState("30");
+  const [idleMonitorRunning, setIdleMonitorRunning] = useState(false);
+  const [idleMonitorInterval, setIdleMonitorInterval] = useState("2");
   const [blockerType, setBlockerType] = useState<PowerSaveBlockerType>("prevent-display-sleep");
   const [blockerId, setBlockerId] = useState<number | null>(null);
 
@@ -20,6 +22,44 @@ export const PagePowerMonitor: React.FC = () => {
     });
     return unsub;
   }, [listening, info]);
+
+  useEffect(() => {
+    if (!idleMonitorRunning) return;
+
+    let cancelled = false;
+    let inFlight = false;
+    const thresholdSeconds = Math.max(1, parseInt(idleThreshold, 10) || 30);
+    const intervalMs = Math.max(1, Number.parseFloat(idleMonitorInterval) || 2) * 1000;
+
+    const sampleIdleStatus = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const [state, idleTime] = await Promise.all([
+          window.Electron.getPowerMonitorIdleState(thresholdSeconds),
+          window.Electron.getPowerMonitorIdleTime(),
+        ]);
+        if (!cancelled) {
+          info("PowerMonitor", "idle monitor", {
+            thresholdSeconds,
+            state,
+            idleTimeSeconds: idleTime,
+          });
+        }
+      } catch (e) {
+        if (!cancelled) log.error("PowerMonitor", "idle monitor", e);
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void sampleIdleStatus();
+    const intervalId = window.setInterval(sampleIdleStatus, intervalMs);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [idleMonitorRunning, idleThreshold, idleMonitorInterval, info, log]);
 
   return (
     <div className="space-y-6">
@@ -78,6 +118,38 @@ export const PagePowerMonitor: React.FC = () => {
           } catch (e) { log.error("PowerMonitor", "getSystemIdleTime", e); }
         }}>
           getSystemIdleTime()
+        </Button>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">Idle monitor</p>
+        <p className="text-xs text-slate-500">
+          Polls <code>getSystemIdleState()</code> and <code>getSystemIdleTime()</code> on an interval so idle transitions can be tested without repeated clicks.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Label label="Idle threshold (s)">
+            <Input
+              type="number"
+              min="1"
+              value={idleThreshold}
+              onChange={(e) => setIdleThreshold(e.target.value)}
+            />
+          </Label>
+          <Label label="Poll interval (s)">
+            <Input
+              type="number"
+              min="1"
+              step="0.5"
+              value={idleMonitorInterval}
+              onChange={(e) => setIdleMonitorInterval(e.target.value)}
+            />
+          </Label>
+        </div>
+        <Button
+          type={idleMonitorRunning ? "red" : "green"}
+          onClick={() => setIdleMonitorRunning((value) => !value)}
+        >
+          {idleMonitorRunning ? "Stop idle monitor" : "Start idle monitor"}
         </Button>
       </section>
 

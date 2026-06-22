@@ -1,11 +1,33 @@
 // Playground page for exercising native app, context, Dock, and tray menu events.
 import React, { useEffect } from "react";
+import type { ShowContextMenuOptions } from "@devioarts/capacitor-electron";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";
 
 export const PageNativeMenus: React.FC = () => {
   const log = useLogger();
   const { info } = log;
+
+  const showTargetMenu = async (
+    event: React.MouseEvent<HTMLElement>,
+    target: ShowContextMenuOptions["target"],
+    data?: unknown,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      const shown = await window.Electron.showContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        target,
+        data,
+      });
+      log.info("ContextMenu", "showContextMenu target", { shown, target, data });
+    } catch (e) {
+      log.error("ContextMenu", "showContextMenu target", e);
+    }
+  };
 
   useEffect(() => {
     const off = window.Electron.onMenuAction((event) => {
@@ -76,6 +98,18 @@ export const PageNativeMenus: React.FC = () => {
           id="settings-card"
           data-menu-kind="settings"
           className="rounded border border-indigo-200 bg-indigo-50 p-4 text-sm text-slate-800"
+          onContextMenu={(event) => {
+            void showTargetMenu(
+              event,
+              {
+                id: "settings-card",
+                tagName: "div",
+                dataset: { menuKind: "settings" },
+                text: "Right-click target by id",
+              },
+              { scenario: "settings-card-right-click" },
+            );
+          }}
         >
           <p className="font-semibold text-indigo-900">Right-click target by id</p>
           <p className="mt-1 text-slate-600">
@@ -95,6 +129,18 @@ export const PageNativeMenus: React.FC = () => {
               className="context-row flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               data-row-id={row.id}
               data-status={row.status}
+              onContextMenu={(event) => {
+                void showTargetMenu(
+                  event,
+                  {
+                    tagName: "div",
+                    classList: ["context-row"],
+                    dataset: { rowId: row.id, status: row.status },
+                    text: `${row.name} ${row.status}`,
+                  },
+                  { scenario: "context-row-right-click", row },
+                );
+              }}
             >
               <span className="font-medium text-slate-800">{row.name}</span>
               <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-600">{row.status}</span>
