@@ -6,7 +6,7 @@ import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
 
 const sampleImage =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=";
 
 export const PageClipboard: React.FC = () => {
   const log = useLogger();

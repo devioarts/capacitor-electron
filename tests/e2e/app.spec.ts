@@ -281,21 +281,19 @@ test('managed external URL windows reject unsafe URL schemes', async () => {
 
 // ── Capacitor URL policy bridges ──────────────────────────────────────────────
 
-test('Browser bridge rejects unsafe URLs and exposes null snapshot', async () => {
+test('Browser bridge rejects unsafe URLs', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
     const result = await page.evaluate(async () => {
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
-      const snapshot = await api.invoke('Browser-getSnapshot', {});
       const rejected = await api.invoke('Browser-open', { url: 'javascript:alert(1)' }).then(
         () => 'resolved',
         (error) => String((error as Error).message ?? error),
       );
-      return { snapshot, rejected };
+      return { rejected };
     });
 
-    expect(result.snapshot).toBeNull();
     expect(result.rejected).toContain('Browser.open only supports http/https URLs');
   } finally {
     await app.close();

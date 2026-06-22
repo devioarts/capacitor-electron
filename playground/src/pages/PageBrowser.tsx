@@ -9,7 +9,6 @@ import { useLogger } from "../components/logger-context";
 export const PageBrowser: React.FC = () => {
   const log = useLogger();
   const { info } = log;
-  const browserWithSnapshot = Browser as typeof Browser & { getSnapshot?: () => Promise<unknown> };
   const [url, setUrl] = useState("https://capacitorjs.com");
   const [windowName, setWindowName] = useState("_blank");
   const [toolbarColor, setToolbarColor] = useState("#1d4ed8");
@@ -115,12 +114,6 @@ export const PageBrowser: React.FC = () => {
             removeAllListeners()
           </Button>
 
-          <Button type="neutral" onClick={async () => {
-            try { log.info("Browser", "getSnapshot", await browserWithSnapshot.getSnapshot?.()); }
-            catch (e) { log.error("Browser", "getSnapshot", e); }
-          }}>
-            getSnapshot()
-          </Button>
         </div>
       </section>
     </div>

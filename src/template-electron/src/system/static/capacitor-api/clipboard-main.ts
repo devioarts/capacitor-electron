@@ -18,7 +18,7 @@ class Clipboard {
     if (image) {
       const img = nativeImage.createFromDataURL(image);
       if (img.isEmpty()) throw new Error('Clipboard image must be a valid data URL');
-      clipboard.writeImage(img);
+      clipboard.write({ image: img });
       return;
     }
 

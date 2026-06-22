@@ -84,10 +84,6 @@ Non-web schemes, including custom app schemes, are rejected with an error. Use `
 
 Closes the active Electron browser window.
 
-#### `getSnapshot()`
-
-Returns `null` — not supported.
-
 ### Events
 
 | Event | Status |
@@ -152,5 +148,4 @@ All Browser and AppLauncher methods are available on macOS, Windows, and Linux. 
 
 | Feature | Status | Reason |
 |---------|--------|--------|
-| `getSnapshot()` | Returns null | Snapshot capture is not implemented for the embedded browser view yet |
 | `canOpenUrl()` | Checks local scheme policy only | No reliable OS API to test scheme registration in Electron |

@@ -98,7 +98,7 @@
     ph('App',         ['getInfo','getState','exitApp','minimizeApp','getLaunchUrl','getAppLanguage','toggleBackButtonHandler'], true),
     ph('ActionSheet', ['showActions'], false),
     ph('Dialog',      ['alert','confirm','prompt'], false),
-    ph('Browser',     ['open','close','getSnapshot'], true),
+    ph('Browser',     ['open','close'], true),
     ph('InAppBrowser', ['openInWebView','openInSystemBrowser','openInExternalBrowser','close'], true),
     ph('AppLauncher', ['canOpenUrl','openUrl'], false),
     ph('Filesystem',  [

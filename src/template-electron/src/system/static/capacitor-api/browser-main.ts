@@ -51,7 +51,6 @@ function isAppLauncherUrlAllowed(url: string): boolean {
  * Uses an Electron-owned WebView window so close/load events can be delivered.
  *
  * Limitations:
- * - `getSnapshot()` returns null — no access to the external browser's content.
  * - `windowName` is ignored because Electron does not use `window.open`.
  */
 class Browser {
@@ -85,8 +84,6 @@ class Browser {
   async close(): Promise<void> {
     closeElectronWebView();
   }
-
-  async getSnapshot(): Promise<null> { return null; }
 }
 
 const browserEvents: EventHooks = {
@@ -94,7 +91,7 @@ const browserEvents: EventHooks = {
   browserPageLoaded: {},
 };
 
-registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close', 'getSnapshot'], browserEvents);
+registerPlugin('Browser', new Browser() as unknown as AnyRecord, ['open', 'close'], browserEvents);
 
 // ── @capacitor/app-launcher ───────────────────────────────────────────────────
 

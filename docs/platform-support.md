@@ -23,7 +23,6 @@ Official API references:
 | `App.appUrlOpen` | Yes | Yes | Partial | Linux links can arrive via `argv`/`second-instance`; desktop entry registration controls whether the OS passes the URL. |
 | `App.toggleBackButtonHandler()`, `backButton`, `appRestoredResult` | No-op | No-op | No-op | Android-only behavior with no desktop equivalent. |
 | `Browser.open()`, `close()` | Yes | Yes | Yes | Opens an Electron-owned web window for `http`/`https` URLs. |
-| `Browser.getSnapshot()` | No | No | No | Implemented as `null`; snapshot capture is not implemented. |
 | `InAppBrowser.openInExternalBrowser()` | Yes | Yes | Yes | Uses `shell.openExternal()` for `http`/`https` URLs. |
 | `InAppBrowser.openInSystemBrowser()` | Yes | Yes | Yes | Same Electron behavior as external browser mode. |
 | `InAppBrowser.openInWebView()` | Yes | Yes | Yes | Uses `BrowserWindow` plus `WebContentsView`; mobile-only options are ignored. |

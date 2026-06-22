@@ -51,10 +51,21 @@ export class BrowserWindow {
   contentView = { addChildView: () => {} };
 }
 
+type MockIpcHandler = (event: unknown, ...args: unknown[]) => unknown;
+const ipcHandlers = new Map<string, MockIpcHandler>();
+
 export const ipcMain = {
-  handle: () => {},
+  handle: (channel: string, handler: MockIpcHandler) => {
+    ipcHandlers.set(channel, handler);
+  },
   on: () => {},
-  removeHandler: () => {},
+  removeHandler: (channel: string) => {
+    ipcHandlers.delete(channel);
+  },
+  __handlers: ipcHandlers,
+  __reset: () => {
+    ipcHandlers.clear();
+  },
 };
 
 export const safeStorage = {
@@ -156,7 +167,54 @@ export class WebContentsView {
   };
   setBounds() {}
 }
-export const nativeImage = { createFromDataURL: () => ({}) };
+type MockNativeImage = {
+  dataUrl: string;
+  isEmpty: () => boolean;
+  toDataURL: () => string;
+  getSize: () => { width: number; height: number };
+};
+
+function makeNativeImage(dataUrl = ''): MockNativeImage {
+  return {
+    dataUrl,
+    isEmpty: () => dataUrl === '',
+    toDataURL: () => dataUrl,
+    getSize: () => dataUrl === '' ? { width: 0, height: 0 } : { width: 1, height: 1 },
+  };
+}
+
+let clipboardText = '';
+let clipboardImage = makeNativeImage();
+
+export const clipboard = {
+  write: (data: { text?: string; image?: MockNativeImage }) => {
+    clipboardText = data.text ?? '';
+    clipboardImage = data.image ?? makeNativeImage();
+  },
+  writeImage: (image: MockNativeImage) => {
+    clipboardImage = image;
+  },
+  writeText: (text: string) => {
+    clipboardText = text;
+    clipboardImage = makeNativeImage();
+  },
+  readImage: () => clipboardImage,
+  readText: () => clipboardText,
+  __reset: () => {
+    clipboardText = '';
+    clipboardImage = makeNativeImage();
+  },
+};
+
+export const nativeImage = {
+  createEmpty: () => makeNativeImage(),
+  createFromPath: (_path: string) => makeNativeImage('mock:path'),
+  createFromDataURL: (dataUrl: string) => (
+    typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')
+      ? makeNativeImage(dataUrl)
+      : makeNativeImage()
+  ),
+};
 
 type NotifOpts = { title: string; body?: string; silent?: boolean };
 type NotifEventMap = {
