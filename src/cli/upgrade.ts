@@ -9,6 +9,7 @@ import * as os from 'os';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 import { extract } from 'tar';
+import { syncElectronPackageMetadata } from './metadata.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -122,6 +123,14 @@ async function main(): Promise<void> {
       );
       if (pkgUpdated) {
         console.log('  merged   package.json (scripts, devDependencies, dependencies)');
+        updated++;
+      }
+      if (syncElectronPackageMetadata(
+        capacitorRoot,
+        path.join(electronDir, 'package.json'),
+        path.join(electronDir, 'package-lock.json'),
+      )) {
+        console.log('  synced   package metadata');
         updated++;
       }
     }

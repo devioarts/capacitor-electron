@@ -7,6 +7,11 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync, execSync } from 'child_process';
 import { extract } from 'tar';
+import {
+  collectElectronPackageMetadata,
+  mergePackageLockMetadata,
+  mergePackageMetadata,
+} from './metadata.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,8 +46,7 @@ try {
   process.exit(1);
 }
 
-const { appName, appId } = readAppMeta(capacitorRoot);
-const packageName = toNpmPackageName(appName, appId);
+const metadata = collectElectronPackageMetadata(capacitorRoot);
 
 for (const pkgFile of [
   path.join(electronDir, 'package.json'),
@@ -52,14 +56,17 @@ for (const pkgFile of [
   try {
     fs.writeFileSync(pkgFile,
       fs.readFileSync(pkgFile, 'utf-8')
-        .replace(/__APP_NAME__/g, packageName)
-        .replace(/__APP_ID__/g, appId),
+        .replace(/__APP_NAME__/g, metadata.packageName)
+        .replace(/__APP_ID__/g, metadata.appMeta.appId),
     );
   } catch (e) {
     console.error(`[cap-electron] Failed to patch ${path.relative(electronDir, pkgFile)}: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   }
 }
+
+mergePackageMetadata(path.join(electronDir, 'package.json'), metadata.packageJson);
+mergePackageLockMetadata(path.join(electronDir, 'package-lock.json'), metadata.packageJson);
 
 console.log('[cap-electron] Installing dependencies...');
 try {
@@ -84,66 +91,3 @@ try {
 }
 
 console.log('\n[cap-electron] Done — electron/ added.');
-
-// ---------------------------------------------------------------------------
-
-function readAppMeta(root: string): { appName: string; appId: string } {
-  // 1. Capacitor CLI sets this env var to the processed config JSON when running hooks
-  if (process.env['CAPACITOR_CONFIG']) {
-    try {
-      const cfg = JSON.parse(process.env['CAPACITOR_CONFIG']) as { appName?: string; appId?: string };
-      if (cfg.appId && cfg.appName) return { appName: cfg.appName, appId: cfg.appId };
-    } catch { /* fall through */ }
-  }
-
-  // 2. capacitor.config.json
-  const jsonCfg = path.join(root, 'capacitor.config.json');
-  if (fs.existsSync(jsonCfg)) {
-    try {
-      const cfg = JSON.parse(fs.readFileSync(jsonCfg, 'utf-8')) as { appName?: string; appId?: string };
-      if (cfg.appId || cfg.appName) {
-        return { appName: cfg.appName ?? 'app', appId: cfg.appId ?? 'com.example.app' };
-      }
-    } catch { /* fall through */ }
-  }
-
-  // 3. capacitor.config.ts / .js — regex extract (can't dynamically import .ts at runtime)
-  for (const ext of ['ts', 'js']) {
-    const cfgFile = path.join(root, `capacitor.config.${ext}`);
-    if (!fs.existsSync(cfgFile)) continue;
-    try {
-      const src = fs.readFileSync(cfgFile, 'utf-8');
-      const appId   = src.match(/appId\s*:\s*['"`]([^'"`]+)['"`]/)?.[1];
-      const appName = src.match(/appName\s*:\s*['"`]([^'"`]+)['"`]/)?.[1];
-      if (appId || appName) {
-        return { appName: appName ?? 'app', appId: appId ?? 'com.example.app' };
-      }
-    } catch { /* fall through */ }
-  }
-
-  // 4. package.json name as last resort
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf-8')) as { name?: string };
-    return { appName: pkg.name ?? 'app', appId: 'com.example.app' };
-  } catch { /* fall through */ }
-
-  return { appName: 'app', appId: 'com.example.app' };
-}
-
-function toNpmPackageName(name: string, fallback: string): string {
-  for (const candidate of [name, fallback, 'app']) {
-    const safe = candidate
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]+/g, '-')
-      .replace(/[-._]{2,}/g, '-')
-      .replace(/^[._-]+|[._-]+$/g, '')
-      .slice(0, 214);
-
-    if (safe) return safe;
-  }
-
-  return 'app';
-}

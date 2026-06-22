@@ -76,6 +76,13 @@ export interface ElectronAppSecurityConfig {
   secureStorageKeys?: 'plain' | 'hashed';
 }
 
+export interface ElectronAppProtocolConfig {
+  /** Internal renderer protocol scheme used by serveMode: 'protocol'. Default: 'capacitor-electron' */
+  scheme?: string;
+  /** Internal renderer protocol hostname used by serveMode: 'protocol'. Default: 'localhost' */
+  hostname?: string;
+}
+
 export interface ElectronDevConfig {
   /** URL of the dev server. cap-electron run reads this too. Default: http://localhost:5173 */
   url?: string;
@@ -87,10 +94,13 @@ export interface ElectronAppConfig {
   /**
    * How the production build is served to the renderer.
    * - `'file'`   — `win.loadFile()` directly from the filesystem (default).
+   * - `'protocol'` — custom in-app protocol with a real app root, so `/assets/...` works without a server.
    * - `'server'` — embedded HTTP server on 127.0.0.1 (random ephemeral port).
    * Default: 'file'
    */
-  serveMode?: 'file' | 'server';
+  serveMode?: 'file' | 'protocol' | 'server';
+  /** Custom in-app protocol settings for `serveMode: 'protocol'`. */
+  protocol?: ElectronAppProtocolConfig;
   /** Prevent launching more than one instance; second launch focuses the existing window. Default: true */
   singleInstance?: boolean;
   /** Remember window size and position between launches. Default: false */

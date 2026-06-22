@@ -116,7 +116,11 @@ const config: CapacitorConfig = {
         openDevTools: true,
       },
       app: {
-        serveMode: 'file',
+        serveMode: 'protocol',
+        protocol: {
+          scheme: 'capacitor-electron',
+          hostname: 'localhost',
+        },
         singleInstance: true,
         persistWindowState: true,
         security: {
@@ -194,7 +198,9 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `app.serveMode` | `'file' \| 'server'` | `'file'` | Production serving mode. Use `'server'` for Web APIs that require an HTTP origin |
+| `app.serveMode` | `'file' \| 'protocol' \| 'server'` | `'file'` | Production serving mode. Use `'protocol'` for web-style absolute paths without a server, or `'server'` for Web APIs that require an HTTP origin |
+| `app.protocol.scheme` | `string` | `'capacitor-electron'` | Internal renderer protocol scheme used by `serveMode: 'protocol'` |
+| `app.protocol.hostname` | `string` | `'localhost'` | Internal renderer protocol hostname used by `serveMode: 'protocol'` |
 | `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
 | `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches |
 | `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |

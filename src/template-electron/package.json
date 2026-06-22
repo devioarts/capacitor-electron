@@ -1,6 +1,22 @@
 {
   "name": "__APP_NAME__",
+  "productName": "__APP_NAME__",
   "version": "0.0.1",
+  "description": "Electron desktop application",
+  "author": {
+    "name": "App Maintainer",
+    "email": "maintainer@example.com"
+  },
+  "homepage": "https://example.com",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/repository.git"
+  },
+  "bugs": {
+    "url": "https://example.com/issues"
+  },
+  "desktopName": "__APP_NAME__",
   "type": "commonjs",
   "main": "dist/main.cjs",
   "scripts": {

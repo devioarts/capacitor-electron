@@ -25,7 +25,7 @@ const scripts: Record<string, string> = {
 const script = scripts[command ?? ''];
 if (!script) {
   console.error(`npx cap-electron: unknown command "${command ?? ''}"`);
-  console.log('Usage: npx cap-electron <scripts|add|copy|prepare|update|sync|run|build|kill|upgrade|restore>');
+  console.log('Usage: npx cap-electron <scripts|add|copy|prepare|update|sync [--all]|run|build|kill|upgrade [--all]|restore>');
   process.exit(1);
 }
 

@@ -4,6 +4,7 @@ const path = require('path');
 let appId = 'com.example.app';
 let appName = 'App';
 let builderOverrides = {};
+let packageMeta = {};
 
 try {
   const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'capacitor.config.json'), 'utf-8'));
@@ -19,11 +20,22 @@ try {
   console.warn('[electron-builder] capacitor.config.json not found — using defaults. Run: cap-electron sync');
 }
 
+try {
+  const parsed = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+  packageMeta = isPlainObject(parsed) ? parsed : {};
+} catch {
+  packageMeta = {};
+}
+
 const asset = (file) => fs.existsSync(path.join(__dirname, 'assets', file))
   ? path.join(__dirname, 'assets', file)
   : undefined;
 
 const appExecutableName = toSafeFileName(appName, appId);
+const author = normalizeAuthor(packageMeta.author);
+const maintainerName = author.name || appName;
+const maintainerEmail = author.email || 'maintainer@example.com';
+const linuxMaintainer = `${maintainerName} <${maintainerEmail}>`;
 
 function toSafeFileName(name, fallback) {
   for (const candidate of [name, fallback, 'app']) {
@@ -45,6 +57,25 @@ function toSafeFileName(name, fallback) {
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeAuthor(author) {
+  if (typeof author === 'string') {
+    const match = author.match(/^\s*(.*?)\s*<([^<>@\s]+@[^<>@\s]+)>\s*$/);
+    return {
+      name: (match?.[1] || author).trim(),
+      email: match?.[2],
+    };
+  }
+
+  if (isPlainObject(author)) {
+    return {
+      name: typeof author.name === 'string' ? author.name.trim() : undefined,
+      email: typeof author.email === 'string' ? author.email.trim() : undefined,
+    };
+  }
+
+  return {};
 }
 
 function deepMerge(base, override) {
@@ -104,6 +135,9 @@ const defaultConfig = {
     icon: iconPng,
     target: [{ target: 'AppImage', arch: ['x64', 'arm64'] }],
     category: 'Utility',
+    maintainer: linuxMaintainer,
+    vendor: maintainerName,
+    syncDesktopName: true,
   },
   nsis: {
     oneClick: false,

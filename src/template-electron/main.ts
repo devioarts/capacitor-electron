@@ -3,7 +3,7 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, type ManagedWindowAppTarget } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -17,6 +17,11 @@ const { appCfg, cfg } = loadConfig();
 const appConfig = cfg.app ?? {};
 const devConfig = cfg.dev ?? {};
 const browserWindowConfig = cfg.browserWindow ?? {};
+const appProtocol = !isDev && appConfig.serveMode === 'protocol'
+  ? resolveAppProtocolConfig(appConfig.protocol)
+  : null;
+
+if (appProtocol) registerAppProtocolPrivileges(appProtocol);
 
 // Set app identity before app.ready so Windows Action Center and macOS dock
 // show the correct name. On Windows, AUMID must also be set before ready.
@@ -31,9 +36,10 @@ const iconImage = (() => {
   return img.isEmpty() ? undefined : img;
 })();
 
-function resolveHttpAppPath(baseHref: string, appPath: string): ManagedWindowAppTarget {
+function resolveUrlAppPath(baseHref: string, appPath: string): ManagedWindowAppTarget {
   const base = new URL(baseHref);
-  if (appPath.startsWith('/')) return { kind: 'url', url: new URL(appPath, base.origin).href };
+  const root = base.origin === 'null' ? `${base.protocol}//${base.host}` : base.origin;
+  if (appPath.startsWith('/')) return { kind: 'url', url: new URL(appPath, root).href };
   if (appPath.startsWith('?')) base.search = appPath;
   else if (appPath.startsWith('#')) base.hash = appPath.slice(1);
   return { kind: 'url', url: base.href };
@@ -112,16 +118,22 @@ function setup(): void {
       const devUrl = devConfig.url ?? 'http://localhost:5173';
       const devOrigin = (() => { try { return new URL(devUrl).origin; } catch { return devUrl; } })();
       setIpcSenderCheck(url => { try { return new URL(url).origin === devOrigin; } catch { return false; } });
-      setManagedWindowAppResolver(appPath => resolveHttpAppPath(devUrl, appPath));
+      setManagedWindowAppResolver(appPath => resolveUrlAppPath(devUrl, appPath));
       win.loadURL(devUrl);
       if (devConfig.openDevTools !== false) win.webContents.openDevTools();
       watchPreloadSignal(win);
+    } else if (appProtocol) {
+      const indexUrl = appProtocolUrl(appProtocol);
+      setIpcSenderCheck(url => isAppProtocolUrl(url, appProtocol));
+      setManagedWindowAppResolver(appPath => resolveUrlAppPath(indexUrl, appPath));
+      win.loadURL(indexUrl);
+      if (devConfig.openDevTools === true) win.webContents.openDevTools();
     } else if (appConfig.serveMode === 'server') {
       const w = win;
       startLocalServer(path.join(process.resourcesPath, 'app')).then((port) => {
         const serverOrigin = `http://127.0.0.1:${port}`;
         setIpcSenderCheck(url => { try { return new URL(url).origin === serverOrigin; } catch { return false; } });
-        setManagedWindowAppResolver(appPath => resolveHttpAppPath(`${serverOrigin}/index.html`, appPath));
+        setManagedWindowAppResolver(appPath => resolveUrlAppPath(`${serverOrigin}/index.html`, appPath));
         if (!w.isDestroyed()) w.loadURL(`${serverOrigin}/index.html`);
       });
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
@@ -133,7 +145,7 @@ function setup(): void {
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
     }
 
-    applySecurityHardening(win, isDev);
+    applySecurityHardening(win, isDev, appProtocol);
     setupContextMenu(win, cfg, isDev, getWin, contextMenu);
 
     if (windowState.isMaximized) win.maximize();
@@ -157,6 +169,7 @@ function setup(): void {
 
   app.whenReady().then(() => {
     setupCSP(cfg, isDev);
+    if (appProtocol) setupAppProtocol(path.join(process.resourcesPath, 'app'), appProtocol);
     setupMenu(cfg, isDev, getWin, appMenu);
     if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
     setupDockMenu(cfg, isDev, getWin, dockMenu);
@@ -198,7 +211,7 @@ function setup(): void {
  *  - Deny window.open / target=_blank (use shell.openExternal explicitly if needed)
  *  - Deny all permission requests by default
  */
-function applySecurityHardening(win: BrowserWindow, dev: boolean): void {
+function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig: ResolvedAppProtocolConfig | null): void {
   win.webContents.on('will-navigate', (event, url) => {
     const current = win.webContents.getURL();
     let allow = false;
@@ -207,7 +220,8 @@ function applySecurityHardening(win: BrowserWindow, dev: boolean): void {
       if (current) {
         const curU = new URL(current);
         allow = (curU.protocol === 'file:' && newU.protocol === 'file:')
-             || (curU.origin !== 'null' && curU.origin === newU.origin);
+             || (curU.origin !== 'null' && curU.origin === newU.origin)
+             || (!!protocolConfig && isAppProtocolUrl(current, protocolConfig) && isAppProtocolUrl(url, protocolConfig));
       }
     } catch { /* ignore invalid URLs */ }
     if (!allow) {

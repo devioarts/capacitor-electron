@@ -184,7 +184,7 @@ await window.Electron.windows.focus(settings.id);
 
 Managed windows can be listed, focused, shown, hidden, resized, and closed.
 
-Use `appPath` for internal application windows. These windows load the app's own renderer content and receive the full preload bridge, including `window.Electron` and built-in Capacitor plugin IPC. `appPath` must be app-relative (`#/settings`, `?window=settings`, or `/settings`) and cannot be an absolute URL. `#/...` routes are recommended when the production app uses `serveMode: 'file'`; `/...` routes work naturally in dev/server mode and are mapped to a hash route in file mode.
+Use `appPath` for internal application windows. These windows load the app's own renderer content and receive the full preload bridge, including `window.Electron` and built-in Capacitor plugin IPC. `appPath` must be app-relative (`#/settings`, `?window=settings`, or `/settings`) and cannot be an absolute URL. `#/...` routes are recommended when the production app uses `serveMode: 'file'`; `/...` routes work naturally in dev/protocol/server mode and are mapped to a hash route in file mode.
 
 Use `url` for external `http` / `https` content. External URL windows are opened without the preload bridge, so the loaded page does not receive `window.Electron`. `appPath` and `url` are mutually exclusive.
 

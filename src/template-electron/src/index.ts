@@ -13,6 +13,8 @@ export { loadWindowState, trackWindowState } from './system/static/electron-api/
 export type { WindowBounds } from './system/static/electron-api/window-state';
 export { setupTray } from './system/static/electron-api/tray-main';
 export { startLocalServer } from './system/static/electron-api/server-main';
+export { appProtocolUrl, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol } from './system/static/electron-api/app-protocol-main';
+export type { ResolvedAppProtocolConfig } from './system/static/electron-api/app-protocol-main';
 export type { TrayMenuContext, TrayMenuFactory } from './system/static/electron-api/tray-main';
 export { setManagedWindowAppResolver } from './system/static/electron-api/windows-main';
 export type { ManagedWindowAppTarget } from './system/static/electron-api/windows-main';
