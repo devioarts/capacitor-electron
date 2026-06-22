@@ -81,7 +81,7 @@ export interface ElectronAppProtocolConfig {
   scheme?: string;
   /** Internal renderer protocol hostname used by serveMode: 'protocol'. Default: 'localhost' */
   hostname?: string;
-  /** Protocol handler implementation. Default: 'handle'. Use 'buffer' as a compatibility fallback. */
+  /** Protocol handler implementation. Default: 'buffer'. Use 'handle' to try Electron's current protocol.handle API. */
   handler?: 'handle' | 'buffer';
   /** Expose protocol diagnostics at /__cap_electron_protocol_debug and detailed error responses. Default: false */
   debug?: boolean;

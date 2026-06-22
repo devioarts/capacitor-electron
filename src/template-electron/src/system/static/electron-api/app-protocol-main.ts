@@ -15,7 +15,7 @@ export interface ResolvedAppProtocolConfig {
 const DEFAULT_PROTOCOL: ResolvedAppProtocolConfig = {
   scheme: 'capacitor-electron',
   hostname: 'localhost',
-  handler: 'handle',
+  handler: 'buffer',
   debug: false,
 };
 

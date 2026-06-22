@@ -120,7 +120,7 @@ const config: CapacitorConfig = {
         protocol: {
           scheme: 'capacitor-electron',
           hostname: 'localhost',
-          handler: 'handle',
+          handler: 'buffer',
         },
         singleInstance: true,
         persistWindowState: true,
@@ -202,7 +202,7 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.serveMode` | `'file' \| 'protocol' \| 'server'` | `'file'` | Production serving mode. Use `'protocol'` for web-style absolute paths without a server, or `'server'` for Web APIs that require an HTTP origin |
 | `app.protocol.scheme` | `string` | `'capacitor-electron'` | Internal renderer protocol scheme used by `serveMode: 'protocol'` |
 | `app.protocol.hostname` | `string` | `'localhost'` | Internal renderer protocol hostname used by `serveMode: 'protocol'` |
-| `app.protocol.handler` | `'handle' \| 'buffer'` | `'handle'` | Internal protocol implementation. `'handle'` uses Electron's current `protocol.handle`; `'buffer'` is a compatibility fallback |
+| `app.protocol.handler` | `'buffer' \| 'handle'` | `'buffer'` | Internal protocol implementation. `'buffer'` is the stable default; `'handle'` tries Electron's current `protocol.handle` API |
 | `app.protocol.debug` | `boolean` | `false` | Expose diagnostics at `/__cap_electron_protocol_debug` and include detailed protocol error responses |
 | `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
 | `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches |
