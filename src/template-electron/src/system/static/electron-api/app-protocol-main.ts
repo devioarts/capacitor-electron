@@ -143,38 +143,57 @@ async function fileOrIndex(distDir: string, requestUrl: string, config: Resolved
 }
 
 export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig): void {
-  protocol.handle(config.scheme, async (request) => {
-    try {
-      if (request.method !== 'GET' && request.method !== 'HEAD') {
-        return new Response(null, { status: 405 });
-      }
+  const ok = protocol.registerBufferProtocol(config.scheme, (request, callback) => {
+    void (async () => {
+      try {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          callback({
+            statusCode: 405,
+            data: Buffer.alloc(0),
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          });
+          return;
+        }
 
-      const target = await fileOrIndex(distDir, request.url, config);
-      if (!target) {
-        return new Response('Not found', {
-          status: 404,
+        const target = await fileOrIndex(distDir, request.url, config);
+        if (!target) {
+          callback({
+            statusCode: 404,
+            data: Buffer.from('Not found'),
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          });
+          return;
+        }
+
+        const { filePath } = target;
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = MIME[ext] ?? 'application/octet-stream';
+        const headers = { 'Content-Type': contentType };
+        if (request.method === 'HEAD') {
+          callback({ statusCode: 200, data: Buffer.alloc(0), headers });
+          return;
+        }
+
+        if (target.injectBase && ext === '.html') {
+          const html = await fs.promises.readFile(filePath, 'utf-8');
+          callback({
+            statusCode: 200,
+            data: Buffer.from(injectAppProtocolBase(html, config)),
+            headers,
+          });
+          return;
+        }
+
+        callback({ statusCode: 200, data: await fs.promises.readFile(filePath), headers });
+      } catch (err) {
+        callback({
+          statusCode: 500,
+          data: Buffer.from(err instanceof Error ? err.message : 'Internal app protocol error'),
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
         });
       }
-
-      const { filePath } = target;
-      const ext = path.extname(filePath).toLowerCase();
-      const contentType = MIME[ext] ?? 'application/octet-stream';
-      const headers = { 'Content-Type': contentType };
-      if (request.method === 'HEAD') return new Response(null, { status: 200, headers });
-
-      if (target.injectBase && ext === '.html') {
-        const html = await fs.promises.readFile(filePath, 'utf-8');
-        return new Response(injectAppProtocolBase(html, config), { status: 200, headers });
-      }
-
-      const data = await fs.promises.readFile(filePath);
-      return new Response(new Blob([data], { type: contentType }), { status: 200, headers });
-    } catch (err) {
-      return new Response(err instanceof Error ? err.message : 'Internal app protocol error', {
-        status: 500,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
-    }
+    })();
   });
+
+  if (!ok) throw new Error(`Failed to register app protocol: ${config.scheme}`);
 }

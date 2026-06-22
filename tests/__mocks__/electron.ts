@@ -106,6 +106,7 @@ export const session = {
 export const protocol = {
   isProtocolHandled: (_s: string) => false,
   registerSchemesAsPrivileged: () => {},
+  registerBufferProtocol: () => true,
   handle: () => {},
 };
 
