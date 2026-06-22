@@ -196,7 +196,7 @@ function registerContextMenuIpc(): void {
       isDev: runtime.isDev,
       getWin: runtime.getWin,
       userMenu: runtime.userMenu,
-      trigger: 'renderer',
+      trigger: options.target ? 'right-click' : 'renderer',
       params: {
         x: options.x,
         y: options.y,
