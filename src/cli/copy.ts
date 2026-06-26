@@ -9,6 +9,9 @@ import { ensureAppInit } from './electron-init.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+process.stdout.write('\n');
+const start = performance.now();
+
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
 const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
@@ -16,14 +19,14 @@ const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
-  console.error('[cap-electron] electron/ not found — run: npx cap-electron add');
+  console.error('\x1b[1;31m[cap-electron] electron/ not found — run: npx cap-electron add\x1b[0m');
   process.exit(1);
 }
 
 const webDir = getWebDir();
 
 if (!fs.existsSync(webDir)) {
-  console.error(`[cap-electron] web dir not found: ${webDir}`);
+  console.error(`\x1b[1;31m[cap-electron] web dir not found: ${webDir}\x1b[0m`);
   console.error('Build your web app first.');
   process.exit(1);
 }
@@ -35,13 +38,15 @@ try {
   if (fs.existsSync(appDir)) await rm(appDir, { recursive: true, force: true });
   await cp(webDir, appDir, { recursive: true });
 } catch (e) {
-  console.error(`[cap-electron] Failed to copy web assets: ${e instanceof Error ? e.message : String(e)}`);
+  const elapsed = (performance.now() - start).toFixed(2);
+  console.error(`\x1b[1;31m✖ copy electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`);
   process.exit(1);
 }
 
 ensureAppInit(appDir);
 
-console.log('[cap-electron] Copy done.');
+const elapsed = (performance.now() - start).toFixed(2);
+console.log(`\x1b[1;32m✔ copy electron in ${elapsed}ms\x1b[0m`);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

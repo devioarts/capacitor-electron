@@ -30,8 +30,11 @@ const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
   ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
+process.stdout.write('\n');
+const start = performance.now();
+
 if (!fs.existsSync(electronDir)) {
-  console.error('[cap-electron] electron/ not found — run: npx cap-electron add');
+  console.error('\x1b[1;31m[cap-electron] electron/ not found — run: npx cap-electron add\x1b[0m');
   process.exit(1);
 }
 
@@ -264,10 +267,16 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e) => {
-  console.error(`[cap-electron] Update failed: ${e instanceof Error ? e.message : String(e)}`);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    const elapsed = (performance.now() - start).toFixed(2);
+    console.log(`\x1b[1;32m✔ update electron in ${elapsed}ms\x1b[0m`);
+  })
+  .catch((e) => {
+    const elapsed = (performance.now() - start).toFixed(2);
+    console.error(`\x1b[1;31m✖ update electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`);
+    process.exit(1);
+  });
 
 // ── Config helpers ────────────────────────────────────────────────────────────
 
