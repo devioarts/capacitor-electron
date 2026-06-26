@@ -28,9 +28,9 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run build",
     "release": "npm publish --access public",
-    "capacitor:sync:after": "npx cap-electron sync",
-    "capacitor:copy:after": "npx cap-electron copy",
-    "capacitor:update:after": "npx cap-electron update"
+    "capacitor:sync:after": "cap-electron sync",
+    "capacitor:copy:after": "cap-electron copy",
+    "capacitor:update:after": "cap-electron update"
   },
   "repository": {
     "type": "git",
