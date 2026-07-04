@@ -133,6 +133,29 @@ describe('externalCommands.run', () => {
 
     await expect(run('node', { args: ['-e', 'process.exit(0)'] })).rejects.toThrow('arg is not allowed');
   });
+
+  it('escalates timed-out commands that ignore SIGTERM', async () => {
+    mockLoadConfig.mockReturnValue({
+      appCfg: {},
+      cfg: {
+        app: {
+          externalCommands: {
+            node: { command: process.execPath, resolve: 'absolute', timeoutMs: 50 },
+          },
+        },
+      },
+    });
+
+    const result = await run('node', {
+      args: ['-e', 'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);'],
+    }) as {
+      signal: NodeJS.Signals | null;
+      timedOut: boolean;
+    };
+
+    expect(result.timedOut).toBe(true);
+    expect(result.signal).toBe('SIGKILL');
+  }, 8_000);
 });
 
 describe('external command resolution', () => {

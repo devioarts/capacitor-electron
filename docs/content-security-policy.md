@@ -1,6 +1,8 @@
 # Content Security Policy (CSP)
 
-Electron does not apply a CSP automatically — without configuration the renderer has full access to `eval`, inline scripts, and arbitrary external origins. This plugin injects CSP via `session.defaultSession.webRequest.onHeadersReceived` before any window loads.
+Electron does not apply a CSP automatically — without configuration the renderer has full access to `eval`, inline scripts, and arbitrary external origins. This plugin applies CSP through response headers before any window loads.
+
+For normal dev, file, and local-server responses, CSP is injected with `session.defaultSession.webRequest.onHeadersReceived`. For production `app.serveMode: 'protocol'`, the custom app protocol also writes the same `Content-Security-Policy` header directly onto every protocol response, including 404/405/500 responses. The direct protocol header is intentional: custom protocol responses are created by our handler, so their security headers should not depend only on Electron's `webRequest` observation of custom-scheme traffic.
 
 ---
 
@@ -129,6 +131,7 @@ csp: {
 ## Notes
 
 - CSP is applied via HTTP response headers, not a `<meta>` tag — this works reliably even with dynamically loaded content.
+- In `app.serveMode: 'protocol'`, CSP is added both by the general `defaultSession` hook and directly by the app protocol handler. If `security.csp` is `false`, neither path adds a CSP header.
 - In dev mode the default CSP intentionally allows `unsafe-eval` and `unsafe-inline` because Vite HMR requires them.
 - If you are unsure what to block, open DevTools (Console + Network) and watch for CSP violations — the browser logs them to the console.
 - `session.defaultSession` applies to all windows in the app. If you need per-window CSP, use a named session (`session.fromPartition('...')`).

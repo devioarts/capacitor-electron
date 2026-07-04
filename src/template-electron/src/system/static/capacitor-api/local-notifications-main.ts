@@ -19,9 +19,7 @@ interface NotifSchema {
   actionTypeId?: string;
 }
 
-type TimerHandle =
-  | { kind: 'timeout';  ref: ReturnType<typeof setTimeout> }
-  | { kind: 'interval'; ref: ReturnType<typeof setInterval> };
+type TimerHandle = { cancel: () => void };
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -29,6 +27,7 @@ const timers    = new Map<number, TimerHandle>();
 const pending   = new Map<number, NotifSchema>();
 const delivered: NotifSchema[] = [];
 const MAX_DELIVERED = 200;
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 const EVERY_MS: Record<string, number> = {
   second:       1_000,
@@ -77,10 +76,35 @@ function fire(n: NotifSchema): void {
 function cancelById(id: number): void {
   const h = timers.get(id);
   if (!h) return;
-  if (h.kind === 'timeout') clearTimeout(h.ref);
-  else clearInterval(h.ref);
+  h.cancel();
   timers.delete(id);
   pending.delete(id);
+}
+
+function scheduleLongTimeout(cb: () => void, delayMs: number): { cancel: () => void } {
+  const safeDelay = Number.isFinite(delayMs) ? Math.max(0, delayMs) : 0;
+  const targetTime = Date.now() + safeDelay;
+  let ref: ReturnType<typeof setTimeout> | null = null;
+  let cancelled = false;
+
+  const arm = (): void => {
+    if (cancelled) return;
+    const remaining = targetTime - Date.now();
+    const delay = remaining <= 0 ? 0 : Math.min(remaining, MAX_TIMER_DELAY_MS);
+    ref = setTimeout(() => {
+      if (cancelled) return;
+      if (Date.now() >= targetTime) cb();
+      else arm();
+    }, delay);
+  };
+
+  arm();
+  return {
+    cancel: () => {
+      cancelled = true;
+      if (ref) clearTimeout(ref);
+    },
+  };
 }
 
 // ── Plugin class ─────────────────────────────────────────────────────────────
@@ -88,7 +112,7 @@ function cancelById(id: number): void {
 /**
  * Electron implementation of the Capacitor LocalNotifications plugin.
  *
- * Scheduling is handled entirely in-process via `setTimeout`/`setInterval`.
+ * Scheduling is handled entirely in-process via cancellable `setTimeout` chains.
  * All state (pending timers, delivered list) is in-memory and resets on restart.
  *
  * Limitations:
@@ -120,8 +144,8 @@ export class LocalNotifications {
       if (sched.at) {
         const ts = sched.at instanceof Date ? sched.at.getTime() : new Date(sched.at as string).getTime();
         const delay = Math.max(0, ts - Date.now());
-        const ref = setTimeout(() => { fire(n); timers.delete(n.id); pending.delete(n.id); }, delay);
-        timers.set(n.id, { kind: 'timeout', ref });
+        const handle = scheduleLongTimeout(() => { fire(n); timers.delete(n.id); pending.delete(n.id); }, delay);
+        timers.set(n.id, handle);
         pending.set(n.id, n);
         continue;
       }
@@ -129,17 +153,30 @@ export class LocalNotifications {
         const ms = EVERY_MS[sched.every] ?? 60_000;
         const max = sched.count ?? Infinity;
         let fired = 0;
-        const tick = () => { fire(n); fired++; if (fired >= max) cancelById(n.id); };
+        const finish = (): void => {
+          timers.delete(n.id);
+          pending.delete(n.id);
+        };
+        const tick = (): boolean => {
+          fire(n);
+          fired++;
+          return fired >= max || sched.repeats === false;
+        };
         if (sched.repeats === false) {
-          const ref = setTimeout(() => {
+          const handle = scheduleLongTimeout(() => {
             tick();
-            timers.delete(n.id);
-            pending.delete(n.id);
+            finish();
           }, ms);
-          timers.set(n.id, { kind: 'timeout', ref });
+          timers.set(n.id, handle);
         } else {
-          const ref = setInterval(tick, ms);
-          timers.set(n.id, { kind: 'interval', ref });
+          const scheduleNext = (): void => {
+            const handle = scheduleLongTimeout(() => {
+              if (tick()) finish();
+              else scheduleNext();
+            }, ms);
+            timers.set(n.id, handle);
+          };
+          scheduleNext();
         }
         pending.set(n.id, n);
       }

@@ -119,6 +119,30 @@
     return filePath;
   }
 
+  function isPluginFailureResult(value) {
+    return !!value && typeof value === 'object' && value.success === false;
+  }
+
+  function pluginFailureToError(result) {
+    var payload = result.error || {};
+    var err = new Error(payload.message || 'Capacitor Electron plugin call failed');
+    if (payload.code) err.code = payload.code;
+    if (payload.platform) err.platform = payload.platform;
+    if (payload.method) err.method = payload.method;
+    if (payload.details !== undefined) err.details = payload.details;
+    return err;
+  }
+
+  function invokePlugin(channel, opts) {
+    return b.invoke(channel, opts).then(function (result) {
+      // registerPlugin() returns structured failures so main can attach
+      // Capacitor-style metadata. Renderer callers should still receive a
+      // rejected Promise, matching window.Electron.* IPC methods.
+      if (isPluginFailureResult(result)) throw pluginFailureToError(result);
+      return result;
+    });
+  }
+
   // ── Built-in Capacitor plugin headers (static) ────────────────────────────
 
   var BUILTIN = [
@@ -173,7 +197,7 @@
   window.Capacitor = {
     PluginHeaders:  BUILTIN.concat(b.getPluginHeaders()),
     convertFileSrc: convertFileSrc,
-    nativePromise:  function (p, m, o) { return b.invoke(p + '-' + m, withPreferencesMigrationPayload(p, m, o)); },
+    nativePromise:  function (p, m, o) { return invokePlugin(p + '-' + m, withPreferencesMigrationPayload(p, m, o)); },
     nativeCallback: function (p, m, o, fn) { return b.nativeCallback(p, m, o, fn); },
   };
 })();

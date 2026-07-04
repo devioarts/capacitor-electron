@@ -12,6 +12,8 @@ interface SavedState {
   isMaximized: boolean;
 }
 
+type RawState = Partial<Record<keyof SavedState, unknown>>;
+
 export interface WindowBounds {
   x?: number;
   y?: number;
@@ -20,13 +22,17 @@ export interface WindowBounds {
   isMaximized: boolean;
 }
 
+const MAX_WINDOW_SIZE = 100_000;
+const MIN_VISIBLE_SIZE = 64;
+
 function statePath(): string {
   return path.join(app.getPath('userData'), 'window-state.json');
 }
 
-function readState(): SavedState | null {
+function readState(): RawState | null {
   try {
-    return JSON.parse(fs.readFileSync(statePath(), 'utf-8')) as SavedState;
+    const state = JSON.parse(fs.readFileSync(statePath(), 'utf-8')) as unknown;
+    return state && typeof state === 'object' && !Array.isArray(state) ? state as RawState : null;
   } catch {
     return null;
   }
@@ -40,10 +46,22 @@ function writeState(state: SavedState): void {
   }
 }
 
-function isOnAnyScreen(x: number, y: number): boolean {
-  return screen.getAllDisplays().some(({ bounds: b }) =>
-    x >= b.x && y >= b.y && x < b.x + b.width && y < b.y + b.height
-  );
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function validDimension(value: unknown): number | undefined {
+  const n = finiteNumber(value);
+  return n !== undefined && n > 0 && n <= MAX_WINDOW_SIZE ? n : undefined;
+}
+
+function isVisibleOnAnyScreen(x: number, y: number, width: number, height: number): boolean {
+  return screen.getAllDisplays().some(({ bounds: b }) => {
+    const visibleWidth = Math.min(x + width, b.x + b.width) - Math.max(x, b.x);
+    const visibleHeight = Math.min(y + height, b.y + b.height) - Math.max(y, b.y);
+    return visibleWidth >= Math.min(width, MIN_VISIBLE_SIZE)
+      && visibleHeight >= Math.min(height, MIN_VISIBLE_SIZE);
+  });
 }
 
 /**
@@ -64,17 +82,19 @@ export function loadWindowState(cfg: ElectronConfig): WindowBounds {
   const saved = readState();
   if (!saved) return defaults;
 
-  let x: number | undefined = saved.x;
-  let y: number | undefined = saved.y;
-  // Drop saved position if it's off all current screens (monitor unplugged etc.)
-  if (x != null && y != null && !isOnAnyScreen(x, y)) { x = undefined; y = undefined; }
+  const width = validDimension(saved.width) ?? defaults.width;
+  const height = validDimension(saved.height) ?? defaults.height;
+  let x: number | undefined = finiteNumber(saved.x);
+  let y: number | undefined = finiteNumber(saved.y);
+  // Drop saved position if invalid, off-screen, or only a tiny sliver is visible.
+  if (x === undefined || y === undefined || !isVisibleOnAnyScreen(x, y, width, height)) { x = undefined; y = undefined; }
 
   return {
     x,
     y,
-    width:      saved.width      ?? defaults.width,
-    height:     saved.height     ?? defaults.height,
-    isMaximized: saved.isMaximized ?? false,
+    width,
+    height,
+    isMaximized: saved.isMaximized === true,
   };
 }
 

@@ -23,10 +23,12 @@ type ActiveCommand = {
   child: ChildProcessWithoutNullStreams;
   result: ExternalCommandResult;
   timer?: NodeJS.Timeout;
+  killTimer?: NodeJS.Timeout;
 };
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_OUTPUT_BYTES = 1024 * 1024;
+const TIMEOUT_KILL_GRACE_MS = 2_000;
 const MAX_ARGS = 256;
 const MAX_ARG_LENGTH = 8192;
 
@@ -229,10 +231,22 @@ function spawnExternalCommand(
     };
 
     let timer: NodeJS.Timeout | undefined;
+    let killTimer: NodeJS.Timeout | undefined;
+    const clearTimers = (): void => {
+      if (timer) clearTimeout(timer);
+      if (killTimer) clearTimeout(killTimer);
+    };
+
     if (resolved.timeoutMs > 0) {
       timer = setTimeout(() => {
         result.timedOut = true;
-        child.kill();
+        child.kill('SIGTERM');
+        // Some native commands ignore SIGTERM. Keep the graceful first signal,
+        // then escalate so a timed-out process cannot remain orphaned forever.
+        killTimer = setTimeout(() => { child.kill('SIGKILL'); }, TIMEOUT_KILL_GRACE_MS);
+        killTimer.unref?.();
+        const activeCommand = active.get(id);
+        if (activeCommand) activeCommand.killTimer = killTimer;
       }, resolved.timeoutMs);
       timer.unref?.();
     }
@@ -250,7 +264,7 @@ function spawnExternalCommand(
     child.once('error', (error) => {
       result.error = error.message;
       finish(() => {
-        if (timer) clearTimeout(timer);
+        clearTimers();
         active.delete(id);
         if (emitEvents) emitExit(win, result);
         reject(error);
@@ -260,7 +274,7 @@ function spawnExternalCommand(
       result.exitCode = exitCode;
       result.signal = signal;
       finish(() => {
-        if (timer) clearTimeout(timer);
+        clearTimers();
         active.delete(id);
         if (emitEvents) emitExit(win, result);
         resolve({ ...result });

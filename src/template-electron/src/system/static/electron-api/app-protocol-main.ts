@@ -216,6 +216,21 @@ interface AppProtocolResponse {
   text?: string;
 }
 
+function withCspHeader(response: AppProtocolResponse, cspHeader?: string | null): AppProtocolResponse {
+  if (!cspHeader) return response;
+
+  // The custom app protocol owns these responses. Add CSP here directly so
+  // protocol-mode security does not depend only on the defaultSession webRequest
+  // hook observing custom-scheme traffic consistently across Electron versions.
+  return {
+    ...response,
+    headers: {
+      ...response.headers,
+      'Content-Security-Policy': cspHeader,
+    },
+  };
+}
+
 async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
   const requestedPath = resolveAppProtocolFilePath(distDir, requestUrl, config);
   if (!requestedPath) return null;
@@ -379,23 +394,35 @@ function toFetchResponse(response: AppProtocolResponse): Response {
   });
 }
 
-function setupAppProtocolHandle(distDir: string, config: ResolvedAppProtocolConfig, capacitorFileRoots: CapacitorFileProtocolRoot[]): void {
+function setupAppProtocolHandle(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[],
+  cspHeader?: string | null,
+): void {
   protocol.handle(config.scheme, async (request) => {
     try {
-      return toFetchResponse(await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots));
+      const response = await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots);
+      return toFetchResponse(withCspHeader(response, cspHeader));
     } catch (err) {
-      return toFetchResponse(errorResponse(err, request.url, config));
+      return toFetchResponse(withCspHeader(errorResponse(err, request.url, config), cspHeader));
     }
   });
 }
 
-function setupAppProtocolBuffer(distDir: string, config: ResolvedAppProtocolConfig, capacitorFileRoots: CapacitorFileProtocolRoot[]): void {
+function setupAppProtocolBuffer(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[],
+  cspHeader?: string | null,
+): void {
   const ok = protocol.registerBufferProtocol(config.scheme, (request, callback) => {
     void (async () => {
       try {
-        callback(await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots));
+        const response = await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots);
+        callback(withCspHeader(response, cspHeader));
       } catch (err) {
-        callback(errorResponse(err, request.url, config));
+        callback(withCspHeader(errorResponse(err, request.url, config), cspHeader));
       }
     })();
   });
@@ -403,11 +430,16 @@ function setupAppProtocolBuffer(distDir: string, config: ResolvedAppProtocolConf
   if (!ok) throw new Error(`Failed to register app protocol: ${config.scheme}`);
 }
 
-export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig, capacitorFileRoots: CapacitorFileProtocolRoot[] = []): void {
+export function setupAppProtocol(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[] = [],
+  cspHeader?: string | null,
+): void {
   if (config.handler === 'buffer') {
-    setupAppProtocolBuffer(distDir, config, capacitorFileRoots);
+    setupAppProtocolBuffer(distDir, config, capacitorFileRoots, cspHeader);
     return;
   }
 
-  setupAppProtocolHandle(distDir, config, capacitorFileRoots);
+  setupAppProtocolHandle(distDir, config, capacitorFileRoots, cspHeader);
 }

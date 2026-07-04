@@ -4,11 +4,39 @@
 // injection through user-supplied options.
 import { vi, describe, it, expect } from 'vitest';
 
+const { createdSessions } = vi.hoisted(() => ({
+  createdSessions: [] as Array<{
+    clearCache: ReturnType<typeof vi.fn>;
+    clearData: ReturnType<typeof vi.fn>;
+    setPermissionRequestHandler: ReturnType<typeof vi.fn>;
+    setPermissionCheckHandler: ReturnType<typeof vi.fn>;
+  }>,
+}));
+
+function mockSession() {
+  const ses = {
+    clearCache: vi.fn(async () => {}),
+    clearData: vi.fn(async () => {}),
+    setPermissionRequestHandler: vi.fn(),
+    setPermissionCheckHandler: vi.fn(),
+  };
+  createdSessions.push(ses);
+  return ses;
+}
+
 vi.mock('electron', () => ({
   BrowserWindow: class {
     static getAllWindows() { return []; }
     static getFocusedWindow() { return null; }
+    webContents = {
+      loadURL: async () => {},
+      once: vi.fn(),
+      on: vi.fn(),
+      executeJavaScript: async () => {},
+    };
     isDestroyed() { return false; }
+    close() {}
+    getContentSize(): [number, number] { return [1000, 720]; }
     on() { return this; }
     once() { return this; }
     loadURL() { return Promise.resolve(); }
@@ -30,15 +58,8 @@ vi.mock('electron', () => ({
   },
   shell: { openExternal: async () => {} },
   session: {
-    defaultSession: {
-      clearCache: async () => {},
-      clearData: async () => {},
-      fromPartition: (_: string) => ({ clearCache: async () => {}, clearData: async () => {} }),
-    },
-    fromPartition: (_: string) => ({
-      clearCache: async () => {},
-      clearData: async () => {},
-    }),
+    defaultSession: mockSession(),
+    fromPartition: (_: string) => mockSession(),
   },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
 }));
@@ -46,7 +67,10 @@ vi.mock('electron', () => ({
 import {
   parseWebUrl,
   canOpenExternal,
+  isPermissionAllowed,
+  normalizeAllowedPermissions,
   normalizeCssColor,
+  openElectronWebView,
   sanitizeWindowOptions,
   extraHeaders,
 } from '../../src/template-electron/src/system/static/capacitor-api/in-app-browser-main.js';
@@ -130,6 +154,60 @@ describe('canOpenExternal', () => {
 
   it('returns false for invalid (unparseable) URL', () => {
     expect(canOpenExternal('not a url')).toBe(false);
+  });
+});
+
+// ── permission policy ─────────────────────────────────────────────────────────
+
+describe('permission policy', () => {
+  it('normalizes explicit permission allowlists', () => {
+    const permissions = normalizeAllowedPermissions(['media', ' geolocation ', '', 'bad permission', 42, 'notifications']);
+    expect([...permissions].sort()).toEqual(['geolocation', 'media', 'notifications']);
+  });
+
+  it('allows only configured permission names', () => {
+    const permissions = normalizeAllowedPermissions(['media']);
+    expect(isPermissionAllowed('media', permissions)).toBe(true);
+    expect(isPermissionAllowed('geolocation', permissions)).toBe(false);
+  });
+
+  it('installs deny-by-default permission handlers on the selected session', async () => {
+    createdSessions.length = 0;
+    await openElectronWebView({
+      url: 'https://example.com',
+      options: { electron: { session: { partition: 'persist:iab-test' } } },
+    }, { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' });
+
+    const ses = createdSessions[0];
+    expect(ses.setPermissionRequestHandler).toHaveBeenCalledTimes(1);
+    expect(ses.setPermissionCheckHandler).toHaveBeenCalledTimes(1);
+
+    const requestHandler = ses.setPermissionRequestHandler.mock.calls[0][0] as (
+      wc: unknown,
+      permission: string,
+      callback: (allowed: boolean) => void,
+    ) => void;
+    const callback = vi.fn();
+    requestHandler({}, 'media', callback);
+    expect(callback).toHaveBeenCalledWith(false);
+  });
+
+  it('allows explicitly configured InAppBrowser permissions', async () => {
+    createdSessions.length = 0;
+    await openElectronWebView({
+      url: 'https://example.com',
+      options: { electron: { session: { partition: 'persist:iab-media' }, permissions: { allowed: ['media'] } } },
+    }, { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' });
+
+    const ses = createdSessions[0];
+    const requestHandler = ses.setPermissionRequestHandler.mock.calls[0][0] as (
+      wc: unknown,
+      permission: string,
+      callback: (allowed: boolean) => void,
+    ) => void;
+    const callback = vi.fn();
+    requestHandler({}, 'media', callback);
+    expect(callback).toHaveBeenCalledWith(true);
   });
 });
 

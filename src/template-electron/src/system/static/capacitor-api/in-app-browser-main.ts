@@ -24,6 +24,9 @@ type ElectronInAppBrowserOptions = {
   navigation?: {
     openExternalLinksInSystemBrowser?: boolean;
   };
+  permissions?: {
+    allowed?: string[];
+  };
 };
 
 type WebViewOptions = {
@@ -89,6 +92,18 @@ function stringValue(value: unknown, max = 200): string | undefined {
   return trimmed.length > 0 ? trimmed.slice(0, max) : undefined;
 }
 
+export function normalizeAllowedPermissions(value: unknown): Set<string> {
+  if (!Array.isArray(value)) return new Set();
+  return new Set(value
+    .filter((permission): permission is string => typeof permission === 'string')
+    .map((permission) => permission.trim())
+    .filter((permission) => permission.length > 0 && permission.length <= 80 && /^[A-Za-z][A-Za-z0-9_.:-]*$/.test(permission)));
+}
+
+export function isPermissionAllowed(permission: string, allowedPermissions: Set<string>): boolean {
+  return allowedPermissions.has(permission);
+}
+
 export function sanitizeWindowOptions(raw: unknown): BrowserWindowConstructorOptions {
   if (!isPlainObject(raw)) return {};
 
@@ -151,6 +166,15 @@ function browserSession(options: WebViewOptions): Session {
 
 async function prepareSession(ses: Session, options: WebViewOptions): Promise<void> {
   const electron = electronOptions(options);
+  const allowedPermissions = normalizeAllowedPermissions(electron.permissions?.allowed);
+  // InAppBrowser hosts untrusted web content, often in a custom partition that
+  // does not inherit the main app window's permission handler. Install an
+  // explicit deny-by-default policy on every open; projects opt in per call via
+  // options.electron.permissions.allowed (for example ['media']).
+  ses.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(isPermissionAllowed(permission, allowedPermissions));
+  });
+  ses.setPermissionCheckHandler?.((_wc, permission) => isPermissionAllowed(permission, allowedPermissions));
   if (options.clearCache || electron.session?.clearCache) await ses.clearCache();
   if (options.clearSessionCache || electron.session?.clearStorage) {
     await ses.clearData({ dataTypes: ['cookies', 'localStorage', 'indexedDB', 'serviceWorkers', 'webSQL', 'cache'] });

@@ -37,7 +37,7 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | `build mac` | Run on macOS → Expected: `.dmg` created | ✅ | — | — | Gatekeeper requires code signing for unsigned-build warnings |
 | `build win` | Run on Windows → Expected: NSIS `.exe` installer created | — | 🧪 | — |                                                              |
 | `build linux` | Run on Linux → Expected: AppImage (or configured target) created | — | — | 🧪 |                                                              |
-| `kill` | With a running Electron instance → `npx cap-electron kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 |                                                              |
+| `kill` | With a running Electron instance → `npx cap-electron kill` → Expected: Node/Electron processes bound to project root terminated; exit code 0 | ✅ | 🧪 | 🧪 | Dev cleanup helper; matches process command lines containing the project root, so review printed PIDs when other tools are using the same path |
 | `upgrade` | On existing project → Expected: `src/system/` updated from template; `src/user/` files left intact; generated files cleaned and regenerated | ✅ | ✅ | 🧪 |                                                              |
 | `upgrade --all` | → Expected: also updates `electron-builder.js`, `tsconfig.json`; merges template deps/scripts into `package.json` | ✅ | ✅ | 🧪 |                                                              |
 | `restore` | After failed upgrade → Expected: system files restored from template; user files unaffected | ✅ | ✅ | 🧪 | need run sync after                                          |
@@ -97,6 +97,7 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | `get(key)` existing | After `set()` → **get(same key)** → Expected: returns exact stored value | ✅ | ✅ | ✅ | |
 | `get(key)` nonexistent | **get()** on unknown key → Expected: returns `null` or `undefined` | ✅ | ✅ | ✅ | |
 | `keys()` | Store multiple keys → **keys()** → Expected: array listing all stored key names | ✅ | ✅ | ✅ | |
+| `keys()` with hashed key mode | Set `app.security.secureStorageKeys: 'hashed'` before first write → store a key → **keys()** → Expected: promise rejects with an explanatory error; `get(originalKey)` still works | 🧪 | 🧪 | 🧪 | Hashed mode does not store original key names, so listing usable keys is unsupported |
 | `remove(key)` | After `set()` → **remove(key)** → `get(key)` → Expected: `null` | ✅ | ✅ | ✅ | |
 | `clear()` | Store multiple entries → **clear()** → `keys()` → Expected: empty array | ✅ | ✅ | ✅ | |
 | Persistence across restarts | `set(key, value)` → quit app → relaunch → `get(key)` → Expected: value still present | ✅ | ✅ | ✅ | |
@@ -139,6 +140,7 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 |---------|-----------------|-------|-----|-----|-------|
 | `start(url)` — default save path | Downloads → enter URL → **start (no path)** → Expected: file saved to default downloads folder; `started` event logged | ✅ | ✅ | ✅ | |
 | `start(url, savePath)` — explicit path | Enter URL + absolute save path → **start()** → Expected: file saved exactly at specified path | ✅ | ✅ | ✅ | |
+| Concurrent same-URL downloads | Start the same URL twice at the same time with different save paths → Expected: not guaranteed; current bridge correlates by URL FIFO, so avoid this pattern when destination metadata matters | 🧪 | 🧪 | 🧪 | Known limitation |
 | `started` event | Start any download → Expected: `started` event logged with `id`, `url`, `savePath`, `totalBytes` | ✅ | ✅ | ✅ | |
 | `updated` events (progress) | Download a large file → Expected: repeated `updated` events with increasing `receivedBytes` and `percent` | ✅ | ✅ | ✅ | |
 | `completed` event | After full download → Expected: `completed` event with final `savePath` | ✅ | ✅ | ✅ | |
@@ -200,6 +202,9 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 |---------|-----------------|-------|-----|-----|-------|
 | `create({ appPath })` — internal app route | Managed windows → choose internal route mode → enter `#/settings` or `/` → **create()** → Expected: new trusted app window opens with the Electron preload bridge available | ✅ | ✅ | ✅ | Use hash routes when production `serveMode` is `file` |
 | `create({ url })` — valid HTTPS | Managed windows → choose external URL mode → enter `https://` URL → **create()** → Expected: new untrusted `BrowserWindow` opens without the preload bridge; appears in `list()` result | ✅ | ✅ | ✅ | |
+| External URL popup guard | In an external managed window, trigger `window.open('https://example.com')` or a `target="_blank"` link → Expected: no child Electron window is created; web popup opens in the system browser | ✅ | ✅ | ✅ | Non-web popup URLs are denied |
+| External URL navigation guard | In an external managed window, try to navigate top-level content to `file:///etc/passwd`, `javascript:alert(1)`, or `data:text/html,...` → Expected: navigation is blocked; `http` / `https` navigations still work | ✅ | ✅ | ✅ | Security guard for untrusted web content |
+| External URL non-web allowlist | Set `app.externalWindowAllowedSchemes: ['mailto']`, then trigger `mailto:user@example.com` from an external managed window → Expected: no Electron navigation; URL opens through the OS default handler | 🧪 | 🧪 | 🧪 | Dangerous schemes remain blocked even when configured |
 | `create({ url })` — non-HTTP rejection | Enter `file:///etc/passwd` or `javascript:alert(1)` in external URL mode → **create()** → Expected: error returned; no window opened | ✅ | ✅ | ✅ | Security guard — non-http(s) URLs must be rejected |
 | `list()` | After creating windows → **list()** → Expected: array of `ManagedWindowInfo` with `id`, `url`, `title`, `visible` for each | ✅ | ✅ | ✅ | |
 | Window selection UI | **list()** → click a row → Expected: row highlighted; per-window action buttons appear | ✅ | ✅ | ✅ | |
@@ -264,6 +269,7 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | `App.getLaunchUrl()` — second call (consumed) | Call `getLaunchUrl()` a second time → Expected: `null` (URL consumed on first call) | ✅ | ✅ | 🧪 | |
 | `App.getLaunchUrl()` — normal launch | Launch without deep link → getLaunchUrl() → Expected: `null` | ✅ | ✅ | 🧪 | |
 | Editable scheme input | Deep links → change scheme input → Expected: displayed test commands update to use the new scheme | ✅ | ✅ | 🧪 | Scheme must match `app.deepLinkingScheme` in `capacitor.config.ts` |
+| Deep link with `singleInstance:false` | Set `app.deepLinkingScheme` and `app.singleInstance:false` → launch app → trigger link while running → Expected: URL is not forwarded to the existing window | 🧪 | 🧪 | 🧪 | Running-instance forwarding on Windows/Linux depends on Electron's `second-instance` event |
 | `appUrlOpen` Capacitor event | App tab → enable Events → trigger deep link while app running → Expected: `appUrlOpen` event with `{ url }` (Capacitor-layer equivalent of `onDeepLink`) | ✅ | ✅ | 🧪 | |
 
 ### Native Menus — Playground: **Native menus tab**
@@ -415,7 +421,7 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | Directory: `LIBRARY` | Select LIBRARY → Expected: file in Application Support / Library directory | ✅ | ✅ | ✅ | |
 | Directory: `CACHE` | Select CACHE → Expected: file in system cache directory | ✅ | ✅ | ✅ | |
 | Directory: `EXTERNAL` / `EXTERNAL_STORAGE` | Select EXTERNAL → Expected: file in Documents (mapped on desktop) | ✅ | ✅ | ✅ | |
-| Directory: absolute path | Select `(absolute path)` → enter full path in path field → Expected: operates on the exact absolute path without any directory prefix | ✅ | ✅ | ✅ | |
+| Directory: absolute path | Select `(absolute path)` → enter full path in path field → Expected: operates on the exact absolute path without any directory prefix | ✅ | ✅ | ✅ | Desktop-only escape hatch; use only for trusted paths from app UI/native dialogs |
 
 ### In-App Browser — Playground: **In-app browser tab**
 
@@ -436,6 +442,8 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | `backgroundColor` | Set hex colour → Expected: window background shows colour while page loads | ✅ | ✅ | ✅ | |
 | `opacity` | Set opacity (e.g. `0.5`) → Expected: window semi-transparent | ✅ | ✅ | ✅ | |
 | Session `partition` | Enter custom partition string → **openInWebView()** → Expected: window uses isolated session (cookies/storage separate from main) | ✅ | ✅ | ✅ | |
+| Permission default deny | Open a page in `openInWebView()` that requests camera/microphone without `electron.permissions.allowed` → Expected: permission request is denied; no OS/browser grant persists through a custom partition | 🧪 | 🧪 | 🧪 | Security guard for embedded web content |
+| Permission allowlist | Open the same page with `electron.permissions.allowed: ['media']` → Expected: media permission may be granted by Electron/OS; unlisted permissions are still denied | 🧪 | 🧪 | 🧪 | Use narrow per-call allowlists |
 | Session `clearCache` | Enable clearCache → **openInWebView()** → Expected: session cache cleared on open | ✅ | ✅ | ✅ | |
 | Session `clearStorage` | Enable clearStorage → Expected: session storage cleared on open | ✅ | ✅ | ✅ | |
 | Custom user agent | Enter UA string → **openInWebView()** → verify in Network tab of IAB DevTools → Expected: requests carry custom UA | ✅ | ✅ | ✅ | |
@@ -535,11 +543,14 @@ Run all commands from the Capacitor project root. Requires a valid Capacitor pro
 | Project-root asset paths | Use leading-slash path in config (e.g. `/assets/icon.png`) → run `npx cap sync update` → Expected: file copied to `electron/assets/`; runtime loads it correctly without path error | ✅ | 🧪 | 🧪 | |
 | Plugin settings read | Set values under `plugins.Electron` in `capacitor.config.ts` → run app → Expected: `getElectronConfig()` in main returns configured values | ✅ | ✅ | 🧪 | |
 | `capacitorPlugins.preferences: false` | Set `capacitorPlugins: { preferences: false }` → Expected: `@capacitor/preferences` uses `localStorage` (not electron-store); verified by data being lost on app restart | 🧪 | 🧪 | 🧪 | |
-| CSP — string | Set `security.contentSecurityPolicy: "default-src 'self'"` → load page → Expected: CSP applied; external resource loads blocked | ✅ | ✅ | 🧪 | |
+| App protocol handler compatibility | Set `app.serveMode: 'protocol'` and leave `app.protocol.handler` unset → Expected: app serves through the default `buffer` handler; set `handler: 'handle'` only when validating Electron's newer protocol API for your target build | 🧪 | 🧪 | 🧪 | `buffer` remains the compatibility default intentionally |
+| CSP — string | Set `security.csp: "default-src 'self'"` → load page → Expected: CSP applied; external resource loads blocked | ✅ | ✅ | 🧪 | |
 | CSP — object | Set CSP as `{ "default-src": ["'self'"] }` → Expected: auto-assembled CSP string applied | ✅ | ✅ | 🧪 | |
-| CSP — false (disabled) | Set `security.contentSecurityPolicy: false` → Expected: no CSP header; external resources load freely | ✅ | ✅ | 🧪 | Dev only — not recommended for production |
+| CSP — false (disabled) | Set `security.csp: false` → Expected: no CSP header; external resources load freely | ✅ | ✅ | 🧪 | Dev only — not recommended for production |
+| CSP — protocol mode direct header | Set `app.serveMode: 'protocol'` and `security.csp: "default-src 'self'"` → load `capacitor-electron://localhost/index.html` and a missing asset in Network panel → Expected: both app and error responses include `Content-Security-Policy` | 🧪 | 🧪 | 🧪 | Confirms custom protocol responses carry CSP directly, not only through `webRequest` |
 | Single instance lock | Set `app.singleInstance: true` → launch second instance → Expected: second instance exits; first window gains focus | ✅ | ✅ | 🧪 | Required for Windows deep linking |
 | `serveMode: 'server'` | Set `app.serveMode: 'server'` → launch → verify URL in DevTools → Expected: app served from `http://127.0.0.1:<port>` instead of `file://` | 🧪 | 🧪 | 🧪 | Enables WebUSB / WebBluetooth; no visual difference |
+| `serveMode: 'file'` IPC trust | In a packaged file-mode build, navigate the main window to a local HTML file outside `resources/app/` → Expected: privileged IPC from that file is rejected; app files under `resources/app/` remain trusted | 🧪 | 🧪 | 🧪 | Security guard: local files are not automatically trusted |
 | Vite dev URL | Set `dev.url` in config → `open` → Expected: Electron loads from that URL | ✅ | ✅ | 🧪 | |
 | Electron hot-restart on main change | `open` → edit `electron/dist/main.cjs` → save → Expected: Electron main process restarts; window reloads | ✅ | ✅ | 🧪 | |
 | Renderer reload on preload change | `open` → edit `electron/dist/preload.cjs` → save → Expected: renderer reloads automatically | ✅ | ✅ | 🧪 | |

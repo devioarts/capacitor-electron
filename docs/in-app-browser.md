@@ -126,6 +126,9 @@ electron: {
   navigation?: {
     openExternalLinksInSystemBrowser?: boolean;
   };
+  permissions?: {
+    allowed?: string[];
+  };
 }
 ```
 
@@ -134,6 +137,27 @@ electron: {
 When `electron.window.modal` is `true`, Capacitor Electron uses the focused app window as the modal parent when one is available.
 
 Use `electron.session.partition` for controlled session selection.
+
+Embedded pages run with an explicit deny-by-default permission policy. This is
+applied to the selected session on every `openInWebView()` call, including
+custom partitions created with `electron.session.partition`. If the embedded web
+content has a legitimate need for a browser permission, opt in per call:
+
+```ts
+await InAppBrowser.openInWebView({
+  url: 'https://calls.example.com',
+  options: {
+    electron: {
+      permissions: {
+        allowed: ['media'], // camera/microphone
+      },
+    },
+  },
+});
+```
+
+Use Electron permission names such as `media`, `geolocation`, or
+`notifications`. Keep the allowlist narrow; permissions not listed are denied.
 
 ---
 

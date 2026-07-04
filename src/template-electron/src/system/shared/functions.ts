@@ -123,7 +123,9 @@ export function emitPluginEvent(pluginClass: string, eventType: string, data?: u
  * For each method in `methods`, registers an `ipcMain.handle` handler on the
  * channel `{pluginClass}-{method}`. The options argument must be a plain JSON
  * object; errors thrown by the implementation are caught and returned as a
- * structured `{ success: false, error }` object so the renderer can inspect them.
+ * structured `{ success: false, error }` object. The preload bridge converts
+ * those structured failures back into rejected Promises so renderer code handles
+ * plugin errors the same way it handles window.Electron.* IPC errors.
  *
  * When `events` is provided, registers `event-add-{pluginClass}` and
  * `event-remove-{pluginClass}-{type}` listeners used by the preload to start

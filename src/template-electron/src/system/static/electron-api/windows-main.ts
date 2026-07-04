@@ -1,10 +1,13 @@
 // Managed secondary BrowserWindow bridge for trusted app routes and untrusted external URLs.
 import { BrowserWindow, shell, type BrowserWindowConstructorOptions, type IpcMainInvokeEvent } from 'electron';
 import * as path from 'path';
-import { trustedIpcHandle } from '../../shared/functions';
+import { loadConfig, trustedIpcHandle } from '../../shared/functions';
 
 const managed = new Map<number, BrowserWindow>();
 const MAX_APP_PATH_LENGTH = 2048;
+const WEB_SCHEMES = new Set(['http:', 'https:']);
+const BLOCKED_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:']);
+const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 
 export type ManagedWindowAppTarget =
   | { kind: 'url'; url: string }
@@ -61,10 +64,62 @@ function getManaged(id: number): BrowserWindow {
 
 export function webUrl(rawUrl: string): string {
   const url = new URL(rawUrl);
-  if (!['http:', 'https:'].includes(url.protocol)) {
+  if (!WEB_SCHEMES.has(url.protocol)) {
     throw new Error(`Unsupported external URL protocol: ${url.protocol}`);
   }
   return url.href;
+}
+
+export function isWebUrl(rawUrl: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return WEB_SCHEMES.has(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Normalize the explicit OS handoff allowlist for external managed windows.
+ *
+ * The allowlist is intentionally non-web only: http/https are always allowed by
+ * the external-window policy, while configured custom schemes are handed to the
+ * operating system via shell.openExternal and never loaded inside Electron.
+ * Script/data schemes stay blocked even if a project accidentally configures
+ * them.
+ */
+export function normalizeExternalWindowSchemes(value: unknown): Set<string> {
+  if (!Array.isArray(value)) return new Set();
+
+  const schemes = value
+    .filter((scheme): scheme is string => typeof scheme === 'string')
+    .map((scheme) => scheme.trim().toLowerCase().replace(/:\/\/$/, '').replace(/:$/, ''))
+    .filter((scheme) => SCHEME_RE.test(scheme))
+    .map((scheme) => `${scheme}:`)
+    .filter((scheme) => !WEB_SCHEMES.has(scheme) && !BLOCKED_SCHEMES.has(scheme));
+
+  return new Set(schemes);
+}
+
+function configuredExternalWindowSchemes(): Set<string> {
+  return normalizeExternalWindowSchemes(loadConfig().cfg.app?.externalWindowAllowedSchemes);
+}
+
+/**
+ * Return whether a URL is allowed to leave an external managed window.
+ *
+ * "Allowed" means either normal web navigation/popup handling (`http`/`https`)
+ * or explicit OS handoff for a project-configured scheme such as `mailto:` or a
+ * first-party deep link. It does not mean the URL should be loaded into the
+ * Electron window; non-web URLs are always opened externally.
+ */
+export function canOpenExternalWindowUrl(rawUrl: string, allowedSchemes = configuredExternalWindowSchemes()): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return WEB_SCHEMES.has(url.protocol) || allowedSchemes.has(url.protocol);
+  } catch {
+    return false;
+  }
 }
 
 export function appPath(rawAppPath: unknown): string | undefined {
@@ -132,6 +187,30 @@ function loadManagedContent(win: BrowserWindow, target: ManagedWindowContentTarg
   void win.loadURL(target.url);
 }
 
+function hardenExternalWindow(win: BrowserWindow): void {
+  const allowedSchemes = configuredExternalWindowSchemes();
+  const openAllowedExternal = (url: string): void => {
+    if (canOpenExternalWindowUrl(url, allowedSchemes)) void shell.openExternal(new URL(url).href);
+  };
+
+  // External managed windows host untrusted web content. They intentionally do
+  // not receive the preload bridge, and pages inside them may not create more
+  // Electron BrowserWindows via window.open/target=_blank. Web popups are handed
+  // to the user's normal browser; configured non-web schemes are handed to the
+  // OS; everything else is denied.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    openAllowedExternal(url);
+    return { action: 'deny' };
+  });
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (isWebUrl(url)) return;
+    event.preventDefault();
+    // A configured non-web URL is an OS handoff, not Electron-rendered content.
+    openAllowedExternal(url);
+  });
+}
+
 trustedIpcHandle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined) => {
   const opts = windowOptions(rawOpts);
   const contentTarget = resolveManagedContent(opts);
@@ -155,6 +234,7 @@ trustedIpcHandle('windows:create', (e, rawOpts: ManagedWindowOptions | undefined
   });
   managed.set(win.id, win);
   win.once('closed', () => managed.delete(win.id));
+  if (contentTarget?.kind === 'external') hardenExternalWindow(win);
 
   loadManagedContent(win, contentTarget);
 

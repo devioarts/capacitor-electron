@@ -216,6 +216,9 @@ export interface ManagedWindowCreateOptions {
   appPath?: string;
   /**
    * External http(s) URL. Untrusted content; opened without the preload bridge.
+   * Popups are denied as Electron windows; http(s) and configured
+   * app.externalWindowAllowedSchemes popups open externally. Configured
+   * non-web schemes are OS handoffs, not Electron-rendered navigations.
    */
   url?: string;
 }

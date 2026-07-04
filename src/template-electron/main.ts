@@ -4,7 +4,7 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, createCapacitorFileProtocolRoots, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, createCapacitorFileProtocolRoots, createFileAppSenderCheck, isAppProtocolUrl, isTrustedFileUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, resolveCspHeader, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -66,6 +66,7 @@ if (appConfig.singleInstance !== false && !app.requestSingleInstanceLock()) {
 function setup(): void {
   let win: BrowserWindow | null = null;
   const getWin = () => win;
+  let trustedFileAppRoot: string | null = null;
 
   if (appConfig.deepLinkingScheme) {
     setupDeepLinking(appConfig.deepLinkingScheme, getWin);
@@ -143,14 +144,15 @@ function setup(): void {
       });
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
     } else {
-      const indexHtml = path.join(process.resourcesPath, 'app', 'index.html');
-      setIpcSenderCheck(url => url.startsWith('file:'));
+      trustedFileAppRoot = path.join(process.resourcesPath, 'app');
+      const indexHtml = path.join(trustedFileAppRoot, 'index.html');
+      setIpcSenderCheck(createFileAppSenderCheck(trustedFileAppRoot));
       setManagedWindowAppResolver(appPath => resolveFileAppPath(indexHtml, appPath));
       win.loadFile(indexHtml);
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
     }
 
-    applySecurityHardening(win, isDev, appProtocol);
+    applySecurityHardening(win, isDev, appProtocol, trustedFileAppRoot);
     setupContextMenu(win, cfg, isDev, getWin, contextMenu);
 
     if (windowState.isMaximized) win.maximize();
@@ -172,9 +174,25 @@ function setup(): void {
     win.on('closed', () => { setMainWindow(null); win = null; });
   }
 
+  function setupAppProtocolOrQuit(): boolean {
+    if (!appProtocol) return true;
+
+    try {
+      setupAppProtocol(path.join(process.resourcesPath, 'app'), appProtocol, createCapacitorFileProtocolRoots(), resolveCspHeader(cfg, isDev));
+      return true;
+    } catch (err) {
+      // serveMode:"protocol" depends on this handler for the app origin. Falling
+      // back to file/server mode would silently change the security model, so
+      // fail startup with a clear diagnostic instead.
+      console.error('[cap-electron] Failed to register app protocol; cannot continue with app.serveMode="protocol".', err);
+      app.quit();
+      return false;
+    }
+  }
+
   app.whenReady().then(() => {
     setupCSP(cfg, isDev);
-    if (appProtocol) setupAppProtocol(path.join(process.resourcesPath, 'app'), appProtocol, createCapacitorFileProtocolRoots());
+    if (!setupAppProtocolOrQuit()) return;
     setupMenu(cfg, isDev, getWin, appMenu);
     if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
     setupDockMenu(cfg, isDev, getWin, dockMenu);
@@ -216,7 +234,7 @@ function setup(): void {
  *  - Deny window.open / target=_blank (use shell.openExternal explicitly if needed)
  *  - Deny all permission requests by default
  */
-function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig: ResolvedAppProtocolConfig | null): void {
+function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig: ResolvedAppProtocolConfig | null, fileAppRoot: string | null): void {
   win.webContents.on('will-navigate', (event, url) => {
     const current = win.webContents.getURL();
     let allow = false;
@@ -224,7 +242,7 @@ function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig
       const newU = new URL(url);
       if (current) {
         const curU = new URL(current);
-        allow = (curU.protocol === 'file:' && newU.protocol === 'file:')
+        allow = (curU.protocol === 'file:' && newU.protocol === 'file:' && !!fileAppRoot && isTrustedFileUrl(current, fileAppRoot) && isTrustedFileUrl(url, fileAppRoot))
              || (curU.origin !== 'null' && curU.origin === newU.origin)
              || (!!protocolConfig && isAppProtocolUrl(current, protocolConfig) && isAppProtocolUrl(url, protocolConfig));
       }

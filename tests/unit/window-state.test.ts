@@ -153,6 +153,28 @@ describe('loadWindowState — persistWindowState enabled', () => {
     expect(state.height).toBe(900);
   });
 
+  it('falls back to config width/height when saved dimensions are invalid', () => {
+    writeState({ x: 0, y: 0, width: -10, height: 200_000, isMaximized: false });
+    const state = loadWindowState(cfg);
+    expect(state.width).toBe(1400);
+    expect(state.height).toBe(900);
+  });
+
+  it('clears x/y when saved coordinates are invalid', () => {
+    writeState({ x: 'left', y: 100, width: 1200, height: 800, isMaximized: false });
+    const state = loadWindowState(cfg);
+    expect(state.x).toBeUndefined();
+    expect(state.y).toBeUndefined();
+    expect(state.width).toBe(1200);
+    expect(state.height).toBe(800);
+  });
+
+  it('treats non-boolean isMaximized as false', () => {
+    writeState({ x: 0, y: 0, width: 1200, height: 800, isMaximized: 'yes' });
+    const state = loadWindowState(cfg);
+    expect(state.isMaximized).toBe(false);
+  });
+
   it('returns defaults when state file contains invalid JSON', () => {
     realFs.writeFileSync(stateFile(), 'not-json', 'utf-8');
     const state = loadWindowState(cfg);
@@ -167,6 +189,15 @@ describe('loadWindowState — persistWindowState enabled', () => {
     const state = loadWindowState(cfg);
     expect(state.x).toBeUndefined();
     expect(state.y).toBeUndefined();
+  });
+
+  it('clears x/y when only a tiny sliver of the saved window is visible', () => {
+    writeState({ x: 1910, y: 100, width: 1200, height: 800, isMaximized: false });
+    const state = loadWindowState(cfg);
+    expect(state.x).toBeUndefined();
+    expect(state.y).toBeUndefined();
+    expect(state.width).toBe(1200);
+    expect(state.height).toBe(800);
   });
 });
 

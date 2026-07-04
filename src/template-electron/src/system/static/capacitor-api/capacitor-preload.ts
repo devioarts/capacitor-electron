@@ -38,6 +38,17 @@ type CapacitorFileSrcConfig = {
 };
 interface PluginMethod { name: string; rtype: RType }
 interface PluginHeader { name: string; methods: PluginMethod[] }
+interface PluginErrorPayload {
+  code?: string;
+  message?: string;
+  platform?: string;
+  method?: string;
+  details?: unknown;
+}
+interface PluginFailureResult {
+  success: false;
+  error?: PluginErrorPayload;
+}
 
 // Only third-party plugins belong in PluginHeaders here.
 // Built-in Capacitor plugins are handled by electron-init.js (static, non-critical path).
@@ -91,6 +102,36 @@ function getCapacitorFileSrcConfig(): CapacitorFileSrcConfig {
 }
 
 const CAPACITOR_FILE_SRC_CONFIG = getCapacitorFileSrcConfig();
+
+function isPluginFailureResult(value: unknown): value is PluginFailureResult {
+  return typeof value === 'object'
+    && value !== null
+    && (value as { success?: unknown }).success === false;
+}
+
+function pluginFailureToError(result: PluginFailureResult): Error {
+  const payload = result.error ?? {};
+  const err = new Error(payload.message ?? 'Capacitor Electron plugin call failed') as Error & {
+    code?: string;
+    platform?: string;
+    method?: string;
+    details?: unknown;
+  };
+  if (payload.code) err.code = payload.code;
+  if (payload.platform) err.platform = payload.platform;
+  if (payload.method) err.method = payload.method;
+  if (payload.details !== undefined) err.details = payload.details;
+  return err;
+}
+
+async function invokePlugin(channel: string, opts: unknown): Promise<unknown> {
+  const result = await ipcRenderer.invoke(channel, opts ?? {});
+  // registerPlugin() returns structured failures so the main process can attach
+  // Capacitor-style metadata. Renderer callers should still see a normal
+  // rejected promise, consistent with window.Electron.* methods.
+  if (isPluginFailureResult(result)) throw pluginFailureToError(result);
+  return result;
+}
 
 // ── Event subscription registry ───────────────────────────────────────────────
 
@@ -157,7 +198,7 @@ contextBridge.exposeInMainWorld('_CapElectron', {
   getCapacitorFileSrcConfig: () => CAPACITOR_FILE_SRC_CONFIG,
 
   invoke: (channel: string, opts: unknown) =>
-    ipcRenderer.invoke(channel, opts ?? {}),
+    invokePlugin(channel, opts),
 
   nativeCallback: (
     pluginName: string,

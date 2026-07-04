@@ -227,6 +227,28 @@ describe('setupAppProtocol', () => {
     expect(response.data?.toString()).toBe('body{}');
   });
 
+  it('adds CSP directly to buffer protocol responses when configured', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config, [], "default-src 'self'");
+
+    const response = await invokeBuffer('capacitor-electron://localhost/index.html');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers?.['Content-Security-Policy']).toBe("default-src 'self'");
+  });
+
+  it('adds CSP directly to buffer protocol error responses when configured', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config, [], "default-src 'self'");
+
+    const response = await invokeBuffer('capacitor-electron://localhost/assets/missing.css');
+
+    expect(response.statusCode).toBe(404);
+    expect(response.headers?.['Content-Security-Policy']).toBe("default-src 'self'");
+  });
+
   it('returns 404 for missing asset-like paths instead of index.html', async () => {
     const config = resolveAppProtocolConfig();
     const distDir = await createDist();
@@ -300,5 +322,16 @@ describe('setupAppProtocol', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('text/css');
     expect(await response.text()).toBe('body{}');
+  });
+
+  it('adds CSP directly to protocol.handle responses when configured', async () => {
+    const config = resolveAppProtocolConfig({ handler: 'handle' });
+    const distDir = await createDist();
+    setupAppProtocol(distDir, config, [], "default-src 'self'");
+
+    const response = await invokeHandle('capacitor-electron://localhost/assets/index.css');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Security-Policy')).toBe("default-src 'self'");
   });
 });

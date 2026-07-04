@@ -31,6 +31,12 @@ The Capacitor `Directory` enum maps to Electron paths:
 | `EXTERNAL_STORAGE`    | `app.getPath('downloads')` |
 | *(omitted)*           | `path` is treated as an absolute path |
 
+Omitting `directory` is a desktop-only escape hatch for absolute paths. It is
+useful for files selected through native dialogs or paths already approved by
+your app, but it also means the main process will read/write the exact path the
+renderer passes. Keep this API behind trusted UI flows and prefer a Capacitor
+`Directory` value for app-owned data.
+
 `Directory.CACHE` maps to Electron's `temp` path. Treat it as volatile storage:
 the operating system or cleanup tools may delete files there without app-level
 coordination. Use `Directory.DATA` / `Directory.LIBRARY` for app-owned data that

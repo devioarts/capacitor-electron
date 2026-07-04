@@ -70,7 +70,9 @@ export interface ElectronAppSecurityConfig {
   /**
    * How `window.Electron.secureStorage` stores JSON object keys on disk.
    * - `'plain'` keeps original key names. Values are still encrypted with Electron safeStorage.
-   * - `'hashed'` stores deterministic SHA-256 key hashes. Existing data is not migrated automatically.
+   * - `'hashed'` stores deterministic SHA-256 key hashes. Original key names are
+   *   not stored, so secureStorage.keys() rejects instead of returning unusable hashes.
+   * Existing data is not migrated automatically.
    * Default: 'plain'
    */
   secureStorageKeys?: 'plain' | 'hashed';
@@ -110,9 +112,9 @@ export interface ExternalCommandConfig {
   platforms?: ExternalCommandPlatform[];
   /** Optional exact argument allowlist. When present, every runtime arg must match one entry. */
   allowedArgs?: string[];
-  /** Default timeout for this command in milliseconds. Use 0 to disable. Default: 30000. */
+  /** Default timeout for this command in milliseconds. Use 0 to disable. Timed-out commands receive SIGTERM, then SIGKILL after a short grace period. Default: 30000. */
   timeoutMs?: number;
-  /** Maximum captured stdout/stderr bytes per stream. Default: 1048576. */
+  /** Maximum captured stdout/stderr bytes per stream. Use 0 to disable result capture while still streaming output events. Default: 1048576. */
   maxOutputBytes?: number;
 }
 
@@ -139,6 +141,7 @@ export interface ElectronAppConfig {
    * How the production build is served to the renderer.
    * - `'file'`   — `win.loadFile()` directly from the filesystem (default).
    * - `'protocol'` — custom in-app protocol with a real app root, so `/assets/...` works without a server.
+   *   Registration failures are fatal because falling back would change the renderer origin/security model.
    * - `'server'` — embedded HTTP server on 127.0.0.1 (random ephemeral port).
    * Default: 'file'
    */
@@ -153,6 +156,13 @@ export interface ElectronAppConfig {
   deepLinkingScheme?: string;
   /** Additional URL schemes allowed for `@capacitor/app-launcher`. */
   appLauncherSchemes?: string[];
+  /**
+   * Additional non-web URL schemes external managed windows may hand off to
+   * `shell.openExternal`. These schemes are not loaded inside Electron; they are
+   * delegated to the OS after the external window blocks the navigation/popup.
+   * Dangerous script/data schemes are ignored. Default: [].
+   */
+  externalWindowAllowedSchemes?: string[];
   /**
    * Allowlisted native commands callable from `window.Electron.externalCommands`.
    * Keys are renderer-visible aliases; command paths stay in trusted config.
@@ -277,6 +287,15 @@ export interface ElectronInAppBrowserOptions {
   /** Navigation policy for links opened by the embedded page. */
   navigation?: {
     openExternalLinksInSystemBrowser?: boolean;
+  };
+  /**
+   * Electron permission names allowed for the embedded web content, e.g. ['media']
+   * for camera/microphone. The policy is installed on the selected session every
+   * time openInWebView() runs, including custom partitions. Omit or leave empty
+   * to deny all permission requests.
+   */
+  permissions?: {
+    allowed?: string[];
   };
 }
 
