@@ -28,6 +28,14 @@ type RType = 'promise' | 'callback';
 type ListenerFn = (data: unknown) => void;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 type BuiltinCapacitorConfig = { preferences: boolean };
+type CapacitorFileSrcConfig = {
+  enabled: boolean;
+  roots: {
+    name: string;
+    fileUrlPrefix: string;
+    urlPrefix: string;
+  }[];
+};
 interface PluginMethod { name: string; rtype: RType }
 interface PluginHeader { name: string; methods: PluginMethod[] }
 
@@ -62,6 +70,27 @@ function getBuiltinCapacitorConfig(): BuiltinCapacitorConfig {
 }
 
 const BUILTIN_CAPACITOR_CONFIG = getBuiltinCapacitorConfig();
+
+function getCapacitorFileSrcConfig(): CapacitorFileSrcConfig {
+  try {
+    const cfg = ipcRenderer.sendSync('CapElectron-getCapacitorFileSrcConfig') as Partial<CapacitorFileSrcConfig> | undefined;
+    const roots = Array.isArray(cfg?.roots)
+      ? cfg.roots.filter((root): root is CapacitorFileSrcConfig['roots'][number] =>
+        typeof root?.name === 'string'
+        && typeof root.fileUrlPrefix === 'string'
+        && typeof root.urlPrefix === 'string')
+      : [];
+
+    return {
+      enabled: cfg?.enabled === true,
+      roots,
+    };
+  } catch {
+    return { enabled: false, roots: [] };
+  }
+}
+
+const CAPACITOR_FILE_SRC_CONFIG = getCapacitorFileSrcConfig();
 
 // ── Event subscription registry ───────────────────────────────────────────────
 
@@ -125,6 +154,7 @@ function removeAllSubs(pluginName: string, eventName?: string): void {
 contextBridge.exposeInMainWorld('_CapElectron', {
   getPluginHeaders: () => PLUGIN_HEADERS,
   getBuiltinCapacitorConfig: () => BUILTIN_CAPACITOR_CONFIG,
+  getCapacitorFileSrcConfig: () => CAPACITOR_FILE_SRC_CONFIG,
 
   invoke: (channel: string, opts: unknown) =>
     ipcRenderer.invoke(channel, opts ?? {}),

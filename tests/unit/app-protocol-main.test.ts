@@ -3,6 +3,7 @@
 import { mkdtemp, mkdir, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { mockHandle, mockRegisterBufferProtocol } = vi.hoisted(() => ({
@@ -11,6 +12,9 @@ const { mockHandle, mockRegisterBufferProtocol } = vi.hoisted(() => ({
 }));
 
 vi.mock('electron', () => ({
+  app: {
+    getPath: (name: string) => `/mock-${name}`,
+  },
   protocol: {
     registerSchemesAsPrivileged: vi.fn(),
     handle: mockHandle,
@@ -20,10 +24,12 @@ vi.mock('electron', () => ({
 
 import {
   appProtocolUrl,
+  createCapacitorFileSrcMappings,
   injectAppProtocolBase,
   isAppProtocolUrl,
   resolveAppProtocolConfig,
   resolveAppProtocolFilePath,
+  resolveCapacitorFileProtocolPath,
   setupAppProtocol,
 } from '../../src/template-electron/src/system/static/electron-api/app-protocol-main.js';
 
@@ -176,6 +182,29 @@ describe('resolveAppProtocolFilePath', () => {
   });
 });
 
+describe('Capacitor file protocol paths', () => {
+  const config = resolveAppProtocolConfig();
+  const roots = [{ name: 'data', fileSystemPath: '/app/user-data' }];
+
+  it('maps /_capacitor_file_/data paths inside the configured root', () => {
+    expect(resolveCapacitorFileProtocolPath(roots, 'capacitor-electron://localhost/_capacitor_file_/data/images/a.png', config))
+      .toBe('/app/user-data/images/a.png');
+  });
+
+  it('blocks traversal outside the configured root', () => {
+    expect(resolveCapacitorFileProtocolPath(roots, 'capacitor-electron://localhost/_capacitor_file_/data/%2e%2e%2fsecret.png', config))
+      .toBeNull();
+  });
+
+  it('builds convertFileSrc mappings for renderer use', () => {
+    expect(createCapacitorFileSrcMappings(config, roots)).toEqual([{
+      name: 'data',
+      fileUrlPrefix: pathToFileURL('/app/user-data/').href,
+      urlPrefix: 'capacitor-electron://localhost/_capacitor_file_/data/',
+    }]);
+  });
+});
+
 describe('setupAppProtocol', () => {
   it('uses the buffer protocol by default', async () => {
     const config = resolveAppProtocolConfig();
@@ -217,6 +246,34 @@ describe('setupAppProtocol', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.data?.toString()).toContain('<base href="capacitor-electron://localhost/">');
+  });
+
+  it('serves Capacitor data files from the virtual file route', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
+    tempDirs.push(dataDir);
+    await mkdir(join(dataDir, 'images'));
+    await writeFile(join(dataDir, 'images', 'avatar.png'), 'png-data');
+    setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
+
+    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/images/avatar.png');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers?.['Content-Type']).toBe('image/png');
+    expect(response.data?.toString()).toBe('png-data');
+  });
+
+  it('returns 404 for missing Capacitor file routes instead of falling back to index.html', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
+    tempDirs.push(dataDir);
+    setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
+
+    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/images/missing.png');
+
+    expect(response.statusCode).toBe(404);
   });
 
   it('exposes visible diagnostics when debug is enabled', async () => {

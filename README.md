@@ -400,7 +400,7 @@ await Filesystem.writeFile({
 });
 ```
 
-Full read/write/copy/rename/download support via Node.js `fs/promises`. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
+Full read/write/copy/rename/download support via Node.js `fs/promises`. In production `app.serveMode: 'protocol'`, `Capacitor.convertFileSrc()` maps app-owned `file://` URIs from `getUri()` to `capacitor-electron://localhost/_capacitor_file_/...` URLs for renderer use. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
 
 ### Clipboard
 

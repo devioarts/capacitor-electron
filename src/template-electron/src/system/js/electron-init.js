@@ -34,6 +34,9 @@
   var builtinConfig = typeof b.getBuiltinCapacitorConfig === 'function'
     ? b.getBuiltinCapacitorConfig()
     : {};
+  var fileSrcConfig = typeof b.getCapacitorFileSrcConfig === 'function'
+    ? b.getCapacitorFileSrcConfig()
+    : {};
 
   // Preserve third-party plugin bridges set by plugins-preload.ts via contextBridge.
   // Must be read BEFORE we overwrite window.CapacitorCustomPlatform below.
@@ -92,6 +95,30 @@
     return next;
   }
 
+  function convertFileSrc(filePath) {
+    if (typeof filePath !== 'string') return filePath;
+    if (!fileSrcConfig || fileSrcConfig.enabled !== true || !Array.isArray(fileSrcConfig.roots)) {
+      return filePath;
+    }
+
+    var normalized = filePath;
+    try {
+      normalized = new URL(filePath).href;
+    } catch (_err) {
+      return filePath;
+    }
+
+    for (var i = 0; i < fileSrcConfig.roots.length; i++) {
+      var root = fileSrcConfig.roots[i];
+      if (!root || typeof root.fileUrlPrefix !== 'string' || typeof root.urlPrefix !== 'string') continue;
+      if (normalized.indexOf(root.fileUrlPrefix) === 0) {
+        return root.urlPrefix + normalized.slice(root.fileUrlPrefix.length);
+      }
+    }
+
+    return filePath;
+  }
+
   // ── Built-in Capacitor plugin headers (static) ────────────────────────────
 
   var BUILTIN = [
@@ -145,6 +172,7 @@
 
   window.Capacitor = {
     PluginHeaders:  BUILTIN.concat(b.getPluginHeaders()),
+    convertFileSrc: convertFileSrc,
     nativePromise:  function (p, m, o) { return b.invoke(p + '-' + m, withPreferencesMigrationPayload(p, m, o)); },
     nativeCallback: function (p, m, o, fn) { return b.nativeCallback(p, m, o, fn); },
   };

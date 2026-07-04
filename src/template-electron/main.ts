@@ -4,7 +4,7 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, createCapacitorFileProtocolRoots, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -174,7 +174,7 @@ function setup(): void {
 
   app.whenReady().then(() => {
     setupCSP(cfg, isDev);
-    if (appProtocol) setupAppProtocol(path.join(process.resourcesPath, 'app'), appProtocol);
+    if (appProtocol) setupAppProtocol(path.join(process.resourcesPath, 'app'), appProtocol, createCapacitorFileProtocolRoots());
     setupMenu(cfg, isDev, getWin, appMenu);
     if (iconImage && process.platform === 'darwin') app.dock?.setIcon(iconImage);
     setupDockMenu(cfg, isDev, getWin, dockMenu);
