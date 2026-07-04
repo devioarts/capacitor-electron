@@ -1,6 +1,6 @@
 // Preload bridge that exposes the safe window.Electron desktop API to renderer code.
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent, ContextMenuTarget, ShowContextMenuOptions } from '../../shared/types';
+import type { ElectronBridge, UpdaterBridge, UpdaterEventName, PowerMonitorEventName, PowerSaveBlockerType, ScreenEventPayload, DownloadState, NativeThemeSnapshot, MenuActionEvent, ContextMenuTarget, ShowContextMenuOptions, ExternalCommandRunOptions, ExternalCommandOutputEvent, ExternalCommandExitEvent } from '../../shared/types';
 
 ipcRenderer.send('downloads:ensureSession');
 
@@ -136,6 +136,24 @@ const bridge: ElectronBridge = {
     hide: (id: number) => ipcRenderer.invoke('windows:hide', id),
     setBounds: (id: number, bounds) => ipcRenderer.invoke('windows:setBounds', { id, bounds }),
     openExternal: (url: string) => ipcRenderer.invoke('windows:openExternal', url),
+  },
+
+  externalCommands: {
+    run: (alias: string, options?: ExternalCommandRunOptions) =>
+      ipcRenderer.invoke('externalCommands:run', { alias, options }),
+    start: (alias: string, options?: ExternalCommandRunOptions) =>
+      ipcRenderer.invoke('externalCommands:start', { alias, options }),
+    kill: (id: string) => ipcRenderer.invoke('externalCommands:kill', id),
+    onOutput: (callback: (event: ExternalCommandOutputEvent) => void): (() => void) => {
+      const listener = (_e: IpcRendererEvent, event: ExternalCommandOutputEvent) => callback(event);
+      ipcRenderer.on('externalCommands:output', listener);
+      return () => ipcRenderer.removeListener('externalCommands:output', listener);
+    },
+    onExit: (callback: (event: ExternalCommandExitEvent) => void): (() => void) => {
+      const listener = (_e: IpcRendererEvent, event: ExternalCommandExitEvent) => callback(event);
+      ipcRenderer.on('externalCommands:exit', listener);
+      return () => ipcRenderer.removeListener('externalCommands:exit', listener);
+    },
   },
 
   onDeepLink: (callback: (data: { url: string }) => void): (() => void) => {

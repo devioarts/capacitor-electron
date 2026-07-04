@@ -27,6 +27,7 @@ import './system/static/electron-api/secure-storage-main';
 import './system/static/electron-api/protocol-main';
 import './system/static/electron-api/session-main';
 import './system/static/electron-api/downloads-main';
+import './system/static/electron-api/external-commands-main';
 import './system/static/electron-api/print-main';
 import './system/static/electron-api/desktop-capture-main';
 import './system/static/electron-api/auto-launch-main';

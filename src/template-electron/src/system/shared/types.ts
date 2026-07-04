@@ -76,6 +76,46 @@ export interface ElectronAppSecurityConfig {
   secureStorageKeys?: 'plain' | 'hashed';
 }
 
+export type ExternalCommandResolveMode = 'app' | 'path' | 'absolute';
+export type ExternalCommandPlatform =
+  | 'aix'
+  | 'android'
+  | 'darwin'
+  | 'freebsd'
+  | 'haiku'
+  | 'linux'
+  | 'openbsd'
+  | 'sunos'
+  | 'win32'
+  | 'cygwin'
+  | 'netbsd';
+
+export interface ExternalCommandConfig {
+  /**
+   * Executable name or path. Renderer code can only reference the surrounding
+   * config key as an alias; it cannot choose an arbitrary command at runtime.
+   */
+  command: string;
+  /**
+   * How `command` is resolved.
+   * - `'app'` resolves from the bundled web app bin directory: resources/app/bin.
+   * - `'path'` resolves through the host PATH. `command` must be a bare executable name.
+   * - `'absolute'` uses an absolute command path from this config.
+   * Default: 'app'
+   */
+  resolve?: ExternalCommandResolveMode;
+  /** Optional working directory. Relative paths are resolved from the app base for `resolve: 'app'`. */
+  cwd?: string;
+  /** Optional OS allowlist using Node.js process.platform values, e.g. ['win32']. */
+  platforms?: ExternalCommandPlatform[];
+  /** Optional exact argument allowlist. When present, every runtime arg must match one entry. */
+  allowedArgs?: string[];
+  /** Default timeout for this command in milliseconds. Use 0 to disable. Default: 30000. */
+  timeoutMs?: number;
+  /** Maximum captured stdout/stderr bytes per stream. Default: 1048576. */
+  maxOutputBytes?: number;
+}
+
 export interface ElectronAppProtocolConfig {
   /** Internal renderer protocol scheme used by serveMode: 'protocol'. Default: 'capacitor-electron' */
   scheme?: string;
@@ -113,6 +153,11 @@ export interface ElectronAppConfig {
   deepLinkingScheme?: string;
   /** Additional URL schemes allowed for `@capacitor/app-launcher`. */
   appLauncherSchemes?: string[];
+  /**
+   * Allowlisted native commands callable from `window.Electron.externalCommands`.
+   * Keys are renderer-visible aliases; command paths stay in trusted config.
+   */
+  externalCommands?: Record<string, ExternalCommandConfig>;
   /** Auto-updater via electron-updater. Only active in production (app.isPackaged). */
   autoUpdater?: AutoUpdaterConfig;
   /** App-level security/privacy options. */

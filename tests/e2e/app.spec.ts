@@ -112,7 +112,7 @@ test('window.Electron exposes all expected top-level namespaces', async () => {
     const required = [
       'minimize', 'maximize', 'quit', 'reload', 'getAppVersion',
       'dialogs', 'secureStorage', 'session', 'downloads',
-      'nativeTheme', 'windows', 'autoLaunch',
+      'nativeTheme', 'windows', 'autoLaunch', 'externalCommands',
     ];
     for (const key of required) {
       expect(keys).toContain(key);

@@ -57,6 +57,7 @@ Official API references:
 | `protocols` | Yes | Yes | Partial | Registration uses Electron protocol APIs; Linux cold-start app routing depends on desktop integration. |
 | `session` | Yes | Yes | Yes | Wraps the sender window's Electron session. |
 | `downloads` | Yes | Yes | Yes | Uses Electron `will-download` and `DownloadItem`. |
+| `externalCommands` | Yes | Yes | Yes | Runs allowlisted commands via Node.js `spawn()` with `shell: false`; actual command availability depends on config and the host OS. |
 | `print` / `printToPDF` | Yes | Yes | Yes | Printer availability is OS/environment dependent. |
 | `desktopCapture` | Partial | Partial | Partial | OS screen-recording permissions and window manager behavior apply. |
 | `autoLaunch` | Yes | Yes | No | Linux returns `false`; create a desktop-environment autostart entry manually. |

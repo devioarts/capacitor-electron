@@ -84,6 +84,80 @@ const download = await window.Electron.downloads.start({ url: 'https://example.c
 
 Download events include `started`, `updated`, and one final outcome event: `completed`, `cancelled`, or `interrupted`. Active downloads can be paused, resumed, or cancelled by id.
 
+## External commands
+
+`window.Electron.externalCommands` runs native executables that are explicitly allowlisted in `capacitor.config`. Renderer code can only call a configured alias; it cannot choose an arbitrary command path at runtime.
+
+```ts
+plugins: {
+  Electron: {
+    app: {
+      externalCommands: {
+        rawPrint: {
+          command: 'RawPrint.exe',
+          resolve: 'app',
+          platforms: ['win32'],
+        },
+        calculator: {
+          command: 'calc.exe',
+          resolve: 'path',
+          platforms: ['win32'],
+        },
+      },
+    },
+  },
+}
+```
+
+Resolution modes:
+
+| Mode | Meaning |
+|---|---|
+| `app` | Runs `resources/app/bin/<command>` in packaged builds, or `electron/app/bin/<command>` in dev. |
+| `path` | Runs a bare executable name through the host `PATH`, for example `calc.exe` or `vlc`. |
+| `absolute` | Runs the absolute path configured in `command`. |
+
+Commands always use `spawn(command, args, { shell: false })`, so arguments are passed as an argv array rather than interpolated into a shell command.
+
+Capture short command output with `run()`:
+
+```ts
+const result = await window.Electron.externalCommands.run('rawPrint', {
+  args: ['list'],
+});
+
+console.log(result.exitCode, result.stdout, result.stderr);
+```
+
+Send binary stdin, for example ESC/POS receipt data:
+
+```ts
+await window.Electron.externalCommands.run('rawPrint', {
+  args: ['print', '--default', '--stdin'],
+  stdin: receiptBytes,
+});
+```
+
+For longer-running tools, use `start()` and subscribe to output and exit events:
+
+```ts
+const offOutput = window.Electron.externalCommands.onOutput(event => {
+  console.log(event.id, event.stream, event.text);
+});
+const offExit = window.Electron.externalCommands.onExit(event => {
+  console.log(event.result.exitCode);
+});
+
+const proc = await window.Electron.externalCommands.start('rawPrint', {
+  args: ['print', '--default', '--stdin'],
+  stdinBase64: receiptBase64,
+});
+
+await window.Electron.externalCommands.kill(proc.id);
+offOutput();
+offExit();
+```
+
 ## Print and PDF
 
 ```ts
