@@ -32,6 +32,7 @@ type ListenerFn = (...args: unknown[]) => unknown;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 type PluginFailureResult = {
   success: false;
+  __capacitorElectronPluginError: true;
   error?: {
     code?: string;
     message?: string;
@@ -46,7 +47,8 @@ const allPlugins: Record<string, PluginEntry> = { ...pluginsAuto, ...pluginsUser
 function isPluginFailureResult(value: unknown): value is PluginFailureResult {
   return typeof value === 'object'
     && value !== null
-    && (value as { success?: unknown }).success === false;
+    && (value as { success?: unknown }).success === false
+    && (value as { __capacitorElectronPluginError?: unknown }).__capacitorElectronPluginError === true;
 }
 
 function pluginFailureToError(result: PluginFailureResult): Error {
@@ -142,9 +144,9 @@ for (const [name, entry] of Object.entries(allPlugins) as [string, PluginEntry][
   const bridge: Record<string, unknown> = {};
 
   for (const method of entry.methods) {
-    // registerPlugin() returns structured failures from main so we can preserve
-    // Capacitor-style error metadata. Convert them back to rejected promises at
-    // the preload boundary, matching window.Electron.* IPC methods.
+    // registerPlugin() marks its internal failure objects so business results
+    // like { success: false } can pass through unchanged. Marked bridge failures
+    // become rejected promises, matching window.Electron.* IPC methods.
     bridge[method] = (opts?: unknown) => invokePlugin(`${name}-${method}`, opts);
   }
 

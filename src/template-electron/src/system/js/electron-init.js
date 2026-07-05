@@ -120,7 +120,10 @@
   }
 
   function isPluginFailureResult(value) {
-    return !!value && typeof value === 'object' && value.success === false;
+    return !!value
+      && typeof value === 'object'
+      && value.success === false
+      && value.__capacitorElectronPluginError === true;
   }
 
   function pluginFailureToError(result) {
@@ -135,9 +138,10 @@
 
   function invokePlugin(channel, opts) {
     return b.invoke(channel, opts).then(function (result) {
-      // registerPlugin() returns structured failures so main can attach
-      // Capacitor-style metadata. Renderer callers should still receive a
-      // rejected Promise, matching window.Electron.* IPC methods.
+      // registerPlugin() marks internal failures so main can attach
+      // Capacitor-style metadata without stealing legitimate plugin results
+      // such as { success: false }. Marked bridge failures become rejected
+      // Promises, matching window.Electron.* IPC methods.
       if (isPluginFailureResult(result)) throw pluginFailureToError(result);
       return result;
     });

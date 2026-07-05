@@ -53,6 +53,7 @@ describe('electron-init nativePromise', () => {
   it('rejects structured plugin failures as Error objects with metadata', async () => {
     const capacitor = loadCapacitor({ enabled: false, roots: [] }, () => Promise.resolve({
       success: false,
+      __capacitorElectronPluginError: true,
       error: {
         code: 'INVALID_PARAMS',
         message: 'Options must be a plain object',
@@ -73,5 +74,16 @@ describe('electron-init nativePromise', () => {
       method: 'doThing',
       details: { field: 'options' },
     });
+  });
+
+  it('passes through unmarked plugin results with success false', async () => {
+    const expected = { success: false, reason: 'not-enabled' };
+    const capacitor = loadCapacitor({ enabled: false, roots: [] }, () => Promise.resolve(expected));
+
+    await expect((capacitor.nativePromise as (plugin: string, method: string, opts: unknown) => Promise<unknown>)(
+      'MyPlugin',
+      'isEnabled',
+      {},
+    )).resolves.toBe(expected);
   });
 });

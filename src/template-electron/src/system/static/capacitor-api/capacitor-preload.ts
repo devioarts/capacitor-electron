@@ -47,6 +47,7 @@ interface PluginErrorPayload {
 }
 interface PluginFailureResult {
   success: false;
+  __capacitorElectronPluginError: true;
   error?: PluginErrorPayload;
 }
 
@@ -106,7 +107,8 @@ const CAPACITOR_FILE_SRC_CONFIG = getCapacitorFileSrcConfig();
 function isPluginFailureResult(value: unknown): value is PluginFailureResult {
   return typeof value === 'object'
     && value !== null
-    && (value as { success?: unknown }).success === false;
+    && (value as { success?: unknown }).success === false
+    && (value as { __capacitorElectronPluginError?: unknown }).__capacitorElectronPluginError === true;
 }
 
 function pluginFailureToError(result: PluginFailureResult): Error {
@@ -127,8 +129,10 @@ function pluginFailureToError(result: PluginFailureResult): Error {
 async function invokePlugin(channel: string, opts: unknown): Promise<unknown> {
   const result = await ipcRenderer.invoke(channel, opts ?? {});
   // registerPlugin() returns structured failures so the main process can attach
-  // Capacitor-style metadata. Renderer callers should still see a normal
-  // rejected promise, consistent with window.Electron.* methods.
+  // Capacitor-style metadata. Only marked internal failures are converted here;
+  // user plugins may legitimately return business data such as { success: false }.
+  // Renderer callers should still see a normal rejected promise for bridge errors,
+  // consistent with window.Electron.* methods.
   if (isPluginFailureResult(result)) throw pluginFailureToError(result);
   return result;
 }
