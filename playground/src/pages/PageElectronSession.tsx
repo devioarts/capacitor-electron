@@ -1,5 +1,6 @@
 // Playground page for exercising Electron session cache, proxy, storage, and cookies.
 import React, { useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -22,6 +23,8 @@ export const PageElectronSession: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["getUserAgent()", "setUserAgent()", "resolveProxy()", "setCookie()", "getCookies()", "removeCookie()", "clearStorageData()"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">User agent / proxy</p>
         <div className="grid gap-2 md:grid-cols-2">

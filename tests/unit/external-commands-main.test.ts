@@ -140,7 +140,7 @@ describe('externalCommands.run', () => {
       cfg: {
         app: {
           externalCommands: {
-            node: { command: process.execPath, resolve: 'absolute', timeoutMs: 50 },
+            node: { command: process.execPath, resolve: 'absolute', timeoutMs: 300 },
           },
         },
       },

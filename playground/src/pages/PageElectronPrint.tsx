@@ -1,5 +1,6 @@
 // Playground page for exercising Electron printing and print-to-PDF options.
 import React, { useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -45,6 +46,8 @@ export const PageElectronPrint: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["printToPDF() base64 return", "printToPDF() writing to an absolute file path"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Printers</p>
         <Button type="neutral" onClick={async () => {

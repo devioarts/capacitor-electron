@@ -1,5 +1,6 @@
 // Playground page for exercising Electron download start, progress, and control events.
 import React, { useEffect, useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -17,6 +18,8 @@ export const PageElectronDownloads: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <AutomatedTestNote items={["start() from local HTTP fixture", "completed event", "savePath file creation", "getActive() after completion"]} />
+
       <div className="grid gap-2 md:grid-cols-2">
         <Label label="Download URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} /></Label>
         <Label label="Save path (optional)"><Input value={savePath} onChange={(e) => setSavePath(e.target.value)} placeholder="/absolute/path/file.bin" /></Label>

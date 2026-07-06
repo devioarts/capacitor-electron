@@ -1,6 +1,7 @@
 // Playground page for exercising Capacitor Clipboard text and image operations.
 import React, { useState } from "react";
 import { Clipboard } from "@capacitor/clipboard";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -15,6 +16,8 @@ export const PageClipboard: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <AutomatedTestNote items={["write({ string })", "read() text round-trip"]} />
+
       <div className="grid gap-2 md:grid-cols-2">
         <Label label="Text"><Input value={text} onChange={(e) => setText(e.target.value)} /></Label>
         <Label label="URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} /></Label>

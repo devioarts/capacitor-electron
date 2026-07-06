@@ -1,6 +1,7 @@
 // Playground page for exercising Electron power monitor and power save blocker APIs.
 import React, { useEffect, useState } from "react";
 import type { PowerSaveBlockerType } from "@devioarts/capacitor-electron";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -63,6 +64,8 @@ export const PagePowerMonitor: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["getSystemIdleState()", "getSystemIdleTime()", "powerSaveBlocker start/isStarted/stop"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">System power events</p>
         <p className="text-xs text-slate-500">

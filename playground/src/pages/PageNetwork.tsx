@@ -1,6 +1,7 @@
 // Playground page for exercising Capacitor Network status and change events.
 import React, { useEffect, useState } from "react";
 import { Network } from "@capacitor/network";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";
 
@@ -19,16 +20,20 @@ export const PageNetwork: React.FC = () => {
   }, [listening, info]);
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button onClick={async () => {
-        try { log.info("Network", "getStatus", await Network.getStatus()); }
-        catch (e) { log.error("Network", "getStatus", e); }
-      }}>
-        getStatus()
-      </Button>
-      <Button type={listening ? "green" : "neutral"} onClick={() => setListening((v) => !v)}>
-        {listening ? "listener ON" : "listener OFF"}
-      </Button>
+    <div className="space-y-4">
+      <AutomatedTestNote items={["getStatus() value shape"]} />
+
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={async () => {
+          try { log.info("Network", "getStatus", await Network.getStatus()); }
+          catch (e) { log.error("Network", "getStatus", e); }
+        }}>
+          getStatus()
+        </Button>
+        <Button type={listening ? "green" : "neutral"} onClick={() => setListening((v) => !v)}>
+          {listening ? "listener ON" : "listener OFF"}
+        </Button>
+      </div>
     </div>
   );
 };

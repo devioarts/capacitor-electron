@@ -1,5 +1,6 @@
 // Playground page for exercising Electron window controls and badge APIs.
 import React, { useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -11,6 +12,8 @@ export const PageWindow: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["isMaximized() on launch", "isFullscreen() on launch"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Window state</p>
         <div className="flex flex-wrap gap-2">

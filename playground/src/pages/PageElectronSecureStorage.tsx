@@ -1,5 +1,6 @@
 // Playground page for exercising encrypted key/value storage on Electron.
 import React, { useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -12,6 +13,8 @@ export const PageElectronSecureStorage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["isEncryptionAvailable() value shape"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Key/value storage</p>
         <div className="grid gap-2 md:grid-cols-2">
