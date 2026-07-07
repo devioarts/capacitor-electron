@@ -8,7 +8,7 @@ Capacitor platform plugin that adds Electron support to any Capacitor app. Provi
 
 - Node.js ≥ 24
 - Capacitor ≥ 8
-- Electron ≥ 42
+- Electron ≥ 43
 
 ## Installation
 
