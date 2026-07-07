@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveUserDataPath } from './app-identity';
+import { resolveAppVersion, resolveUserDataPath } from './app-identity';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -10,10 +10,13 @@ const capacitorConfig = readJson(path.join(__dirname, '..', 'capacitor.config.js
 const displayName = stringOrUndefined(capacitorConfig?.['appName'])
   ?? stringOrUndefined(packageMeta?.['productName']);
 const userDataPath = resolveUserDataPath(app.getPath('appData'), packageMeta, displayName);
+const appVersion = resolveAppVersion(packageMeta);
 
 if (userDataPath && !app.commandLine.hasSwitch('user-data-dir')) {
   app.setPath('userData', userDataPath);
 }
+
+if (appVersion) app.setVersion(appVersion);
 
 function readJson(file: string): JsonRecord | null {
   try {
