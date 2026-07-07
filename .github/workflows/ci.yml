@@ -55,8 +55,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright/Electron runtime dependencies
-        run: npx playwright install --with-deps chromium
-
       - name: Electron e2e
         run: xvfb-run --auto-servernum npm run test:e2e

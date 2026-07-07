@@ -154,7 +154,11 @@ describe('externalCommands.run', () => {
     };
 
     expect(result.timedOut).toBe(true);
-    expect(result.signal).toBe('SIGKILL');
+    if (process.platform === 'win32') {
+      expect(result.signal).toBe('SIGTERM');
+    } else {
+      expect(result.signal).toBe('SIGKILL');
+    }
   }, 8_000);
 });
 

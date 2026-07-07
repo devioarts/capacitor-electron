@@ -182,8 +182,12 @@ describe('SecureStorage persistence', () => {
 
     const storePath = path.join(tmpDir, 'CapacitorStorage', 'secure-storage.json');
     const stat = realFs.statSync(storePath);
-     
-    expect(stat.mode & 0o777).toBe(0o600);
+
+    if (process.platform === 'win32') {
+      expect(stat.isFile()).toBe(true);
+    } else {
+      expect(stat.mode & 0o777).toBe(0o600);
+    }
   });
 });
 

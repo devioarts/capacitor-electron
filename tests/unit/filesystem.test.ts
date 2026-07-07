@@ -41,7 +41,7 @@ afterAll(() => { realFs.rmSync(tmpDir, { recursive: true, force: true }); });
 describe('resolvePath — no directory (absolute mode)', () => {
   it('returns the path resolved from cwd when no directory given', () => {
     const result = resolvePath('/tmp/myfile.txt');
-    expect(result).toBe('/tmp/myfile.txt');
+    expect(result).toBe(path.resolve('/tmp/myfile.txt'));
   });
 });
 

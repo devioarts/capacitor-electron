@@ -2,7 +2,7 @@
 // absolute app paths to packaged files without exposing arbitrary filesystem paths.
 import { mkdtemp, mkdir, rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -158,17 +158,17 @@ describe('resolveAppProtocolFilePath', () => {
 
   it('maps / to index.html', () => {
     expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/', config))
-      .toBe('/app/dist/index.html');
+      .toBe(resolve('/app/dist/index.html'));
   });
 
   it('maps absolute asset paths inside distDir', () => {
     expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/assets/logo.png', config))
-      .toBe('/app/dist/assets/logo.png');
+      .toBe(resolve('/app/dist/assets/logo.png'));
   });
 
   it('decodes URL-escaped file paths', () => {
     expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/assets/my%20logo.png', config))
-      .toBe('/app/dist/assets/my logo.png');
+      .toBe(resolve('/app/dist/assets/my logo.png'));
   });
 
   it('blocks encoded slash path traversal', () => {
@@ -188,7 +188,7 @@ describe('Capacitor file protocol paths', () => {
 
   it('maps /_capacitor_file_/data paths inside the configured root', () => {
     expect(resolveCapacitorFileProtocolPath(roots, 'capacitor-electron://localhost/_capacitor_file_/data/images/a.png', config))
-      .toBe('/app/user-data/images/a.png');
+      .toBe(resolve('/app/user-data/images/a.png'));
   });
 
   it('blocks traversal outside the configured root', () => {
