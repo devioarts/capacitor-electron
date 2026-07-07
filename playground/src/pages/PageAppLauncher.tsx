@@ -1,6 +1,7 @@
 // Playground page for exercising Capacitor App Launcher URL policy on Electron.
 import React, { useState } from "react";
 import { AppLauncher } from "@capacitor/app-launcher";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { PlatformSupport } from "../components/PlatformSupport.tsx";
@@ -12,6 +13,8 @@ export const PageAppLauncher: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <AutomatedTestNote items={["canOpenUrl() for HTTPS", "declared capelectron scheme", "unsafe javascript: blocking", "openUrl() blocked result"]} />
+
       <PlatformSupport
         title="Electron behavior"
         platforms={["Electron", "iOS", "Android"]}

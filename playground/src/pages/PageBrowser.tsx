@@ -1,6 +1,7 @@
 // Playground page for exercising the Capacitor Browser window implementation.
 import React, { useEffect, useState } from "react";
 import { Browser } from "@capacitor/browser";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { PlatformSupport } from "../components/PlatformSupport.tsx";
@@ -37,6 +38,8 @@ export const PageBrowser: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["Browser.open() rejection for unsafe javascript: URLs"]} />
+
       <PlatformSupport
         title="Electron behavior"
         platforms={["Electron", "iOS", "Android", "Web"]}

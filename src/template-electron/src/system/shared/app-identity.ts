@@ -29,6 +29,13 @@ export function resolveUserDataPath(appDataPath: string, packageMeta: unknown, f
   return userDataName ? path.join(appDataPath, userDataName) : null;
 }
 
+export function resolveAppVersion(packageMeta: unknown): string | null {
+  if (!isRecord(packageMeta)) return null;
+  const version = stringOrUndefined(packageMeta['version']);
+  if (!version || version === '__APP_VERSION__') return null;
+  return version;
+}
+
 function toSafeUserDataName(...candidates: Array<string | undefined>): string | null {
   for (const candidate of candidates) {
     if (!candidate || candidate === '__APP_NAME__') continue;

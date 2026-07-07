@@ -31,6 +31,12 @@ The Capacitor `Directory` enum maps to Electron paths:
 | `EXTERNAL_STORAGE`    | `app.getPath('downloads')` |
 | *(omitted)*           | `path` is treated as an absolute path |
 
+Omitting `directory` is a desktop-only escape hatch for absolute paths. It is
+useful for files selected through native dialogs or paths already approved by
+your app, but it also means the main process will read/write the exact path the
+renderer passes. Keep this API behind trusted UI flows and prefer a Capacitor
+`Directory` value for app-owned data.
+
 `Directory.CACHE` maps to Electron's `temp` path. Treat it as volatile storage:
 the operating system or cleanup tools may delete files there without app-level
 coordination. Use `Directory.DATA` / `Directory.LIBRARY` for app-owned data that
@@ -158,6 +164,54 @@ const { uri, path } = await Filesystem.getUri({ path, directory? });
 
 Returns the absolute `file://` URI and filesystem path without performing any I/O.
 
+### Image URLs and `Capacitor.convertFileSrc()`
+
+In production `app.serveMode: 'protocol'`, Electron maps app-owned Capacitor files
+to the internal app protocol so they can be used directly in renderer URLs:
+
+```typescript
+const { uri } = await Filesystem.getUri({
+  path: 'images/avatar.png',
+  directory: Directory.Data,
+});
+
+const src = Capacitor.convertFileSrc(uri);
+// capacitor-electron://localhost/_capacitor_file_/data/images/avatar.png
+```
+
+By default, protocol mode serves only passive image, media, and font extensions
+from this virtual file route. This keeps user-writable files from being loaded
+as active app-origin content. To opt into additional trusted file types, set
+`app.protocol.capacitorFileAccess`, for example:
+
+```typescript
+plugins: {
+  Electron: {
+    app: {
+      serveMode: 'protocol',
+      protocol: {
+        capacitorFileAccess: { extensions: ['.pdf', '.svg'] },
+      },
+    },
+  },
+}
+```
+
+The virtual route is only enabled for known Capacitor directories and is resolved
+back to Electron app paths:
+
+| Virtual root | Electron path |
+|--------------|---------------|
+| `/_capacitor_file_/data/...` | `app.getPath('userData')/...` |
+| `/_capacitor_file_/documents/...` | `app.getPath('documents')/...` |
+| `/_capacitor_file_/cache/...` | `app.getPath('temp')/...` |
+| `/_capacitor_file_/external/...` | `app.getPath('downloads')/...` |
+
+For all other serving modes, `convertFileSrc()` keeps the previous behaviour and
+returns the input unchanged. In those modes, use `readFile()` and a Blob URL for
+renderer images, or configure CSP carefully if you intentionally load `file://`
+URLs.
+
 ### `stat(options)`
 
 ```typescript
@@ -239,7 +293,7 @@ Common errors are mapped to Capacitor-compatible messages:
 | `readFileInChunks()` | Not supported | Requires a method-specific callback bridge that can deliver multiple chunks for one method call |
 | `addListener('progress')` for `Filesystem.downloadFile()` | Not supported | Deprecated upstream for `Filesystem.downloadFile()`; use `@capacitor/file-transfer` for progress events |
 | Watching for file changes | Not supported | `@capacitor/filesystem` has no watch API |
-| URIs from `getUri()` in `<img src>` | May need CSP adjustment | `file://` URLs require `img-src: file:` in the CSP — see [content-security-policy.md](content-security-policy.md) |
+| URIs from `getUri()` in `<img src>` | Supported in protocol mode via `convertFileSrc()` | Other serving modes still return `file://` URLs and may need Blob URLs or CSP changes — see [content-security-policy.md](content-security-policy.md) |
 | Cross-volume `rename()` | Fails with `EXDEV` | OS limitation; use `copy()` + `deleteFile()` instead |
 
 `readFileInChunks()` is more than a normal promise method. Capacitor calls it with

@@ -1,6 +1,7 @@
 // Playground page for exercising trusted app windows and untrusted external managed windows.
 import React, { useState } from "react";
 import type { ManagedWindowInfo } from "@devioarts/capacitor-electron";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -27,6 +28,14 @@ export const PageElectronManagedWindows: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <AutomatedTestNote
+        items={[
+          "internal app window create/list/setBounds/hide/show/close",
+          "unsafe external URL rejection",
+          "unsafe openExternal rejection",
+        ]}
+      />
+
       <div className="flex flex-wrap gap-2">
         <Button type={targetMode === "appPath" ? "primary" : "neutral"} onClick={() => setTargetMode("appPath")}>
           Internal appPath

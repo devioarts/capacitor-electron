@@ -22,23 +22,23 @@ export function buildCsp(directives: Record<string, string | string[]>): string 
     .join('; ');
 }
 
+export function resolveCspHeader(cfg: ElectronConfig, isDev: boolean): string | null {
+  const csp = cfg.security?.csp;
+
+  if (csp === false) return null;
+
+  if (typeof csp === 'string') return csp;
+  if (csp && typeof csp === 'object') return buildCsp(csp);
+  return isDev ? DEV_CSP : PROD_CSP;
+}
+
 /**
  * Set up CSP via session.defaultSession.webRequest.onHeadersReceived.
  * Must be called inside app.whenReady(), before createWindow().
  */
 export function setupCSP(cfg: ElectronConfig, isDev: boolean): void {
-  const csp = cfg.security?.csp;
-
-  if (csp === false) return;
-
-  let headerValue: string;
-  if (typeof csp === 'string') {
-    headerValue = csp;
-  } else if (csp && typeof csp === 'object') {
-    headerValue = buildCsp(csp);
-  } else {
-    headerValue = isDev ? DEV_CSP : PROD_CSP;
-  }
+  const headerValue = resolveCspHeader(cfg, isDev);
+  if (!headerValue) return;
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

@@ -21,6 +21,15 @@ export function storageKey(key: string): string {
   return createHash('sha256').update(`${appCfg.appId ?? app.getName()}:${key}`).digest('hex');
 }
 
+export function assertCanListSecureStorageKeys(mode: SecureStorageKeyMode = keyMode): void {
+  if (mode !== 'hashed') return;
+
+  // Hashed-key mode intentionally never stores original key names. Returning
+  // stored SHA-256 names from keys() would look usable, but get()/remove() need
+  // the original key and would hash those hashes again. Reject loudly instead.
+  throw new Error("secureStorage.keys is not supported when app.security.secureStorageKeys is 'hashed'; original key names are not stored");
+}
+
 async function readStore(): Promise<SecureStore> {
   try {
     return JSON.parse(await fs.readFile(storePath(), 'utf-8')) as SecureStore;
@@ -98,7 +107,10 @@ trustedIpcHandle('secureStorage:clear', async () => {
   });
 });
 
-trustedIpcHandle('secureStorage:keys', async () => withStore(async () => Object.keys(await readStore())));
+trustedIpcHandle('secureStorage:keys', async () => {
+  assertCanListSecureStorageKeys();
+  return withStore(async () => Object.keys(await readStore()));
+});
 
 trustedIpcHandle('secureStorage:encryptString', async (_e, value: string) => encrypt(String(value ?? '')));
 trustedIpcHandle('secureStorage:decryptString', async (_e, value: string) => decrypt(String(value ?? '')));

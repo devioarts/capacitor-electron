@@ -61,6 +61,26 @@ Or call the underlying IPC bridge directly (no import needed):
 const result = await window.Capacitor.nativePromise('MyPlugin', 'getData', { key: 'foo' });
 ```
 
+### Error behaviour
+
+Plugin methods should throw normal `Error` objects when they fail:
+
+```typescript
+class MyPlugin {
+  async getData(opts: { key?: string }) {
+    if (!opts.key) throw new Error('key is required');
+    return { value: 'hello' };
+  }
+}
+```
+
+The main-process registry catches thrown errors and records a structured payload
+with `code`, `message`, `platform`, `method`, and `details`. The preload bridge
+then converts that payload back into a rejected Promise. This extra internal
+step keeps Capacitor-style metadata available while making renderer calls behave
+like `window.Electron.*`: use `try/catch` or `.catch()` rather than checking for
+`{ success: false }` in normal app code.
+
 ---
 
 ## Adding events

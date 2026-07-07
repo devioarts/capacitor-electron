@@ -1,5 +1,6 @@
 // Playground page for exercising Electron native theme snapshots and updates.
 import React, { useEffect } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";
 
@@ -12,31 +13,35 @@ export const PageElectronNativeTheme: React.FC = () => {
   }, [info]);
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="neutral" onClick={async () => {
-        try { log.info("NativeTheme", "get", await window.Electron.nativeTheme.get()); }
-        catch (e) { log.error("NativeTheme", "get", e); }
-      }}>
-        get()
-      </Button>
-      <Button type="yellow" onClick={async () => {
-        try { log.info("NativeTheme", "light", await window.Electron.nativeTheme.setThemeSource("light")); }
-        catch (e) { log.error("NativeTheme", "light", e); }
-      }}>
-        light
-      </Button>
-      <Button type="yellow" onClick={async () => {
-        try { log.info("NativeTheme", "dark", await window.Electron.nativeTheme.setThemeSource("dark")); }
-        catch (e) { log.error("NativeTheme", "dark", e); }
-      }}>
-        dark
-      </Button>
-      <Button type="neutral" onClick={async () => {
-        try { log.info("NativeTheme", "system", await window.Electron.nativeTheme.setThemeSource("system")); }
-        catch (e) { log.error("NativeTheme", "system", e); }
-      }}>
-        system
-      </Button>
+    <div className="space-y-4">
+      <AutomatedTestNote items={["get()", "setThemeSource('light')", "setThemeSource('dark')", "setThemeSource('system')"]} />
+
+      <div className="flex flex-wrap gap-2">
+        <Button type="neutral" onClick={async () => {
+          try { log.info("NativeTheme", "get", await window.Electron.nativeTheme.get()); }
+          catch (e) { log.error("NativeTheme", "get", e); }
+        }}>
+          get()
+        </Button>
+        <Button type="yellow" onClick={async () => {
+          try { log.info("NativeTheme", "light", await window.Electron.nativeTheme.setThemeSource("light")); }
+          catch (e) { log.error("NativeTheme", "light", e); }
+        }}>
+          light
+        </Button>
+        <Button type="yellow" onClick={async () => {
+          try { log.info("NativeTheme", "dark", await window.Electron.nativeTheme.setThemeSource("dark")); }
+          catch (e) { log.error("NativeTheme", "dark", e); }
+        }}>
+          dark
+        </Button>
+        <Button type="neutral" onClick={async () => {
+          try { log.info("NativeTheme", "system", await window.Electron.nativeTheme.setThemeSource("system")); }
+          catch (e) { log.error("NativeTheme", "system", e); }
+        }}>
+          system
+        </Button>
+      </div>
     </div>
   );
 };

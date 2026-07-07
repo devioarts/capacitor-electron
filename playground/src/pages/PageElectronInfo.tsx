@@ -1,6 +1,7 @@
 // Playground page for inspecting the Electron bridge and main-process error events.
 import React, { useEffect, useState } from "react";
 import type { ElectronBridge } from "@devioarts/capacitor-electron";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";
 
@@ -25,6 +26,8 @@ export const PageElectronInfo: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["window.Electron bridge availability", "top-level namespace list", "getAppVersion() semver"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Bridge capabilities</p>
         <p className="text-xs text-slate-500">

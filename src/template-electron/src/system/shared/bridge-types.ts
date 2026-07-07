@@ -216,6 +216,9 @@ export interface ManagedWindowCreateOptions {
   appPath?: string;
   /**
    * External http(s) URL. Untrusted content; opened without the preload bridge.
+   * Popups are denied as Electron windows; http(s) and configured
+   * app.externalWindowAllowedSchemes popups open externally. Configured
+   * non-web schemes are OS handoffs, not Electron-rendered navigations.
    */
   url?: string;
 }
@@ -229,6 +232,57 @@ export interface WindowsBridge {
   hide(id: number): Promise<void>;
   setBounds(id: number, bounds: Rect): Promise<void>;
   openExternal(url: string): Promise<void>;
+}
+
+export interface ExternalCommandRunOptions {
+  /** Process arguments. They are passed as an argv array, never through a shell string. */
+  args?: string[];
+  /** Optional stdin payload. Use Uint8Array/number[] for binary data such as ESC/POS. */
+  stdin?: string | number[] | ArrayBuffer | Uint8Array;
+  /** Optional binary stdin encoded as base64. Ignored when `stdin` is also provided. */
+  stdinBase64?: string;
+  /** Per-call timeout in milliseconds. Use 0 to disable. */
+  timeoutMs?: number;
+}
+
+export interface ExternalCommandResult {
+  id: string;
+  pid: number | null;
+  exitCode: number | null;
+  signal: string | null;
+  stdout: string;
+  stderr: string;
+  stdoutTruncated: boolean;
+  stderrTruncated: boolean;
+  timedOut: boolean;
+  error?: string;
+}
+
+export interface ExternalCommandStartResult {
+  id: string;
+  pid: number | null;
+}
+
+export interface ExternalCommandOutputEvent {
+  id: string;
+  stream: 'stdout' | 'stderr';
+  text: string;
+}
+
+export interface ExternalCommandExitEvent {
+  id: string;
+  result: ExternalCommandResult;
+}
+
+export interface ExternalCommandsBridge {
+  /** Run an allowlisted command and resolve after it exits. */
+  run(alias: string, options?: ExternalCommandRunOptions): Promise<ExternalCommandResult>;
+  /** Start an allowlisted command and receive output/exit via events. */
+  start(alias: string, options?: ExternalCommandRunOptions): Promise<ExternalCommandStartResult>;
+  /** Kill a command previously started with `start()`. Returns false when the id is unknown. */
+  kill(id: string): Promise<boolean>;
+  onOutput(callback: (event: ExternalCommandOutputEvent) => void): () => void;
+  onExit(callback: (event: ExternalCommandExitEvent) => void): () => void;
 }
 
 export type MenuActionSource = 'app' | 'context' | 'dock' | 'tray';
@@ -290,6 +344,7 @@ export interface ElectronBridge {
   autoLaunch: AutoLaunchBridge;
   nativeTheme: NativeThemeBridge;
   windows: WindowsBridge;
+  externalCommands: ExternalCommandsBridge;
   /**
    * Subscribe to incoming deep link URLs. Returns an unsubscribe function.
    * No-op handler when app.deepLinkingScheme is not set in capacitor.config.

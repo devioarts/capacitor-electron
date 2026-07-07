@@ -1,5 +1,6 @@
 // Playground page for exercising Electron screen/display queries and events.
 import React, { useEffect, useState } from "react";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { useLogger } from "../components/logger-context";
 
@@ -18,6 +19,8 @@ export const PageScreen: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["getAllDisplays() value shape"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Displays</p>
         <div className="flex flex-wrap gap-2">

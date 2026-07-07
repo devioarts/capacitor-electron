@@ -57,7 +57,10 @@ When the window is maximized, the **pre-maximize bounds** are saved (via `win.ge
 
 ## Multi-monitor support
 
-If the saved position falls outside all currently connected monitors (e.g. a monitor was unplugged), the position is discarded and the window opens at the default position on the primary monitor. Saved dimensions are preserved.
+If the saved position falls outside all currently connected monitors (e.g. a
+monitor was unplugged), or only a tiny sliver of the window would be visible, the
+position is discarded and the window opens at the default position on the
+primary monitor. Valid saved dimensions are preserved.
 
 ---
 
@@ -85,5 +88,6 @@ plugins: {
 
 - State is saved with a 500 ms debounce after each resize/move event — not on every mouse movement.
 - On window close, state is saved synchronously (before the `close` event fires) so data is never lost on forced exit.
+- Invalid saved values in `window-state.json` are ignored and replaced with configured defaults.
 - Delete `window-state.json` manually to reset to the configured defaults.
 - No external dependency — uses only Node.js `fs` and Electron's `app` and `screen` modules.

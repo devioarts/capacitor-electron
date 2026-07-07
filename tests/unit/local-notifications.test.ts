@@ -1,6 +1,6 @@
 // Tests for local-notifications-main.ts — scheduling, cancel, getPending,
 // getDeliveredNotifications, removeDelivered.
-// Uses fake timers to verify setTimeout/setInterval scheduling without real delays.
+// Uses fake timers to verify scheduled delivery without real delays.
 import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 
 // Use the shared electron alias mock and spy on Notification prototype.
@@ -20,6 +20,7 @@ beforeAll(async () => {
 
 let showSpy: ReturnType<typeof vi.spyOn>;
 let isSupportedSpy: ReturnType<typeof vi.spyOn>;
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 beforeEach(() => {
   resetNotificationsForTesting?.();
@@ -95,9 +96,9 @@ describe('schedule — immediate (no schedule object)', () => {
   });
 });
 
-// ── schedule — scheduled (setTimeout) ─────────────────────────────────────────
+// ── schedule — scheduled via "at" ─────────────────────────────────────────────
 
-describe('schedule — scheduled via "at" (setTimeout)', () => {
+describe('schedule — scheduled via "at"', () => {
   it('does NOT fire immediately when schedule.at is in the future', async () => {
     vi.useFakeTimers();
     const ln = new LocalNotifications();
@@ -133,9 +134,27 @@ describe('schedule — scheduled via "at" (setTimeout)', () => {
     const { notifications } = await ln.getPending();
     expect(notifications.some((n) => n.id === 13)).toBe(false);
   });
+
+  it('chains timers for schedule.at beyond the Node timer limit', async () => {
+    vi.useFakeTimers();
+    const ln = new LocalNotifications();
+    const delay = MAX_TIMER_DELAY_MS + 5_000;
+    const future = new Date(Date.now() + delay);
+
+    await ln.schedule({ notifications: [{ id: 14, title: 'Far Future', schedule: { at: future } }] });
+
+    vi.advanceTimersByTime(MAX_TIMER_DELAY_MS);
+    expect(showSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(4_999);
+    expect(showSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(showSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
-// ── schedule — repeating interval ─────────────────────────────────────────────
+// ── schedule — repeating ──────────────────────────────────────────────────────
 
 describe('schedule — repeating every "second"', () => {
   it('fires once per interval tick', async () => {
@@ -155,6 +174,25 @@ describe('schedule — repeating every "second"', () => {
       notifications: [{ id: 21, title: 'Limited', schedule: { every: 'second', count: 2 } }],
     });
     vi.advanceTimersByTime(5_000);
+    expect(showSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('chains long repeating schedules instead of firing immediately', async () => {
+    vi.useFakeTimers();
+    const ln = new LocalNotifications();
+    const monthMs = 2_592_000_000;
+
+    await ln.schedule({
+      notifications: [{ id: 22, title: 'Monthly', schedule: { every: 'month', count: 2 } }],
+    });
+
+    vi.advanceTimersByTime(1);
+    expect(showSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(monthMs - 1);
+    expect(showSpy).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(monthMs);
     expect(showSpy).toHaveBeenCalledTimes(2);
   });
 });

@@ -78,7 +78,16 @@ Main process (Node.js)
 
 `contextBridge` with `contextIsolation: true` is Electron's recommended secure pattern since Electron 12. It prevents the renderer from accessing Node.js APIs directly while still allowing typed, async communication via `ipcRenderer.invoke` / `ipcMain.handle`.
 
-`main.ts` installs one IPC sender-origin check after the app URL is known. The plugin registry and all `window.Electron.*` system handlers use that same check, so privileged IPC is accepted only from the trusted app origin (`file:`, the dev server origin, or the local production server origin).
+`main.ts` installs one IPC sender-origin check after the app URL is known. The plugin registry and all `window.Electron.*` system handlers use that same check, so privileged IPC is accepted only from the trusted app origin. In production `file` mode this means files under the packaged app root (`resources/app/`), not arbitrary `file://` URLs; dev/server/protocol modes use their configured origin or app protocol host.
+
+System APIs exposed as `window.Electron.*` reject failed `ipcRenderer.invoke()`
+calls directly. Plugin methods registered through `registerPlugin()` take one
+extra internal step: main returns a structured failure object with
+Capacitor-style metadata, and the preload converts that object back into a
+rejected Promise. This keeps renderer error handling consistent across
+`window.Electron.*`, built-in Capacitor plugins, and third-party Electron
+plugins while preserving `code`, `method`, `platform`, and `details` on the
+thrown `Error`.
 
 ---
 
@@ -176,6 +185,8 @@ When `CAPACITOR_CONFIG` is not provided, `cap-electron sync` loads `capacitor.co
 
 - `contextIsolation: true` and `nodeIntegration: false` are enforced in all BrowserWindow instances — these are not configurable by the user.
 - The `browserWindow.webPreferences.sandbox` option is passed through to Electron. Leave it unset (Electron default `true`) unless a plugin's preload code specifically requires Node.js access.
-- `window.Electron.*` and plugin IPC handlers are protected by a shared sender-origin check. External managed windows opened with `url` do not receive the preload bridge, and any privileged IPC sent from an untrusted frame is rejected.
-- CSP is injected via response headers before the first window loads. In production, the default policy allows no external sources, no `eval`, and no inline scripts beyond styles.
+- In production `file` mode, the preload bridge remains trusted only while the renderer URL points inside the packaged app root (`resources/app/`). Navigating the main window to another local HTML file does not grant that file privileged IPC.
+- `window.Electron.*` and plugin IPC handlers are protected by a shared sender-origin check. External managed windows opened with `url` do not receive the preload bridge, cannot spawn child Electron windows via `window.open()`, and only hand non-web URLs to the OS when their scheme is explicitly configured. Any privileged IPC sent from an untrusted frame is rejected.
+- Known limitation: plugin events and main-process error events are currently broadcast to every open `BrowserWindow`. External windows do not receive the preload bridge, so they cannot normally observe those events, but the broadcast target is broader than the app trust model. A future hardening pass should track trusted app `webContents` IDs and emit only to the main app window plus trusted internal `appPath` windows.
+- CSP is injected via response headers before the first window loads. In `serveMode: 'protocol'`, the custom app protocol also writes the same CSP header directly onto its own responses, including error responses. In production, the default policy allows no external sources, no `eval`, and no inline scripts beyond styles.
 - The single-instance lock is on by default — a second launch focuses the existing window instead of creating a new process, which prevents UI state duplication.

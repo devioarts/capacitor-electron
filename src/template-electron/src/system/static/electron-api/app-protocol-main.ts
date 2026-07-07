@@ -1,8 +1,9 @@
 // Internal app protocol for production builds that need web-style absolute paths
 // (`/assets/logo.png`) without running the embedded localhost server.
-import { protocol } from 'electron';
+import { app, protocol } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import type { ElectronAppProtocolConfig } from '../../shared/types';
 
 export interface ResolvedAppProtocolConfig {
@@ -10,6 +11,18 @@ export interface ResolvedAppProtocolConfig {
   hostname: string;
   handler: 'handle' | 'buffer';
   debug: boolean;
+  capacitorFileAccess: 'passive' | 'all' | { extensions: string[] };
+}
+
+export interface CapacitorFileProtocolRoot {
+  name: string;
+  fileSystemPath: string;
+}
+
+export interface CapacitorFileSrcRootMapping {
+  name: string;
+  fileUrlPrefix: string;
+  urlPrefix: string;
 }
 
 const DEFAULT_PROTOCOL: ResolvedAppProtocolConfig = {
@@ -17,11 +30,33 @@ const DEFAULT_PROTOCOL: ResolvedAppProtocolConfig = {
   hostname: 'localhost',
   handler: 'buffer',
   debug: false,
+  capacitorFileAccess: 'passive',
 };
 
 const DEBUG_PATH = '/__cap_electron_protocol_debug';
+const CAPACITOR_FILE_PREFIX = '/_capacitor_file_/';
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 const HOSTNAME_RE = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i;
+const PASSIVE_CAPACITOR_FILE_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.gif',
+  '.ico',
+  '.avif',
+  '.bmp',
+  '.mp4',
+  '.webm',
+  '.mp3',
+  '.wav',
+  '.ogg',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.otf',
+  '.eot',
+]);
 
 const MIME: Record<string, string> = {
   '.html':  'text/html; charset=utf-8',
@@ -37,14 +72,18 @@ const MIME: Record<string, string> = {
   '.webp':  'image/webp',
   '.gif':   'image/gif',
   '.ico':   'image/x-icon',
+  '.avif':  'image/avif',
+  '.bmp':   'image/bmp',
   '.woff':  'font/woff',
   '.woff2': 'font/woff2',
   '.ttf':   'font/ttf',
+  '.otf':   'font/otf',
   '.eot':   'application/vnd.ms-fontobject',
   '.mp4':   'video/mp4',
   '.webm':  'video/webm',
   '.mp3':   'audio/mpeg',
   '.wav':   'audio/wav',
+  '.ogg':   'audio/ogg',
   '.pdf':   'application/pdf',
   '.wasm':  'application/wasm',
 };
@@ -59,7 +98,31 @@ export function resolveAppProtocolConfig(config?: ElectronAppProtocolConfig): Re
   const handler = config?.handler ?? DEFAULT_PROTOCOL.handler;
   if (handler !== 'handle' && handler !== 'buffer') throw new Error(`Invalid app protocol handler: ${String(handler)}`);
 
-  return { scheme, hostname, handler, debug: config?.debug === true };
+  return {
+    scheme,
+    hostname,
+    handler,
+    debug: config?.debug === true,
+    capacitorFileAccess: resolveCapacitorFileAccess(config?.capacitorFileAccess),
+  };
+}
+
+function resolveCapacitorFileAccess(access: ElectronAppProtocolConfig['capacitorFileAccess']): ResolvedAppProtocolConfig['capacitorFileAccess'] {
+  if (access === undefined || access === 'passive') return 'passive';
+  if (access === 'all') return 'all';
+  if (access && typeof access === 'object' && Array.isArray(access.extensions)) {
+    return { extensions: access.extensions.map(normalizeExtension) };
+  }
+  throw new Error(`Invalid app protocol capacitorFileAccess: ${String(access)}`);
+}
+
+function normalizeExtension(value: string): string {
+  const ext = String(value).trim().toLowerCase();
+  const normalized = ext.startsWith('.') ? ext : `.${ext}`;
+  if (!/^\.[a-z0-9][a-z0-9+.-]*$/.test(normalized)) {
+    throw new Error(`Invalid app protocol file extension: ${value}`);
+  }
+  return normalized;
 }
 
 export function appProtocolUrl(config: ResolvedAppProtocolConfig, appPath = '/index.html'): string {
@@ -85,6 +148,61 @@ export function isAppProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConf
   } catch {
     return false;
   }
+}
+
+export function isCapacitorFileProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConfig): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === `${config.scheme}:`
+      && url.hostname === config.hostname
+      && url.pathname.startsWith(CAPACITOR_FILE_PREFIX);
+  } catch {
+    return false;
+  }
+}
+
+export function isTrustedAppProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConfig): boolean {
+  return isAppProtocolUrl(rawUrl, config) && !isCapacitorFileProtocolUrl(rawUrl, config);
+}
+
+export function isPassiveCapacitorFilePath(filePath: string): boolean {
+  return PASSIVE_CAPACITOR_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase());
+}
+
+export function isAllowedCapacitorFilePath(filePath: string, config: ResolvedAppProtocolConfig): boolean {
+  if (config.capacitorFileAccess === 'all') return true;
+  if (config.capacitorFileAccess === 'passive') return isPassiveCapacitorFilePath(filePath);
+  return config.capacitorFileAccess.extensions.includes(path.extname(filePath).toLowerCase());
+}
+
+function withTrailingSep(filePath: string): string {
+  return filePath.endsWith(path.sep) ? filePath : `${filePath}${path.sep}`;
+}
+
+function fileUrlPrefix(filePath: string): string {
+  return pathToFileURL(withTrailingSep(path.resolve(filePath))).href;
+}
+
+export function createCapacitorFileProtocolRoots(): CapacitorFileProtocolRoot[] {
+  return [
+    { name: 'data',      fileSystemPath: app.getPath('userData') },
+    { name: 'documents', fileSystemPath: app.getPath('documents') },
+    { name: 'cache',     fileSystemPath: app.getPath('temp') },
+    { name: 'external',  fileSystemPath: app.getPath('downloads') },
+  ];
+}
+
+export function createCapacitorFileSrcMappings(
+  config: ResolvedAppProtocolConfig,
+  roots: CapacitorFileProtocolRoot[],
+): CapacitorFileSrcRootMapping[] {
+  return roots
+    .map((root) => ({
+      name: root.name,
+      fileUrlPrefix: fileUrlPrefix(root.fileSystemPath),
+      urlPrefix: appProtocolUrl(config, `${CAPACITOR_FILE_PREFIX}${root.name}/`),
+    }))
+    .sort((a, b) => b.fileUrlPrefix.length - a.fileUrlPrefix.length);
 }
 
 export function registerAppProtocolPrivileges(config: ResolvedAppProtocolConfig): void {
@@ -125,6 +243,42 @@ export function resolveAppProtocolFilePath(distDir: string, requestUrl: string, 
   return filePath;
 }
 
+export function resolveCapacitorFileProtocolPath(
+  roots: CapacitorFileProtocolRoot[],
+  requestUrl: string,
+  config: ResolvedAppProtocolConfig,
+): string | null {
+  let url: URL;
+  try {
+    url = new URL(requestUrl);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== `${config.scheme}:` || url.hostname !== config.hostname) return null;
+
+  let pathname: string;
+  try {
+    pathname = decodeURIComponent(url.pathname).replace(/\\/g, '/');
+  } catch {
+    return null;
+  }
+
+  if (!pathname.startsWith(CAPACITOR_FILE_PREFIX)) return null;
+
+  const rest = pathname.slice(CAPACITOR_FILE_PREFIX.length);
+  const slash = rest.indexOf('/');
+  const rootName = slash >= 0 ? rest.slice(0, slash) : rest;
+  const relativePath = slash >= 0 ? rest.slice(slash + 1) : '';
+  const root = roots.find((entry) => entry.name === rootName);
+  if (!root) return null;
+
+  const base = path.resolve(root.fileSystemPath);
+  const filePath = path.resolve(base, relativePath || '.');
+  if (filePath !== base && !filePath.startsWith(base + path.sep)) return null;
+  return filePath;
+}
+
 interface AppProtocolFileTarget {
   filePath: string;
   injectBase: boolean;
@@ -135,6 +289,21 @@ interface AppProtocolResponse {
   data: Buffer;
   headers: Record<string, string>;
   text?: string;
+}
+
+function withCspHeader(response: AppProtocolResponse, cspHeader?: string | null): AppProtocolResponse {
+  if (!cspHeader) return response;
+
+  // The custom app protocol owns these responses. Add CSP here directly so
+  // protocol-mode security does not depend only on the defaultSession webRequest
+  // hook observing custom-scheme traffic consistently across Electron versions.
+  return {
+    ...response,
+    headers: {
+      ...response.headers,
+      'Content-Security-Policy': cspHeader,
+    },
+  };
 }
 
 async function fileOrIndex(distDir: string, requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
@@ -155,6 +324,19 @@ async function fileOrIndex(distDir: string, requestUrl: string, config: Resolved
   } catch {
     return null;
   }
+}
+
+async function capacitorFileTarget(roots: CapacitorFileProtocolRoot[], requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
+  const requestedPath = resolveCapacitorFileProtocolPath(roots, requestUrl, config);
+  if (!requestedPath) return null;
+  if (!isAllowedCapacitorFilePath(requestedPath, config)) return null;
+
+  try {
+    const stat = await fs.promises.stat(requestedPath);
+    if (stat.isFile()) return { filePath: requestedPath, injectBase: false };
+  } catch { /* handled as 404 below */ }
+
+  return null;
 }
 
 async function pathExists(filePath: string): Promise<boolean> {
@@ -224,6 +406,7 @@ async function resolveAppProtocolResponse(
   requestUrl: string,
   method: string,
   config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[],
 ): Promise<AppProtocolResponse> {
   if (method !== 'GET' && method !== 'HEAD') {
     return {
@@ -243,7 +426,10 @@ async function resolveAppProtocolResponse(
     return protocolDebugResponse(distDir, config);
   }
 
-  const target = await fileOrIndex(distDir, requestUrl, config);
+  const isCapacitorFileRequest = pathname.startsWith(CAPACITOR_FILE_PREFIX);
+  const target = isCapacitorFileRequest
+    ? await capacitorFileTarget(capacitorFileRoots, requestUrl, config)
+    : await fileOrIndex(distDir, requestUrl, config);
   if (!target) {
     return {
       statusCode: 404,
@@ -284,23 +470,35 @@ function toFetchResponse(response: AppProtocolResponse): Response {
   });
 }
 
-function setupAppProtocolHandle(distDir: string, config: ResolvedAppProtocolConfig): void {
+function setupAppProtocolHandle(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[],
+  cspHeader?: string | null,
+): void {
   protocol.handle(config.scheme, async (request) => {
     try {
-      return toFetchResponse(await resolveAppProtocolResponse(distDir, request.url, request.method, config));
+      const response = await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots);
+      return toFetchResponse(withCspHeader(response, cspHeader));
     } catch (err) {
-      return toFetchResponse(errorResponse(err, request.url, config));
+      return toFetchResponse(withCspHeader(errorResponse(err, request.url, config), cspHeader));
     }
   });
 }
 
-function setupAppProtocolBuffer(distDir: string, config: ResolvedAppProtocolConfig): void {
+function setupAppProtocolBuffer(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[],
+  cspHeader?: string | null,
+): void {
   const ok = protocol.registerBufferProtocol(config.scheme, (request, callback) => {
     void (async () => {
       try {
-        callback(await resolveAppProtocolResponse(distDir, request.url, request.method, config));
+        const response = await resolveAppProtocolResponse(distDir, request.url, request.method, config, capacitorFileRoots);
+        callback(withCspHeader(response, cspHeader));
       } catch (err) {
-        callback(errorResponse(err, request.url, config));
+        callback(withCspHeader(errorResponse(err, request.url, config), cspHeader));
       }
     })();
   });
@@ -308,11 +506,16 @@ function setupAppProtocolBuffer(distDir: string, config: ResolvedAppProtocolConf
   if (!ok) throw new Error(`Failed to register app protocol: ${config.scheme}`);
 }
 
-export function setupAppProtocol(distDir: string, config: ResolvedAppProtocolConfig): void {
+export function setupAppProtocol(
+  distDir: string,
+  config: ResolvedAppProtocolConfig,
+  capacitorFileRoots: CapacitorFileProtocolRoot[] = [],
+  cspHeader?: string | null,
+): void {
   if (config.handler === 'buffer') {
-    setupAppProtocolBuffer(distDir, config);
+    setupAppProtocolBuffer(distDir, config, capacitorFileRoots, cspHeader);
     return;
   }
 
-  setupAppProtocolHandle(distDir, config);
+  setupAppProtocolHandle(distDir, config, capacitorFileRoots, cspHeader);
 }

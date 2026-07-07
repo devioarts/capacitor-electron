@@ -143,7 +143,7 @@ Run via the `build:electron` script below.
 export default [
   {
     input: 'electron/build/index.js',
-    output: [{ file: 'electron/dist/plugin.cjs.js', format: 'cjs', sourcemap: true }],
+    output: [{ file: 'electron/dist/plugin.cjs.js', format: 'cjs', sourcemap: true, inlineDynamicImports: true }],
     external: ['electron'],
   },
   {

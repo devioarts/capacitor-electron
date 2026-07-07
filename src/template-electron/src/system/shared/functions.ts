@@ -7,6 +7,7 @@ import type { AppConfig, ElectronConfig } from './types';
 
 export type AnyRecord = Record<string, unknown>;
 export type EventHooks = Record<string, { onAdd?: () => void; onRemove?: () => void }>;
+const PLUGIN_FAILURE_MARKER = '__capacitorElectronPluginError';
 
 // IPC sender trust filter — default allows all (backwards-compatible).
 // Override with setIpcSenderCheck() from main.ts once the app URL is known.
@@ -99,6 +100,14 @@ function isPlainObject(v: unknown): v is AnyRecord {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+function pluginFailure(method: string, code: string, message: string): AnyRecord {
+  return {
+    success: false,
+    [PLUGIN_FAILURE_MARKER]: true,
+    error: { code, message, platform: 'electron', method, details: {} },
+  };
+}
+
 /**
  * Broadcast an event from a plugin to all renderer windows.
  *
@@ -123,7 +132,9 @@ export function emitPluginEvent(pluginClass: string, eventType: string, data?: u
  * For each method in `methods`, registers an `ipcMain.handle` handler on the
  * channel `{pluginClass}-{method}`. The options argument must be a plain JSON
  * object; errors thrown by the implementation are caught and returned as a
- * structured `{ success: false, error }` object so the renderer can inspect them.
+ * structured failure object marked with `__capacitorElectronPluginError`. The
+ * preload bridge converts only those marked failures back into rejected Promises,
+ * so normal plugin data like `{ success: false }` is still delivered unchanged.
  *
  * When `events` is provided, registers `event-add-{pluginClass}` and
  * `event-remove-{pluginClass}-{type}` listeners used by the preload to start
@@ -139,15 +150,15 @@ export function registerPlugin(pluginClass: string, instance: AnyRecord, methods
     ipcMain.handle(`${pluginClass}-${method}`, async (event, opts: unknown) => {
       const senderUrl = event.senderFrame?.url ?? '';
       if (_senderCheck && !_senderCheck(senderUrl)) {
-        return { success: false, error: { code: 'FORBIDDEN', message: 'IPC sender not trusted', platform: 'electron', method, details: {} } };
+        return pluginFailure(method, 'FORBIDDEN', 'IPC sender not trusted');
       }
       if (!isPlainObject(opts) && opts !== undefined) {
-        return { success: false, error: { code: 'INVALID_PARAMS', message: 'Options must be a plain object', platform: 'electron', method, details: {} } };
+        return pluginFailure(method, 'INVALID_PARAMS', 'Options must be a plain object');
       }
       try {
         return await (instance[method] as (opts: AnyRecord) => Promise<unknown>)((opts ?? {}) as AnyRecord);
       } catch (err) {
-        return { success: false, error: { code: 'UNKNOWN', message: err instanceof Error ? err.message : String(err), platform: 'electron', method, details: {} } };
+        return pluginFailure(method, 'UNKNOWN', err instanceof Error ? err.message : String(err));
       }
     });
   }

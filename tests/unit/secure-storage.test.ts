@@ -88,6 +88,16 @@ describe('storageKey (key mode)', () => {
     expect(storageKey('user-auth-token')).toBe('user-auth-token');
   });
 
+  it('keys() is explicitly unsupported when key names are stored hashed', async () => {
+    const { assertCanListSecureStorageKeys } = await import(
+      '../../src/template-electron/src/system/static/electron-api/secure-storage-main.js'
+    );
+
+    expect(() => assertCanListSecureStorageKeys('hashed')).toThrow(
+      "secureStorage.keys is not supported when app.security.secureStorageKeys is 'hashed'",
+    );
+  });
+
   it('values are stored encrypted (not plaintext)', async () => {
     await call('set', { key: 'secret', value: 'plaintext-value' });
     await new Promise((r) => setTimeout(r, 50));
@@ -172,8 +182,12 @@ describe('SecureStorage persistence', () => {
 
     const storePath = path.join(tmpDir, 'CapacitorStorage', 'secure-storage.json');
     const stat = realFs.statSync(storePath);
-     
-    expect(stat.mode & 0o777).toBe(0o600);
+
+    if (process.platform === 'win32') {
+      expect(stat.isFile()).toBe(true);
+    } else {
+      expect(stat.mode & 0o777).toBe(0o600);
+    }
   });
 });
 

@@ -28,8 +28,28 @@ type RType = 'promise' | 'callback';
 type ListenerFn = (data: unknown) => void;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
 type BuiltinCapacitorConfig = { preferences: boolean };
+type CapacitorFileSrcConfig = {
+  enabled: boolean;
+  roots: {
+    name: string;
+    fileUrlPrefix: string;
+    urlPrefix: string;
+  }[];
+};
 interface PluginMethod { name: string; rtype: RType }
 interface PluginHeader { name: string; methods: PluginMethod[] }
+interface PluginErrorPayload {
+  code?: string;
+  message?: string;
+  platform?: string;
+  method?: string;
+  details?: unknown;
+}
+interface PluginFailureResult {
+  success: false;
+  __capacitorElectronPluginError: true;
+  error?: PluginErrorPayload;
+}
 
 // Only third-party plugins belong in PluginHeaders here.
 // Built-in Capacitor plugins are handled by electron-init.js (static, non-critical path).
@@ -62,6 +82,60 @@ function getBuiltinCapacitorConfig(): BuiltinCapacitorConfig {
 }
 
 const BUILTIN_CAPACITOR_CONFIG = getBuiltinCapacitorConfig();
+
+function getCapacitorFileSrcConfig(): CapacitorFileSrcConfig {
+  try {
+    const cfg = ipcRenderer.sendSync('CapElectron-getCapacitorFileSrcConfig') as Partial<CapacitorFileSrcConfig> | undefined;
+    const roots = Array.isArray(cfg?.roots)
+      ? cfg.roots.filter((root): root is CapacitorFileSrcConfig['roots'][number] =>
+        typeof root?.name === 'string'
+        && typeof root.fileUrlPrefix === 'string'
+        && typeof root.urlPrefix === 'string')
+      : [];
+
+    return {
+      enabled: cfg?.enabled === true,
+      roots,
+    };
+  } catch {
+    return { enabled: false, roots: [] };
+  }
+}
+
+const CAPACITOR_FILE_SRC_CONFIG = getCapacitorFileSrcConfig();
+
+function isPluginFailureResult(value: unknown): value is PluginFailureResult {
+  return typeof value === 'object'
+    && value !== null
+    && (value as { success?: unknown }).success === false
+    && (value as { __capacitorElectronPluginError?: unknown }).__capacitorElectronPluginError === true;
+}
+
+function pluginFailureToError(result: PluginFailureResult): Error {
+  const payload = result.error ?? {};
+  const err = new Error(payload.message ?? 'Capacitor Electron plugin call failed') as Error & {
+    code?: string;
+    platform?: string;
+    method?: string;
+    details?: unknown;
+  };
+  if (payload.code) err.code = payload.code;
+  if (payload.platform) err.platform = payload.platform;
+  if (payload.method) err.method = payload.method;
+  if (payload.details !== undefined) err.details = payload.details;
+  return err;
+}
+
+async function invokePlugin(channel: string, opts: unknown): Promise<unknown> {
+  const result = await ipcRenderer.invoke(channel, opts ?? {});
+  // registerPlugin() returns structured failures so the main process can attach
+  // Capacitor-style metadata. Only marked internal failures are converted here;
+  // user plugins may legitimately return business data such as { success: false }.
+  // Renderer callers should still see a normal rejected promise for bridge errors,
+  // consistent with window.Electron.* methods.
+  if (isPluginFailureResult(result)) throw pluginFailureToError(result);
+  return result;
+}
 
 // ── Event subscription registry ───────────────────────────────────────────────
 
@@ -125,9 +199,10 @@ function removeAllSubs(pluginName: string, eventName?: string): void {
 contextBridge.exposeInMainWorld('_CapElectron', {
   getPluginHeaders: () => PLUGIN_HEADERS,
   getBuiltinCapacitorConfig: () => BUILTIN_CAPACITOR_CONFIG,
+  getCapacitorFileSrcConfig: () => CAPACITOR_FILE_SRC_CONFIG,
 
   invoke: (channel: string, opts: unknown) =>
-    ipcRenderer.invoke(channel, opts ?? {}),
+    invokePlugin(channel, opts),
 
   nativeCallback: (
     pluginName: string,

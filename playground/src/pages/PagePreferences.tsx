@@ -1,6 +1,7 @@
 // Playground page for exercising Capacitor Preferences persistence on Electron.
 import React, { useState } from "react";
 import { Preferences } from "@capacitor/preferences";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -15,6 +16,8 @@ export const PagePreferences: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote items={["set()", "get()", "remove() round-trip"]} />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">set()</p>
         <div className="flex flex-wrap gap-2">

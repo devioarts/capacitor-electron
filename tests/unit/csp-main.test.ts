@@ -28,6 +28,7 @@ vi.mock('electron', () => ({
 
 import {
   buildCsp,
+  resolveCspHeader,
   setupCSP,
 } from '../../src/template-electron/src/system/static/electron-api/csp-main.js';
 
@@ -79,6 +80,10 @@ function capturedHeaderValue(): string {
 beforeEach(() => { mockOnHeadersReceived.mockReset(); });
 
 describe('setupCSP — disabled', () => {
+  it('resolves to null when csp is false', () => {
+    expect(resolveCspHeader({ security: { csp: false } }, false)).toBeNull();
+  });
+
   it('does NOT call onHeadersReceived when csp is false', () => {
     setupCSP({ security: { csp: false } }, false);
     expect(mockOnHeadersReceived).not.toHaveBeenCalled();
@@ -86,6 +91,10 @@ describe('setupCSP — disabled', () => {
 });
 
 describe('setupCSP — custom string', () => {
+  it('resolves the string verbatim', () => {
+    expect(resolveCspHeader({ security: { csp: "default-src 'self'" } }, false)).toBe("default-src 'self'");
+  });
+
   it('uses the string verbatim as the CSP header value', () => {
     setupCSP({ security: { csp: "default-src 'self'" } }, false);
     expect(capturedHeaderValue()).toBe("default-src 'self'");
@@ -93,6 +102,11 @@ describe('setupCSP — custom string', () => {
 });
 
 describe('setupCSP — custom object', () => {
+  it('resolves a directive object to a CSP string', () => {
+    expect(resolveCspHeader({ security: { csp: { 'default-src': "'self'", 'img-src': ["'self'", 'data:'] } } }, false))
+      .toBe("default-src 'self'; img-src 'self' data:");
+  });
+
   it('builds CSP from directive object', () => {
     setupCSP({ security: { csp: { 'default-src': "'self'", 'connect-src': "'self' https://api.example.com" } } }, false);
     const header = capturedHeaderValue();
@@ -102,6 +116,12 @@ describe('setupCSP — custom object', () => {
 });
 
 describe('setupCSP — dev mode defaults', () => {
+  it('resolves dev defaults when no custom csp is configured', () => {
+    const header = resolveCspHeader({}, true);
+    expect(header).toContain('unsafe-eval');
+    expect(header).toContain('localhost');
+  });
+
   it('uses dev CSP (allows localhost and unsafe-eval) when isDev=true and no custom csp', () => {
     setupCSP({}, true);
     const header = capturedHeaderValue();
@@ -116,6 +136,12 @@ describe('setupCSP — dev mode defaults', () => {
 });
 
 describe('setupCSP — prod mode defaults', () => {
+  it('resolves prod defaults when no custom csp is configured', () => {
+    const header = resolveCspHeader({}, false);
+    expect(header).toContain("default-src 'self'");
+    expect(header).not.toContain('unsafe-eval');
+  });
+
   it('uses restrictive prod CSP when isDev=false and no custom csp', () => {
     setupCSP({}, false);
     const header = capturedHeaderValue();

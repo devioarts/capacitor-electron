@@ -30,8 +30,47 @@ import { pluginsUser } from '../../../user/plugins-preload-user';
 
 type ListenerFn = (...args: unknown[]) => unknown;
 type PluginEntry = { methods: readonly string[]; events?: readonly string[] };
+type PluginFailureResult = {
+  success: false;
+  __capacitorElectronPluginError: true;
+  error?: {
+    code?: string;
+    message?: string;
+    platform?: string;
+    method?: string;
+    details?: unknown;
+  };
+};
 
 const allPlugins: Record<string, PluginEntry> = { ...pluginsAuto, ...pluginsUser };
+
+function isPluginFailureResult(value: unknown): value is PluginFailureResult {
+  return typeof value === 'object'
+    && value !== null
+    && (value as { success?: unknown }).success === false
+    && (value as { __capacitorElectronPluginError?: unknown }).__capacitorElectronPluginError === true;
+}
+
+function pluginFailureToError(result: PluginFailureResult): Error {
+  const payload = result.error ?? {};
+  const err = new Error(payload.message ?? 'Capacitor Electron plugin call failed') as Error & {
+    code?: string;
+    platform?: string;
+    method?: string;
+    details?: unknown;
+  };
+  if (payload.code) err.code = payload.code;
+  if (payload.platform) err.platform = payload.platform;
+  if (payload.method) err.method = payload.method;
+  if (payload.details !== undefined) err.details = payload.details;
+  return err;
+}
+
+async function invokePlugin(channel: string, opts?: unknown): Promise<unknown> {
+  const result = await ipcRenderer.invoke(channel, opts);
+  if (isPluginFailureResult(result)) throw pluginFailureToError(result);
+  return result;
+}
 
 // ── Per-plugin event subscription registry ────────────────────────────────────
 //
@@ -105,7 +144,10 @@ for (const [name, entry] of Object.entries(allPlugins) as [string, PluginEntry][
   const bridge: Record<string, unknown> = {};
 
   for (const method of entry.methods) {
-    bridge[method] = (opts?: unknown) => ipcRenderer.invoke(`${name}-${method}`, opts);
+    // registerPlugin() marks its internal failure objects so business results
+    // like { success: false } can pass through unchanged. Marked bridge failures
+    // become rejected promises, matching window.Electron.* IPC methods.
+    bridge[method] = (opts?: unknown) => invokePlugin(`${name}-${method}`, opts);
   }
 
   if (entry.events?.length) {

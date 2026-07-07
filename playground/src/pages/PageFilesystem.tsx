@@ -1,6 +1,7 @@
 // Playground page for exercising Capacitor Filesystem CRUD and URI operations.
 import React, { useState } from "react";
 import { Filesystem } from "@capacitor/filesystem";
+import { AutomatedTestNote } from "../components/AutomatedTestNote.tsx";
 import { Button } from "../components/Button.tsx";
 import { Input, TextArea, Label } from "../components/Input.tsx";
 import { useLogger } from "../components/logger-context";
@@ -23,6 +24,23 @@ export const PageFilesystem: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AutomatedTestNote
+        items={[
+          "mkdir()",
+          "writeFile()",
+          "appendFile()",
+          "readFile()",
+          "stat()",
+          "copy()",
+          "rename()",
+          "readdir()",
+          "deleteFile()",
+          "rmdir()",
+          "downloadFile()",
+          "path traversal rejection",
+        ]}
+      />
+
       <section className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">Shared parameters</p>
         <div className="flex flex-wrap gap-2">

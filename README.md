@@ -8,7 +8,7 @@ Capacitor platform plugin that adds Electron support to any Capacitor app. Provi
 
 - Node.js ≥ 24
 - Capacitor ≥ 8
-- Electron ≥ 42
+- Electron ≥ 43
 
 ## Installation
 
@@ -95,6 +95,14 @@ Starts your Vite dev server (if not already running), builds the Electron app, a
 | `npx cap-electron restore` | Alias for `upgrade` |
 | `npx cap-electron upgrade --all` | Also update `electron-builder.js`, `tsconfig.json`, and merge template `package.json` dependencies/scripts |
 
+`cap-electron kill` is a development cleanup helper. On Unix-like systems it
+uses `pgrep -f <project-root>` and sends `SIGTERM` to matching processes. On
+Windows it searches process command lines with PowerShell/CIM and terminates
+matches with `taskkill /T /F`. Because matching is based on the project root
+appearing in the process command line, unrelated tools can match if they were
+launched with that path as an argument. Review the printed PIDs when other
+long-lived tools are running against the same project.
+
 ---
 
 ## Configuration
@@ -121,6 +129,7 @@ const config: CapacitorConfig = {
           scheme: 'capacitor-electron',
           hostname: 'localhost',
           handler: 'buffer',
+          capacitorFileAccess: 'passive',
         },
         singleInstance: true,
         persistWindowState: true,
@@ -202,12 +211,14 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.serveMode` | `'file' \| 'protocol' \| 'server'` | `'file'` | Production serving mode. Use `'protocol'` for web-style absolute paths without a server, or `'server'` for Web APIs that require an HTTP origin |
 | `app.protocol.scheme` | `string` | `'capacitor-electron'` | Internal renderer protocol scheme used by `serveMode: 'protocol'` |
 | `app.protocol.hostname` | `string` | `'localhost'` | Internal renderer protocol hostname used by `serveMode: 'protocol'` |
-| `app.protocol.handler` | `'buffer' \| 'handle'` | `'buffer'` | Internal protocol implementation. `'buffer'` is the stable default; `'handle'` tries Electron's current `protocol.handle` API |
+| `app.protocol.handler` | `'buffer' \| 'handle'` | `'buffer'` | Internal protocol implementation. `'buffer'` is the compatibility default; `'handle'` opts into Electron's newer `protocol.handle` API |
 | `app.protocol.debug` | `boolean` | `false` | Expose diagnostics at `/__cap_electron_protocol_debug` and include detailed protocol error responses |
+| `app.protocol.capacitorFileAccess` | `'passive' \| 'all' \| { extensions: string[] }` | `'passive'` | File types served by `Capacitor.convertFileSrc()` in protocol mode. `'passive'` allows common image, media, and font files; use an extension allowlist such as `{ extensions: ['.pdf', '.svg'] }` or `'all'` only for trusted files |
 | `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
 | `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches |
 | `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |
 | `app.appLauncherSchemes` | `string[]` | — | Extra URL schemes allowed for `@capacitor/app-launcher` |
+| `app.externalWindowAllowedSchemes` | `string[]` | `[]` | Extra non-web URL schemes external managed windows may hand off to the OS via `shell.openExternal` |
 | `app.autoUpdater` | object | — | `electron-updater` settings |
 | `app.autoUpdater.enabled` | `boolean` | `false` | Enable `electron-updater`; only active in packaged production builds |
 | `app.autoUpdater.channel` | `'latest' \| 'beta' \| 'alpha'` | `'latest'` | Update channel to follow |
@@ -216,6 +227,27 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.autoUpdater.allowPrerelease` | `boolean` | `false` | Include prerelease versions |
 | `app.autoUpdater.allowDowngrade` | `boolean` | `false` | Allow installing an older version |
 | `app.security.secureStorageKeys` | `'plain' \| 'hashed'` | `'plain'` | Store secureStorage JSON keys as original names or deterministic hashes |
+
+When `app.serveMode` is `'protocol'`, the app must register its internal
+protocol before loading the renderer. Registration failures are logged and the
+startup stops instead of silently falling back to another serving mode, because a
+fallback would change the renderer origin and IPC trust model.
+In protocol mode, configured CSP is also written directly onto every custom
+protocol response, including error responses.
+The default protocol handler remains `'buffer'` intentionally: Electron's newer
+`protocol.handle` API is available through `app.protocol.handler: 'handle'`, but
+the template keeps the older buffer handler as the compatibility default until
+`handle` has been validated across the packaging and custom-scheme cases this
+project supports.
+
+When `app.deepLinkingScheme` is configured, keep `app.singleInstance` enabled
+unless you deliberately want separate processes. Running-instance deep links on
+Windows and Linux are delivered through Electron's `second-instance` event; with
+`singleInstance: false`, a second launch is not forwarded to the existing window.
+
+When `app.serveMode` is `'file'`, privileged IPC is trusted only for renderer
+files under the packaged app root (`resources/app/`). Other local `file://` URLs
+do not receive trusted IPC just because they use the `file` scheme.
 
 See [window state](docs/window-state-persistence.md), [deep linking](docs/deep-linking.md), [browser/app launcher](docs/browser.md), [in-app browser](docs/in-app-browser.md), and [auto-updater](docs/auto-updater.md).
 
@@ -400,7 +432,7 @@ await Filesystem.writeFile({
 });
 ```
 
-Full read/write/copy/rename/download support via Node.js `fs/promises`. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
+Full read/write/copy/rename/download support via Node.js `fs/promises`. In production `app.serveMode: 'protocol'`, `Capacitor.convertFileSrc()` maps app-owned `file://` URIs from `getUri()` to `capacitor-electron://localhost/_capacitor_file_/...` URLs for renderer use. The default file-route policy serves passive image, media, and font types; configure `app.protocol.capacitorFileAccess` to opt into additional extensions. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
 
 ### Clipboard
 
@@ -540,7 +572,7 @@ Additional desktop namespaces are exposed under `window.Electron`:
 | Namespace | Description |
 |---|---|
 | `dialogs` | Native open/save/message/error dialogs |
-| `secureStorage` | Encrypted local key-value storage via Electron `safeStorage`; key names can be stored plain or hashed |
+| `secureStorage` | Encrypted local key-value storage via Electron `safeStorage`; key names can be stored plain or hashed (`keys()` is unsupported in hashed mode) |
 | `protocols` | Configured protocol/default-client helpers |
 | `session` | Cache, storage, cookies, proxy, user agent |
 | `downloads` | Electron download manager with progress events |
@@ -685,7 +717,7 @@ See [docs/menus.md](docs/menus.md) for application, context, Dock, and tray menu
 
 ## Content Security Policy
 
-CSP is applied automatically via response headers. In development a permissive policy is used (Vite HMR requires `unsafe-eval`). In production a strict policy is applied. Override when needed:
+CSP is applied automatically via response headers. In development a permissive policy is used (Vite HMR requires `unsafe-eval`). In production a strict policy is applied. When production uses `app.serveMode: 'protocol'`, the same CSP is added directly to the custom protocol responses as well as through Electron's session hook. Override when needed:
 
 ```typescript
 plugins: {

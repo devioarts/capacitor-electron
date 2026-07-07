@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { resolveUserDataName, resolveUserDataPath } from '../../src/template-electron/src/system/shared/app-identity.js';
+import * as path from 'path';
+import { resolveAppVersion, resolveUserDataName, resolveUserDataPath } from '../../src/template-electron/src/system/shared/app-identity.js';
 
 describe('app identity helpers', () => {
   it('uses desktopName before the display product name for userData', () => {
@@ -25,7 +26,7 @@ describe('app identity helpers', () => {
 
   it('resolves a userData path from appData and package metadata', () => {
     expect(resolveUserDataPath('/Users/dev/AppData/Roaming', { desktopName: 'tofik' }))
-      .toBe('/Users/dev/AppData/Roaming/tofik');
+      .toBe(path.join('/Users/dev/AppData/Roaming', 'tofik'));
   });
 
   it('falls back to a safe display name when package metadata is missing', () => {
@@ -34,5 +35,10 @@ describe('app identity helpers', () => {
 
   it('ignores unreplaced template placeholders', () => {
     expect(resolveUserDataName({ desktopName: '__APP_NAME__' })).toBeNull();
+    expect(resolveAppVersion({ version: '__APP_VERSION__' })).toBeNull();
+  });
+
+  it('resolves app version from package metadata', () => {
+    expect(resolveAppVersion({ version: '1.2.3' })).toBe('1.2.3');
   });
 });

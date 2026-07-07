@@ -95,6 +95,12 @@ The method is only present when `app.deepLinkingScheme` is configured — guard 
 
 When a URL reaches the helper, the window is restored (if minimized or hidden), focused, and then the `deepLink` IPC event is sent to the renderer.
 
+Running-instance delivery on Windows and Linux depends on the single-instance
+lock. Leave `app.singleInstance` at its default `true` when using
+`app.deepLinkingScheme`. If `singleInstance` is set to `false`, Electron does
+not emit `second-instance`; the new process receives its own command line and
+the already-running window is not notified.
+
 In development, protocol registration still calls Electron's `app.setAsDefaultProtocolClient()` for the configured scheme. Reusing the same scheme across multiple local projects can therefore move the OS handler between them. Prefer a unique development scheme when testing deep links.
 
 ---
@@ -131,4 +137,4 @@ onMounted(() => {
 - Protocol registration is intentionally kept after quit so cold-start deep links continue to work.
 - In dev mode, registering the protocol works but may conflict with other Electron apps using the same scheme — use a unique scheme per project.
 - The `onDeepLink` handler may fire before your router is ready. Queue or defer handling if needed.
-- `singleInstance` (default `true`) is required for Windows second-instance deep links to work. If you disable it, the second process exits immediately and the URL is never forwarded.
+- `singleInstance` (default `true`) is required for Windows and Linux running-instance deep links to reach the existing window. If you disable it, each launch is independent and no URL is forwarded through `second-instance`.

@@ -53,15 +53,16 @@ Official API references:
 | Window controls (`minimize`, `maximize`, `fullscreen`, etc.) | Yes | Yes | Yes | Act on the sender window. |
 | Badge count | Yes | Partial | Partial | Delegates to `app.setBadgeCount()` / `getBadgeCount()`; unsupported platforms return Electron's result. |
 | `dialogs` | Yes | Yes | Yes | Native open/save/message/error dialogs. |
-| `secureStorage` | Yes | Yes | Partial | Values use Electron `safeStorage`; JSON key names can be plain or hashed. Linux availability depends on the desktop secret storage backend. |
+| `secureStorage` | Yes | Yes | Partial | Values use Electron `safeStorage`; JSON key names can be plain or hashed. In hashed mode `keys()` rejects because original key names are not stored. Linux availability depends on the desktop secret storage backend. |
 | `protocols` | Yes | Yes | Partial | Registration uses Electron protocol APIs; Linux cold-start app routing depends on desktop integration. |
 | `session` | Yes | Yes | Yes | Wraps the sender window's Electron session. |
 | `downloads` | Yes | Yes | Yes | Uses Electron `will-download` and `DownloadItem`. |
+| `externalCommands` | Yes | Yes | Yes | Runs allowlisted commands via Node.js `spawn()` with `shell: false`; actual command availability depends on config and the host OS. |
 | `print` / `printToPDF` | Yes | Yes | Yes | Printer availability is OS/environment dependent. |
 | `desktopCapture` | Partial | Partial | Partial | OS screen-recording permissions and window manager behavior apply. |
 | `autoLaunch` | Yes | Yes | No | Linux returns `false`; create a desktop-environment autostart entry manually. |
 | `nativeTheme` | Yes | Yes | Yes | Depends on Electron `nativeTheme` support in the current OS theme environment. |
-| `windows` | Yes | Yes | Yes | Managed secondary windows; renderer-created URLs are limited to `http`/`https`. |
+| `windows` | Yes | Yes | Yes | Managed secondary windows; renderer-created windows load `http`/`https`; configured non-web links can be handed off externally. |
 | `onDeepLink()` | Yes | Yes | Partial | Same platform notes as `App.appUrlOpen`. |
 | Global shortcuts | Yes | Yes | Yes | Uses Electron `globalShortcut`; availability can depend on OS-reserved accelerators. |
 | Menu APIs | Yes | Yes | Yes | Dock menu and Dock icon controls are macOS-only. |
