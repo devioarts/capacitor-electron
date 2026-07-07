@@ -115,6 +115,32 @@ describe('externalCommands.run', () => {
     expect(result.stdout).toBe('receipt');
   });
 
+  it('folds stdin pipe errors into the command result', async () => {
+    mockLoadConfig.mockReturnValue({
+      appCfg: {},
+      cfg: {
+        app: {
+          externalCommands: {
+            node: { command: process.execPath, resolve: 'absolute', timeoutMs: 5000 },
+          },
+        },
+      },
+    });
+
+    const result = await run('node', {
+      args: ['-e', 'process.exit(0)'],
+      stdin: new Uint8Array(1024 * 1024 * 8),
+    }) as {
+      exitCode: number | null;
+      error?: string;
+      timedOut: boolean;
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.timedOut).toBe(false);
+    if (result.error) expect(result.error).toContain('stdin:');
+  });
+
   it('enforces exact allowedArgs when configured', async () => {
     mockLoadConfig.mockReturnValue({
       appCfg: {},

@@ -261,6 +261,9 @@ function spawnExternalCommand(
       const text = appendOutput(result, 'stderr', chunk, resolved.maxOutputBytes);
       if (emitEvents) emitOutput(win, id, 'stderr', text);
     });
+    child.stdin.on('error', (error) => {
+      result.error = result.error ?? `stdin: ${error.message}`;
+    });
     child.once('error', (error) => {
       result.error = error.message;
       finish(() => {
