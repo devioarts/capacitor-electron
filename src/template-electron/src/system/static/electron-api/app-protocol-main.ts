@@ -11,6 +11,7 @@ export interface ResolvedAppProtocolConfig {
   hostname: string;
   handler: 'handle' | 'buffer';
   debug: boolean;
+  capacitorFileAccess: 'passive' | 'all' | { extensions: string[] };
 }
 
 export interface CapacitorFileProtocolRoot {
@@ -29,12 +30,33 @@ const DEFAULT_PROTOCOL: ResolvedAppProtocolConfig = {
   hostname: 'localhost',
   handler: 'buffer',
   debug: false,
+  capacitorFileAccess: 'passive',
 };
 
 const DEBUG_PATH = '/__cap_electron_protocol_debug';
 const CAPACITOR_FILE_PREFIX = '/_capacitor_file_/';
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*$/i;
 const HOSTNAME_RE = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i;
+const PASSIVE_CAPACITOR_FILE_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.gif',
+  '.ico',
+  '.avif',
+  '.bmp',
+  '.mp4',
+  '.webm',
+  '.mp3',
+  '.wav',
+  '.ogg',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.otf',
+  '.eot',
+]);
 
 const MIME: Record<string, string> = {
   '.html':  'text/html; charset=utf-8',
@@ -50,14 +72,18 @@ const MIME: Record<string, string> = {
   '.webp':  'image/webp',
   '.gif':   'image/gif',
   '.ico':   'image/x-icon',
+  '.avif':  'image/avif',
+  '.bmp':   'image/bmp',
   '.woff':  'font/woff',
   '.woff2': 'font/woff2',
   '.ttf':   'font/ttf',
+  '.otf':   'font/otf',
   '.eot':   'application/vnd.ms-fontobject',
   '.mp4':   'video/mp4',
   '.webm':  'video/webm',
   '.mp3':   'audio/mpeg',
   '.wav':   'audio/wav',
+  '.ogg':   'audio/ogg',
   '.pdf':   'application/pdf',
   '.wasm':  'application/wasm',
 };
@@ -72,7 +98,31 @@ export function resolveAppProtocolConfig(config?: ElectronAppProtocolConfig): Re
   const handler = config?.handler ?? DEFAULT_PROTOCOL.handler;
   if (handler !== 'handle' && handler !== 'buffer') throw new Error(`Invalid app protocol handler: ${String(handler)}`);
 
-  return { scheme, hostname, handler, debug: config?.debug === true };
+  return {
+    scheme,
+    hostname,
+    handler,
+    debug: config?.debug === true,
+    capacitorFileAccess: resolveCapacitorFileAccess(config?.capacitorFileAccess),
+  };
+}
+
+function resolveCapacitorFileAccess(access: ElectronAppProtocolConfig['capacitorFileAccess']): ResolvedAppProtocolConfig['capacitorFileAccess'] {
+  if (access === undefined || access === 'passive') return 'passive';
+  if (access === 'all') return 'all';
+  if (access && typeof access === 'object' && Array.isArray(access.extensions)) {
+    return { extensions: access.extensions.map(normalizeExtension) };
+  }
+  throw new Error(`Invalid app protocol capacitorFileAccess: ${String(access)}`);
+}
+
+function normalizeExtension(value: string): string {
+  const ext = String(value).trim().toLowerCase();
+  const normalized = ext.startsWith('.') ? ext : `.${ext}`;
+  if (!/^\.[a-z0-9][a-z0-9+.-]*$/.test(normalized)) {
+    throw new Error(`Invalid app protocol file extension: ${value}`);
+  }
+  return normalized;
 }
 
 export function appProtocolUrl(config: ResolvedAppProtocolConfig, appPath = '/index.html'): string {
@@ -98,6 +148,31 @@ export function isAppProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConf
   } catch {
     return false;
   }
+}
+
+export function isCapacitorFileProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConfig): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === `${config.scheme}:`
+      && url.hostname === config.hostname
+      && url.pathname.startsWith(CAPACITOR_FILE_PREFIX);
+  } catch {
+    return false;
+  }
+}
+
+export function isTrustedAppProtocolUrl(rawUrl: string, config: ResolvedAppProtocolConfig): boolean {
+  return isAppProtocolUrl(rawUrl, config) && !isCapacitorFileProtocolUrl(rawUrl, config);
+}
+
+export function isPassiveCapacitorFilePath(filePath: string): boolean {
+  return PASSIVE_CAPACITOR_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase());
+}
+
+export function isAllowedCapacitorFilePath(filePath: string, config: ResolvedAppProtocolConfig): boolean {
+  if (config.capacitorFileAccess === 'all') return true;
+  if (config.capacitorFileAccess === 'passive') return isPassiveCapacitorFilePath(filePath);
+  return config.capacitorFileAccess.extensions.includes(path.extname(filePath).toLowerCase());
 }
 
 function withTrailingSep(filePath: string): string {
@@ -254,6 +329,7 @@ async function fileOrIndex(distDir: string, requestUrl: string, config: Resolved
 async function capacitorFileTarget(roots: CapacitorFileProtocolRoot[], requestUrl: string, config: ResolvedAppProtocolConfig): Promise<AppProtocolFileTarget | null> {
   const requestedPath = resolveCapacitorFileProtocolPath(roots, requestUrl, config);
   if (!requestedPath) return null;
+  if (!isAllowedCapacitorFilePath(requestedPath, config)) return null;
 
   try {
     const stat = await fs.promises.stat(requestedPath);

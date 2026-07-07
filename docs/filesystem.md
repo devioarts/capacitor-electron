@@ -179,6 +179,24 @@ const src = Capacitor.convertFileSrc(uri);
 // capacitor-electron://localhost/_capacitor_file_/data/images/avatar.png
 ```
 
+By default, protocol mode serves only passive image, media, and font extensions
+from this virtual file route. This keeps user-writable files from being loaded
+as active app-origin content. To opt into additional trusted file types, set
+`app.protocol.capacitorFileAccess`, for example:
+
+```typescript
+plugins: {
+  Electron: {
+    app: {
+      serveMode: 'protocol',
+      protocol: {
+        capacitorFileAccess: { extensions: ['.pdf', '.svg'] },
+      },
+    },
+  },
+}
+```
+
 The virtual route is only enabled for known Capacitor directories and is resolved
 back to Electron app paths:
 

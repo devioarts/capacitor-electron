@@ -4,7 +4,7 @@ import './src/system/static/electron-api/process-guardian';
 import { app, BrowserWindow, nativeImage, type BrowserWindowConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, createCapacitorFileProtocolRoots, createFileAppSenderCheck, isAppProtocolUrl, isTrustedFileUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, resolveCspHeader, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
+import { loadConfig, setupUpdater, setupDeepLinking, flushDeepLink, setupCSP, setupMenu, setupContextMenu, setupDockMenu, setupSplash, loadWindowState, trackWindowState, setupShortcuts, setupTray, startLocalServer, setIpcSenderCheck, setMainWindow, setManagedWindowAppResolver, appProtocolUrl, createCapacitorFileProtocolRoots, createFileAppSenderCheck, isTrustedAppProtocolUrl, isTrustedFileUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, resolveCspHeader, setupAppProtocol, type ManagedWindowAppTarget, type ResolvedAppProtocolConfig } from './src';
 import { shortcuts } from './src/user/shortcuts';
 import { appMenu } from './src/user/menu/app';
 import { contextMenu } from './src/user/menu/context';
@@ -130,7 +130,7 @@ function setup(): void {
       watchPreloadSignal(win);
     } else if (appProtocol) {
       const indexUrl = appProtocolUrl(appProtocol);
-      setIpcSenderCheck(url => isAppProtocolUrl(url, appProtocol));
+      setIpcSenderCheck(url => isTrustedAppProtocolUrl(url, appProtocol));
       setManagedWindowAppResolver(appPath => resolveUrlAppPath(indexUrl, appPath));
       win.loadURL(indexUrl);
       if (devConfig.openDevTools === true) win.webContents.openDevTools();
@@ -243,8 +243,8 @@ function applySecurityHardening(win: BrowserWindow, dev: boolean, protocolConfig
       if (current) {
         const curU = new URL(current);
         allow = (curU.protocol === 'file:' && newU.protocol === 'file:' && !!fileAppRoot && isTrustedFileUrl(current, fileAppRoot) && isTrustedFileUrl(url, fileAppRoot))
-             || (curU.origin !== 'null' && curU.origin === newU.origin)
-             || (!!protocolConfig && isAppProtocolUrl(current, protocolConfig) && isAppProtocolUrl(url, protocolConfig));
+             || (!!protocolConfig && isTrustedAppProtocolUrl(current, protocolConfig) && isTrustedAppProtocolUrl(url, protocolConfig))
+             || (curU.origin !== 'null' && curU.origin === newU.origin && (!protocolConfig || curU.protocol !== `${protocolConfig.scheme}:`));
       }
     } catch { /* ignore invalid URLs */ }
     if (!allow) {

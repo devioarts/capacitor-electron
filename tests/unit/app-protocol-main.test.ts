@@ -26,7 +26,11 @@ import {
   appProtocolUrl,
   createCapacitorFileSrcMappings,
   injectAppProtocolBase,
+  isAllowedCapacitorFilePath,
   isAppProtocolUrl,
+  isCapacitorFileProtocolUrl,
+  isPassiveCapacitorFilePath,
+  isTrustedAppProtocolUrl,
   resolveAppProtocolConfig,
   resolveAppProtocolFilePath,
   resolveCapacitorFileProtocolPath,
@@ -88,6 +92,7 @@ describe('resolveAppProtocolConfig', () => {
       hostname: 'localhost',
       handler: 'buffer',
       debug: false,
+      capacitorFileAccess: 'passive',
     });
   });
 
@@ -108,6 +113,16 @@ describe('resolveAppProtocolConfig', () => {
 
   it('accepts handle mode', () => {
     expect(resolveAppProtocolConfig({ handler: 'handle' })).toMatchObject({ handler: 'handle' });
+  });
+
+  it('normalizes custom Capacitor file route extension access', () => {
+    expect(resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['PDF', '.Svg'] } }))
+      .toMatchObject({ capacitorFileAccess: { extensions: ['.pdf', '.svg'] } });
+  });
+
+  it('rejects invalid Capacitor file route extension access', () => {
+    expect(() => resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['../html'] } }))
+      .toThrow('Invalid app protocol file extension');
   });
 });
 
@@ -145,6 +160,15 @@ describe('isAppProtocolUrl', () => {
 
   it('accepts URLs on the configured protocol and host', () => {
     expect(isAppProtocolUrl('capacitor-electron://localhost/settings', config)).toBe(true);
+  });
+
+  it('distinguishes trusted app URLs from virtual file route URLs', () => {
+    const fileUrl = 'capacitor-electron://localhost/_capacitor_file_/data/evil.html';
+
+    expect(isAppProtocolUrl(fileUrl, config)).toBe(true);
+    expect(isCapacitorFileProtocolUrl(fileUrl, config)).toBe(true);
+    expect(isTrustedAppProtocolUrl(fileUrl, config)).toBe(false);
+    expect(isTrustedAppProtocolUrl('capacitor-electron://localhost/settings', config)).toBe(true);
   });
 
   it('rejects other hosts', () => {
@@ -202,6 +226,22 @@ describe('Capacitor file protocol paths', () => {
       fileUrlPrefix: pathToFileURL('/app/user-data/').href,
       urlPrefix: 'capacitor-electron://localhost/_capacitor_file_/data/',
     }]);
+  });
+
+  it('only treats passive media and font extensions as servable file route assets', () => {
+    const config = resolveAppProtocolConfig();
+    const pdfConfig = resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['pdf'] } });
+    const allConfig = resolveAppProtocolConfig({ capacitorFileAccess: 'all' });
+
+    expect(isPassiveCapacitorFilePath('/app/user-data/images/a.png')).toBe(true);
+    expect(isPassiveCapacitorFilePath('/app/user-data/video/a.mp4')).toBe(true);
+    expect(isPassiveCapacitorFilePath('/app/user-data/fonts/a.woff2')).toBe(true);
+    expect(isPassiveCapacitorFilePath('/app/user-data/evil.html')).toBe(false);
+    expect(isPassiveCapacitorFilePath('/app/user-data/evil.svg')).toBe(false);
+    expect(isPassiveCapacitorFilePath('/app/user-data/evil.js')).toBe(false);
+    expect(isAllowedCapacitorFilePath('/app/user-data/file.pdf', config)).toBe(false);
+    expect(isAllowedCapacitorFilePath('/app/user-data/file.pdf', pdfConfig)).toBe(true);
+    expect(isAllowedCapacitorFilePath('/app/user-data/evil.html', allConfig)).toBe(true);
   });
 });
 
@@ -284,6 +324,52 @@ describe('setupAppProtocol', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers?.['Content-Type']).toBe('image/png');
     expect(response.data?.toString()).toBe('png-data');
+  });
+
+  it('blocks active content from the virtual file route', async () => {
+    const config = resolveAppProtocolConfig();
+    const distDir = await createDist();
+    const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
+    tempDirs.push(dataDir);
+    await writeFile(join(dataDir, 'evil.html'), '<script>window.Electron.quit()</script>');
+    await writeFile(join(dataDir, 'evil.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+    setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
+
+    const htmlResponse = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/evil.html');
+    const svgResponse = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/evil.svg');
+
+    expect(htmlResponse.statusCode).toBe(404);
+    expect(svgResponse.statusCode).toBe(404);
+  });
+
+  it('serves configured virtual file route extensions', async () => {
+    const config = resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['pdf'] } });
+    const distDir = await createDist();
+    const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
+    tempDirs.push(dataDir);
+    await writeFile(join(dataDir, 'report.pdf'), 'pdf-data');
+    setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
+
+    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/report.pdf');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers?.['Content-Type']).toBe('application/pdf');
+    expect(response.data?.toString()).toBe('pdf-data');
+  });
+
+  it('can explicitly serve all virtual file route extensions', async () => {
+    const config = resolveAppProtocolConfig({ capacitorFileAccess: 'all' });
+    const distDir = await createDist();
+    const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
+    tempDirs.push(dataDir);
+    await writeFile(join(dataDir, 'doc.html'), '<h1>doc</h1>');
+    setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
+
+    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/doc.html');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
+    expect(response.data?.toString()).toBe('<h1>doc</h1>');
   });
 
   it('returns 404 for missing Capacitor file routes instead of falling back to index.html', async () => {

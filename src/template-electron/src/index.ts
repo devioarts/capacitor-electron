@@ -13,7 +13,7 @@ export { loadWindowState, trackWindowState } from './system/static/electron-api/
 export type { WindowBounds } from './system/static/electron-api/window-state';
 export { setupTray } from './system/static/electron-api/tray-main';
 export { startLocalServer } from './system/static/electron-api/server-main';
-export { appProtocolUrl, createCapacitorFileProtocolRoots, createCapacitorFileSrcMappings, isAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, resolveCapacitorFileProtocolPath, setupAppProtocol } from './system/static/electron-api/app-protocol-main';
+export { appProtocolUrl, createCapacitorFileProtocolRoots, createCapacitorFileSrcMappings, isAllowedCapacitorFilePath, isAppProtocolUrl, isCapacitorFileProtocolUrl, isPassiveCapacitorFilePath, isTrustedAppProtocolUrl, registerAppProtocolPrivileges, resolveAppProtocolConfig, resolveCapacitorFileProtocolPath, setupAppProtocol } from './system/static/electron-api/app-protocol-main';
 export type { CapacitorFileProtocolRoot, CapacitorFileSrcRootMapping, ResolvedAppProtocolConfig } from './system/static/electron-api/app-protocol-main';
 export { createFileAppSenderCheck, isTrustedFileUrl } from './system/static/electron-api/file-trust';
 export type { TrayMenuContext, TrayMenuFactory } from './system/static/electron-api/tray-main';

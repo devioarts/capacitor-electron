@@ -127,6 +127,13 @@ export interface ElectronAppProtocolConfig {
   handler?: 'handle' | 'buffer';
   /** Expose protocol diagnostics at /__cap_electron_protocol_debug and detailed error responses. Default: false */
   debug?: boolean;
+  /**
+   * Which user-writable Capacitor file-route assets may be served by `Capacitor.convertFileSrc()`.
+   * - `'passive'` serves only common image, media, and font extensions. Default.
+   * - `'all'` serves any file under the mapped roots. Use only if those files never receive privileged IPC trust.
+   * - `{ extensions: ['.pdf', '.svg'] }` serves only the listed extensions.
+   */
+  capacitorFileAccess?: 'passive' | 'all' | { extensions: string[] };
 }
 
 export interface ElectronDevConfig {

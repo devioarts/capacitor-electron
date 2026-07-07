@@ -129,6 +129,7 @@ const config: CapacitorConfig = {
           scheme: 'capacitor-electron',
           hostname: 'localhost',
           handler: 'buffer',
+          capacitorFileAccess: 'passive',
         },
         singleInstance: true,
         persistWindowState: true,
@@ -212,6 +213,7 @@ Project-root asset paths that start with `/` are copied into `electron/assets/` 
 | `app.protocol.hostname` | `string` | `'localhost'` | Internal renderer protocol hostname used by `serveMode: 'protocol'` |
 | `app.protocol.handler` | `'buffer' \| 'handle'` | `'buffer'` | Internal protocol implementation. `'buffer'` is the compatibility default; `'handle'` opts into Electron's newer `protocol.handle` API |
 | `app.protocol.debug` | `boolean` | `false` | Expose diagnostics at `/__cap_electron_protocol_debug` and include detailed protocol error responses |
+| `app.protocol.capacitorFileAccess` | `'passive' \| 'all' \| { extensions: string[] }` | `'passive'` | File types served by `Capacitor.convertFileSrc()` in protocol mode. `'passive'` allows common image, media, and font files; use an extension allowlist such as `{ extensions: ['.pdf', '.svg'] }` or `'all'` only for trusted files |
 | `app.singleInstance` | `boolean` | `true` | Prevent more than one instance; second launch focuses the existing window |
 | `app.persistWindowState` | `boolean` | `false` | Remember window size and position between launches |
 | `app.deepLinkingScheme` | `string` | — | Custom URL protocol for deep linking, e.g. `'myapp'` for `myapp://` |
@@ -430,7 +432,7 @@ await Filesystem.writeFile({
 });
 ```
 
-Full read/write/copy/rename/download support via Node.js `fs/promises`. In production `app.serveMode: 'protocol'`, `Capacitor.convertFileSrc()` maps app-owned `file://` URIs from `getUri()` to `capacitor-electron://localhost/_capacitor_file_/...` URLs for renderer use. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
+Full read/write/copy/rename/download support via Node.js `fs/promises`. In production `app.serveMode: 'protocol'`, `Capacitor.convertFileSrc()` maps app-owned `file://` URIs from `getUri()` to `capacitor-electron://localhost/_capacitor_file_/...` URLs for renderer use. The default file-route policy serves passive image, media, and font types; configure `app.protocol.capacitorFileAccess` to opt into additional extensions. See [docs/filesystem.md](docs/filesystem.md) for directory mapping and all methods.
 
 ### Clipboard
 
