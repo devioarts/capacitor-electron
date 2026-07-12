@@ -1,0 +1,8 @@
+dist/
+node_modules/
+src/template-electron/
+template-electron.tar.gz
+playground/
+playwright-report/
+test-results/
+package-lock.json

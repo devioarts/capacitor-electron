@@ -6,13 +6,13 @@ const { mockLoadConfig } = vi.hoisted(() => ({
   mockLoadConfig: vi.fn(() => ({ cfg: {}, appCfg: {} })),
 }));
 
-vi.mock(
-  '../../src/template-electron/src/system/shared/functions.js',
-  async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../src/template-electron/src/system/shared/functions.js')>();
-    return { ...original, loadConfig: mockLoadConfig };
-  },
-);
+vi.mock('../../src/template-electron/src/system/shared/functions.js', async (importOriginal) => {
+  const original =
+    await importOriginal<
+      typeof import('../../src/template-electron/src/system/shared/functions.js')
+    >();
+  return { ...original, loadConfig: mockLoadConfig };
+});
 
 import { __externalCommandsForTests } from '../../src/template-electron/src/system/static/electron-api/external-commands-main.js';
 
@@ -25,7 +25,10 @@ function handlers(): IpcHandlers {
 async function run(alias: string, options?: unknown) {
   const handler = handlers().get('externalCommands:run');
   if (!handler) throw new Error('externalCommands:run handler not registered');
-  return await handler({ sender: {}, senderFrame: { url: 'file:///index.html' } }, { alias, options });
+  return await handler(
+    { sender: {}, senderFrame: { url: 'file:///index.html' } },
+    { alias, options },
+  );
 }
 
 beforeEach(() => {
@@ -58,9 +61,9 @@ describe('externalCommands.run', () => {
       },
     });
 
-    const result = await run('node', {
+    const result = (await run('node', {
       args: ['-e', 'process.stdout.write("out"); process.stderr.write("err"); process.exit(7);'],
-    }) as {
+    })) as {
       exitCode: number;
       stdout: string;
       stderr: string;
@@ -85,10 +88,13 @@ describe('externalCommands.run', () => {
       },
     });
 
-    const result = await run('node', {
-      args: ['-e', 'process.stdin.on("data", c => process.stdout.write(Buffer.from(c).toString("hex")));'],
+    const result = (await run('node', {
+      args: [
+        '-e',
+        'process.stdin.on("data", c => process.stdout.write(Buffer.from(c).toString("hex")));',
+      ],
       stdin: [0x1b, 0x40, 0x0a],
-    }) as { exitCode: number; stdout: string };
+    })) as { exitCode: number; stdout: string };
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('1b400a');
@@ -106,10 +112,10 @@ describe('externalCommands.run', () => {
       },
     });
 
-    const result = await run('node', {
+    const result = (await run('node', {
       args: ['-e', 'process.stdin.on("data", c => process.stdout.write(c.toString("utf8")));'],
       stdinBase64: Buffer.from('receipt').toString('base64'),
-    }) as { exitCode: number; stdout: string };
+    })) as { exitCode: number; stdout: string };
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('receipt');
@@ -127,10 +133,10 @@ describe('externalCommands.run', () => {
       },
     });
 
-    const result = await run('node', {
+    const result = (await run('node', {
       args: ['-e', 'process.exit(0)'],
       stdin: new Uint8Array(1024 * 1024 * 8),
-    }) as {
+    })) as {
       exitCode: number | null;
       error?: string;
       timedOut: boolean;
@@ -157,7 +163,9 @@ describe('externalCommands.run', () => {
       },
     });
 
-    await expect(run('node', { args: ['-e', 'process.exit(0)'] })).rejects.toThrow('arg is not allowed');
+    await expect(run('node', { args: ['-e', 'process.exit(0)'] })).rejects.toThrow(
+      'arg is not allowed',
+    );
   });
 
   it('escalates timed-out commands that ignore SIGTERM', async () => {
@@ -172,9 +180,9 @@ describe('externalCommands.run', () => {
       },
     });
 
-    const result = await run('node', {
+    const result = (await run('node', {
       args: ['-e', 'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);'],
-    }) as {
+    })) as {
       signal: NodeJS.Signals | null;
       timedOut: boolean;
     };
@@ -217,7 +225,8 @@ describe('external command resolution', () => {
       },
     });
 
-    expect(() => __externalCommandsForTests.resolveExternalCommand('bad', {}))
-      .toThrow("resolve: 'path'");
+    expect(() => __externalCommandsForTests.resolveExternalCommand('bad', {})).toThrow(
+      "resolve: 'path'",
+    );
   });
 });

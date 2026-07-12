@@ -9,8 +9,9 @@ import { execSync } from 'child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
@@ -19,7 +20,9 @@ if (!fs.existsSync(electronDir)) {
 }
 
 if (!fs.existsSync(path.join(electronDir, 'package.json'))) {
-  console.error('[cap-electron] electron/package.json not found — electron/ is incomplete. Recreate it with: npx cap-electron add');
+  console.error(
+    '[cap-electron] electron/package.json not found — electron/ is incomplete. Recreate it with: npx cap-electron add',
+  );
   process.exit(1);
 }
 

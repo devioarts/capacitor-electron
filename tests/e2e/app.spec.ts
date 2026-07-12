@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ELECTRON_MAIN = path.join(__dirname, '../../playground/electron/dist/main.cjs');
-const ELECTRON_CWD  = path.join(__dirname, '../../playground/electron');
+const ELECTRON_CWD = path.join(__dirname, '../../playground/electron');
 const DEV_SERVER_URL = 'http://localhost:5173';
 
 type CapElectronBridge = {
@@ -34,17 +34,36 @@ type ElectronBridgeForE2E = {
     setThemeSource: (source: 'system' | 'light' | 'dark') => Promise<void>;
   };
   print: {
-    printToPDF: (options?: { options?: unknown; path?: string }) => Promise<{ data?: string; path?: string }>;
+    printToPDF: (options?: {
+      options?: unknown;
+      path?: string;
+    }) => Promise<{ data?: string; path?: string }>;
   };
   downloads: {
-    start: (options: { url: string; savePath?: string }) => Promise<{ id: string; url: string; savePath?: string }>;
+    start: (options: {
+      url: string;
+      savePath?: string;
+    }) => Promise<{ id: string; url: string; savePath?: string }>;
     getActive: () => Promise<Array<{ id: string; state: string }>>;
-    on: (callback: (event: { type: string; data: { id: string; state: string; savePath?: string; receivedBytes: number; totalBytes: number } }) => void) => () => void;
+    on: (
+      callback: (event: {
+        type: string;
+        data: {
+          id: string;
+          state: string;
+          savePath?: string;
+          receivedBytes: number;
+          totalBytes: number;
+        };
+      }) => void,
+    ) => () => void;
   };
   getAllDisplays: () => Promise<unknown[]>;
   getPowerMonitorIdleState: (idleThreshold: number) => Promise<string>;
   getPowerMonitorIdleTime: () => Promise<number>;
-  startPowerSaveBlocker: (type: 'prevent-app-suspension' | 'prevent-display-sleep') => Promise<number>;
+  startPowerSaveBlocker: (
+    type: 'prevent-app-suspension' | 'prevent-display-sleep',
+  ) => Promise<number>;
   stopPowerSaveBlocker: (id: number) => Promise<boolean | undefined>;
   isPowerSaveBlockerStarted: (id: number) => Promise<boolean>;
   session: {
@@ -62,7 +81,10 @@ type ElectronBridgeForE2E = {
     close: (id: number) => Promise<void>;
     hide: (id: number) => Promise<void>;
     show: (id: number) => Promise<void>;
-    setBounds: (id: number, bounds: { x: number; y: number; width: number; height: number }) => Promise<void>;
+    setBounds: (
+      id: number,
+      bounds: { x: number; y: number; width: number; height: number },
+    ) => Promise<void>;
     openExternal: (url: string) => Promise<void>;
   };
 };
@@ -85,7 +107,11 @@ async function launchApp(): Promise<ElectronApplication> {
     env: { ...process.env, NODE_ENV: 'test' },
   });
   app.process().once('exit', () => {
-    try { fs.rmSync(userData, { recursive: true, force: true }); } catch { /* ignore */ }
+    try {
+      fs.rmSync(userData, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
   });
   await ensureRendererLoadStarted(app);
   return app;
@@ -97,7 +123,9 @@ async function waitForDevServer(): Promise<void> {
     try {
       const response = await fetch(DEV_SERVER_URL);
       if (response.ok) return;
-    } catch { /* server not ready yet */ }
+    } catch {
+      /* server not ready yet */
+    }
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(`Timed out waiting for Vite dev server at ${DEV_SERVER_URL}`);
@@ -106,13 +134,16 @@ async function waitForDevServer(): Promise<void> {
 async function ensureRendererLoadStarted(app: ElectronApplication): Promise<void> {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
-    const didStart = await app.evaluate(async (electronApi, devUrl) => {
-      const win = electronApi.BrowserWindow.getAllWindows()
-        .find((candidate) => !candidate.isDestroyed() && !candidate.webContents.getURL());
-      if (!win) return false;
-      await win.loadURL(devUrl);
-      return true;
-    }, DEV_SERVER_URL).catch(() => false);
+    const didStart = await app
+      .evaluate(async (electronApi, devUrl) => {
+        const win = electronApi.BrowserWindow.getAllWindows().find(
+          (candidate) => !candidate.isDestroyed() && !candidate.webContents.getURL(),
+        );
+        if (!win) return false;
+        await win.loadURL(devUrl);
+        return true;
+      }, DEV_SERVER_URL)
+      .catch(() => false);
     if (didStart || app.windows().length > 0) return;
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }
@@ -132,13 +163,21 @@ async function getMainPage(app: ElectronApplication): Promise<Page> {
         if (url.startsWith('devtools://') || url.endsWith('/splash.html')) continue;
         seen.add(url || '<empty-url>');
         await win.waitForLoadState('domcontentloaded', { timeout: 3_000 });
-        const ok = await win.evaluate(() => typeof (window as unknown as { Electron: unknown }).Electron !== 'undefined').catch(() => false);
+        const ok = await win
+          .evaluate(
+            () => typeof (window as unknown as { Electron: unknown }).Electron !== 'undefined',
+          )
+          .catch(() => false);
         if (ok) return win;
-      } catch { /* try next window */ }
+      } catch {
+        /* try next window */
+      }
     }
     await new Promise<void>((r) => setTimeout(r, 300));
   }
-  throw new Error(`Timed out waiting for window with Electron bridge. Seen windows: ${[...seen].join(', ') || 'none'}`);
+  throw new Error(
+    `Timed out waiting for window with Electron bridge. Seen windows: ${[...seen].join(', ') || 'none'}`,
+  );
 }
 
 async function startFixtureServer(): Promise<FixtureServer> {
@@ -168,7 +207,8 @@ async function startFixtureServer(): Promise<FixtureServer> {
 
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('Fixture server did not bind to a TCP port');
+  if (!address || typeof address === 'string')
+    throw new Error('Fixture server did not bind to a TCP port');
   return {
     origin: `http://127.0.0.1:${address.port}`,
     close: () => closeServer(server),
@@ -177,7 +217,7 @@ async function startFixtureServer(): Promise<FixtureServer> {
 
 async function closeServer(server: Server): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve());
+    server.close((error) => (error ? reject(error) : resolve()));
   });
 }
 
@@ -200,13 +240,23 @@ test('window.Electron exposes all expected top-level namespaces', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const keys = await page.evaluate(
-      () => Object.keys((window as unknown as { Electron: Record<string, unknown> }).Electron ?? {}),
+    const keys = await page.evaluate(() =>
+      Object.keys((window as unknown as { Electron: Record<string, unknown> }).Electron ?? {}),
     );
     const required = [
-      'minimize', 'maximize', 'quit', 'reload', 'getAppVersion',
-      'dialogs', 'secureStorage', 'session', 'downloads',
-      'nativeTheme', 'windows', 'autoLaunch', 'externalCommands',
+      'minimize',
+      'maximize',
+      'quit',
+      'reload',
+      'getAppVersion',
+      'dialogs',
+      'secureStorage',
+      'session',
+      'downloads',
+      'nativeTheme',
+      'windows',
+      'autoLaunch',
+      'externalCommands',
     ];
     for (const key of required) {
       expect(keys).toContain(key);
@@ -226,9 +276,15 @@ test('Capacitor Preferences: set and get round-trips a value', async () => {
     // Use _CapElectron IPC bridge directly — bare ESM specifiers can't be
     // dynamically imported inside page.evaluate without the Vite bundler.
     const result = await page.evaluate(async () => {
-      const api = (window as unknown as { _CapElectron: { invoke: (ch: string, opts: unknown) => Promise<unknown> } })._CapElectron;
+      const api = (
+        window as unknown as {
+          _CapElectron: { invoke: (ch: string, opts: unknown) => Promise<unknown> };
+        }
+      )._CapElectron;
       await api.invoke('Preferences-set', { key: 'e2e-test', value: 'hello-playwright' });
-      const res = await api.invoke('Preferences-get', { key: 'e2e-test' }) as { value: string | null };
+      const res = (await api.invoke('Preferences-get', { key: 'e2e-test' })) as {
+        value: string | null;
+      };
       await api.invoke('Preferences-remove', { key: 'e2e-test' });
       return res.value;
     });
@@ -246,17 +302,51 @@ test('Capacitor Filesystem performs CRUD, copy, rename, and traversal protection
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
       const root = `e2e-fs-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       await api.invoke('Filesystem-mkdir', { path: root, directory: 'DATA', recursive: true });
-      await api.invoke('Filesystem-writeFile', { path: `${root}/hello.txt`, directory: 'DATA', data: 'hello', encoding: 'utf8' });
-      await api.invoke('Filesystem-appendFile', { path: `${root}/hello.txt`, directory: 'DATA', data: ' world', encoding: 'utf8' });
-      const read = await api.invoke('Filesystem-readFile', { path: `${root}/hello.txt`, directory: 'DATA', encoding: 'utf8' }) as { data: string };
-      const stat = await api.invoke('Filesystem-stat', { path: `${root}/hello.txt`, directory: 'DATA' }) as { type: string; size: number; uri: string };
-      await api.invoke('Filesystem-copy', { from: `${root}/hello.txt`, to: `${root}/copy.txt`, directory: 'DATA' });
-      await api.invoke('Filesystem-rename', { from: `${root}/copy.txt`, to: `${root}/renamed.txt`, directory: 'DATA' });
-      const listing = await api.invoke('Filesystem-readdir', { path: root, directory: 'DATA' }) as { files: Array<{ name: string; type: string }> };
-      const traversal = await api.invoke('Filesystem-readFile', { path: '../outside.txt', directory: 'DATA', encoding: 'utf8' }).then(
-        () => 'resolved',
-        (error) => String((error as Error).message ?? error),
-      );
+      await api.invoke('Filesystem-writeFile', {
+        path: `${root}/hello.txt`,
+        directory: 'DATA',
+        data: 'hello',
+        encoding: 'utf8',
+      });
+      await api.invoke('Filesystem-appendFile', {
+        path: `${root}/hello.txt`,
+        directory: 'DATA',
+        data: ' world',
+        encoding: 'utf8',
+      });
+      const read = (await api.invoke('Filesystem-readFile', {
+        path: `${root}/hello.txt`,
+        directory: 'DATA',
+        encoding: 'utf8',
+      })) as { data: string };
+      const stat = (await api.invoke('Filesystem-stat', {
+        path: `${root}/hello.txt`,
+        directory: 'DATA',
+      })) as { type: string; size: number; uri: string };
+      await api.invoke('Filesystem-copy', {
+        from: `${root}/hello.txt`,
+        to: `${root}/copy.txt`,
+        directory: 'DATA',
+      });
+      await api.invoke('Filesystem-rename', {
+        from: `${root}/copy.txt`,
+        to: `${root}/renamed.txt`,
+        directory: 'DATA',
+      });
+      const listing = (await api.invoke('Filesystem-readdir', {
+        path: root,
+        directory: 'DATA',
+      })) as { files: Array<{ name: string; type: string }> };
+      const traversal = await api
+        .invoke('Filesystem-readFile', {
+          path: '../outside.txt',
+          directory: 'DATA',
+          encoding: 'utf8',
+        })
+        .then(
+          () => 'resolved',
+          (error) => String((error as Error).message ?? error),
+        );
       await api.invoke('Filesystem-deleteFile', { path: `${root}/hello.txt`, directory: 'DATA' });
       await api.invoke('Filesystem-deleteFile', { path: `${root}/renamed.txt`, directory: 'DATA' });
       await api.invoke('Filesystem-rmdir', { path: root, directory: 'DATA' });
@@ -281,7 +371,7 @@ test('Capacitor Clipboard round-trips text through the native clipboard', async 
     const result = await page.evaluate(async (value) => {
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
       await api.invoke('Clipboard-write', { string: value });
-      return await api.invoke('Clipboard-read') as { value: string; type: string };
+      return (await api.invoke('Clipboard-read')) as { value: string; type: string };
     }, text);
 
     expect(result).toEqual({ value: text, type: 'text/plain' });
@@ -296,13 +386,21 @@ test('Capacitor Device and Network return stable desktop value shapes', async ()
     const page = await getMainPage(app);
     const result = await page.evaluate(async () => {
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
-      const firstId = await api.invoke('Device-getId') as { identifier: string };
-      const secondId = await api.invoke('Device-getId') as { identifier: string };
-      const info = await api.invoke('Device-getInfo') as { platform: string; operatingSystem: string; webViewVersion: string; memUsed: number };
-      const battery = await api.invoke('Device-getBatteryInfo') as Record<string, unknown>;
-      const languageCode = await api.invoke('Device-getLanguageCode') as { value: string };
-      const languageTag = await api.invoke('Device-getLanguageTag') as { value: string };
-      const network = await api.invoke('Network-getStatus') as { connected: boolean; connectionType: string };
+      const firstId = (await api.invoke('Device-getId')) as { identifier: string };
+      const secondId = (await api.invoke('Device-getId')) as { identifier: string };
+      const info = (await api.invoke('Device-getInfo')) as {
+        platform: string;
+        operatingSystem: string;
+        webViewVersion: string;
+        memUsed: number;
+      };
+      const battery = (await api.invoke('Device-getBatteryInfo')) as Record<string, unknown>;
+      const languageCode = (await api.invoke('Device-getLanguageCode')) as { value: string };
+      const languageTag = (await api.invoke('Device-getLanguageTag')) as { value: string };
+      const network = (await api.invoke('Network-getStatus')) as {
+        connected: boolean;
+        connectionType: string;
+      };
       return { firstId, secondId, info, battery, languageCode, languageTag, network };
     });
 
@@ -330,17 +428,27 @@ test('Capacitor Filesystem.downloadFile downloads from a local HTTP server', asy
     const result = await page.evaluate(async (origin) => {
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
       const target = `e2e-download-${Date.now()}.txt`;
-      const downloaded = await api.invoke('Filesystem-downloadFile', {
+      const downloaded = (await api.invoke('Filesystem-downloadFile', {
         url: `${origin}/download.txt`,
         path: target,
         directory: 'DATA',
-      }) as { path: string; uri: string };
-      const read = await api.invoke('Filesystem-readFile', { path: target, directory: 'DATA', encoding: 'utf8' }) as { data: string };
+      })) as { path: string; uri: string };
+      const read = (await api.invoke('Filesystem-readFile', {
+        path: target,
+        directory: 'DATA',
+        encoding: 'utf8',
+      })) as { data: string };
       await api.invoke('Filesystem-deleteFile', { path: target, directory: 'DATA' });
-      const rejected = await api.invoke('Filesystem-downloadFile', { url: 'file:///etc/passwd', path: target, directory: 'DATA' }).then(
-        () => 'resolved',
-        (error) => String((error as Error).message ?? error),
-      );
+      const rejected = await api
+        .invoke('Filesystem-downloadFile', {
+          url: 'file:///etc/passwd',
+          path: target,
+          directory: 'DATA',
+        })
+        .then(
+          () => 'resolved',
+          (error) => String((error as Error).message ?? error),
+        );
       return { downloaded, read, rejected };
     }, server.origin);
 
@@ -359,8 +467,10 @@ test('window.Electron.getAppVersion() returns a semver string', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const version = await page.evaluate(
-      async () => (window as unknown as { Electron: { getAppVersion: () => Promise<string> } }).Electron.getAppVersion(),
+    const version = await page.evaluate(async () =>
+      (
+        window as unknown as { Electron: { getAppVersion: () => Promise<string> } }
+      ).Electron.getAppVersion(),
     );
     expect(version).toMatch(/^\d+\.\d+\.\d+/);
   } finally {
@@ -372,8 +482,16 @@ test('window.Electron.nativeTheme.get() returns a theme object', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const theme = await page.evaluate(
-      async () => (window as unknown as { Electron: { nativeTheme: { get: () => Promise<{ themeSource: string; shouldUseDarkColors: boolean }> } } }).Electron.nativeTheme.get(),
+    const theme = await page.evaluate(async () =>
+      (
+        window as unknown as {
+          Electron: {
+            nativeTheme: {
+              get: () => Promise<{ themeSource: string; shouldUseDarkColors: boolean }>;
+            };
+          };
+        }
+      ).Electron.nativeTheme.get(),
     );
     expect(theme).toHaveProperty('themeSource');
     expect(theme).toHaveProperty('shouldUseDarkColors');
@@ -415,8 +533,10 @@ test('isMaximized() returns false on a normal launch', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const maximized = await page.evaluate(
-      async () => (window as unknown as { Electron: { isMaximized: () => Promise<boolean> } }).Electron.isMaximized(),
+    const maximized = await page.evaluate(async () =>
+      (
+        window as unknown as { Electron: { isMaximized: () => Promise<boolean> } }
+      ).Electron.isMaximized(),
     );
     expect(maximized).toBe(false);
   } finally {
@@ -428,8 +548,10 @@ test('isFullscreen() returns false on a normal launch', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const fullscreen = await page.evaluate(
-      async () => (window as unknown as { Electron: { isFullscreen: () => Promise<boolean> } }).Electron.isFullscreen(),
+    const fullscreen = await page.evaluate(async () =>
+      (
+        window as unknown as { Electron: { isFullscreen: () => Promise<boolean> } }
+      ).Electron.isFullscreen(),
     );
     expect(fullscreen).toBe(false);
   } finally {
@@ -443,8 +565,12 @@ test('isEncryptionAvailable() returns a boolean', async () => {
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const available = await page.evaluate(
-      async () => (window as unknown as { Electron: { secureStorage: { isEncryptionAvailable: () => Promise<boolean> } } }).Electron.secureStorage.isEncryptionAvailable(),
+    const available = await page.evaluate(async () =>
+      (
+        window as unknown as {
+          Electron: { secureStorage: { isEncryptionAvailable: () => Promise<boolean> } };
+        }
+      ).Electron.secureStorage.isEncryptionAvailable(),
     );
     expect(typeof available).toBe('boolean');
   } finally {
@@ -501,10 +627,14 @@ test('managed external URL windows reject unsafe URL schemes', async () => {
         Electron.windows.create({ url: 'javascript:alert(1)' }),
         Electron.windows.openExternal('javascript:alert(1)'),
       ];
-      return Promise.all(attempts.map((attempt) => attempt.then(
-        () => 'resolved',
-        (error) => String((error as Error).message ?? error),
-      )));
+      return Promise.all(
+        attempts.map((attempt) =>
+          attempt.then(
+            () => 'resolved',
+            (error) => String((error as Error).message ?? error),
+          ),
+        ),
+      );
     });
 
     for (const message of errors) {
@@ -542,10 +672,18 @@ test('AppLauncher bridge allows declared schemes and blocks dangerous schemes', 
     const page = await getMainPage(app);
     const result = await page.evaluate(async () => {
       const api = (window as unknown as { _CapElectron: CapElectronBridge })._CapElectron;
-      const http = await api.invoke('AppLauncher-canOpenUrl', { url: 'https://example.com/' }) as { value: boolean };
-      const declared = await api.invoke('AppLauncher-canOpenUrl', { url: 'capelectron://test' }) as { value: boolean };
-      const blocked = await api.invoke('AppLauncher-canOpenUrl', { url: 'javascript:alert(1)' }) as { value: boolean };
-      const blockedOpen = await api.invoke('AppLauncher-openUrl', { url: 'javascript:alert(1)' }) as { completed: boolean };
+      const http = (await api.invoke('AppLauncher-canOpenUrl', {
+        url: 'https://example.com/',
+      })) as { value: boolean };
+      const declared = (await api.invoke('AppLauncher-canOpenUrl', {
+        url: 'capelectron://test',
+      })) as { value: boolean };
+      const blocked = (await api.invoke('AppLauncher-canOpenUrl', {
+        url: 'javascript:alert(1)',
+      })) as { value: boolean };
+      const blockedOpen = (await api.invoke('AppLauncher-openUrl', {
+        url: 'javascript:alert(1)',
+      })) as { completed: boolean };
       return { http, declared, blocked, blockedOpen };
     });
 
@@ -600,7 +738,9 @@ test('session bridge sets user agent and manages cookies', async () => {
     });
 
     expect(result.updatedUserAgent).toContain('CapElectronE2E');
-    expect(result.cookiesAfterSet).toContainEqual(expect.objectContaining({ name: 'cap-e2e', value: 'cookie-value' }));
+    expect(result.cookiesAfterSet).toContainEqual(
+      expect.objectContaining({ name: 'cap-e2e', value: 'cookie-value' }),
+    );
     expect(result.cookiesAfterRemove.find((cookie) => cookie.name === 'cap-e2e')).toBeUndefined();
   } finally {
     await app.close();
@@ -608,15 +748,25 @@ test('session bridge sets user agent and manages cookies', async () => {
 });
 
 test('print bridge writes PDF data and PDF files', async () => {
-  const pdfPath = path.join(os.tmpdir(), `cap-electron-print-${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`);
+  const pdfPath = path.join(
+    os.tmpdir(),
+    `cap-electron-print-${Date.now()}-${Math.random().toString(36).slice(2)}.pdf`,
+  );
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
     const result = await page.evaluate(async (targetPath) => {
       const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
-      const inline = await Electron.print.printToPDF({ options: { printBackground: true, pageSize: 'A4' } });
-      const file = await Electron.print.printToPDF({ path: targetPath, options: { landscape: true, printBackground: true } });
-      const inlineHeader = inline.data ? Array.from(Uint8Array.from(atob(inline.data), (char) => char.charCodeAt(0)).slice(0, 4)) : [];
+      const inline = await Electron.print.printToPDF({
+        options: { printBackground: true, pageSize: 'A4' },
+      });
+      const file = await Electron.print.printToPDF({
+        path: targetPath,
+        options: { landscape: true, printBackground: true },
+      });
+      const inlineHeader = inline.data
+        ? Array.from(Uint8Array.from(atob(inline.data), (char) => char.charCodeAt(0)).slice(0, 4))
+        : [];
       return { inlineHeader, file };
     }, pdfPath);
 
@@ -631,33 +781,51 @@ test('print bridge writes PDF data and PDF files', async () => {
 
 test('downloads bridge saves a local HTTP download and emits completion', async () => {
   const server = await startFixtureServer();
-  const savePath = path.join(os.tmpdir(), `cap-electron-download-${Date.now()}-${Math.random().toString(36).slice(2)}.bin`);
+  const savePath = path.join(
+    os.tmpdir(),
+    `cap-electron-download-${Date.now()}-${Math.random().toString(36).slice(2)}.bin`,
+  );
   const app = await launchApp();
   try {
     const page = await getMainPage(app);
-    const result = await page.evaluate(async ({ origin, targetPath }) => {
-      const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
-      let startedId = '';
-      const completed = new Promise<{ id: string; state: string; savePath?: string; receivedBytes: number; totalBytes: number }>((resolve, reject) => {
-        let unsubscribe = () => {};
-        const timeout = window.setTimeout(() => {
-          unsubscribe();
-          reject(new Error('Timed out waiting for download completion'));
-        }, 15_000);
-        unsubscribe = Electron.downloads.on((event) => {
-          if (event.type === 'completed' && (event.data.id === startedId || event.data.savePath === targetPath)) {
-            window.clearTimeout(timeout);
+    const result = await page.evaluate(
+      async ({ origin, targetPath }) => {
+        const Electron = (window as unknown as { Electron: ElectronBridgeForE2E }).Electron;
+        let startedId = '';
+        const completed = new Promise<{
+          id: string;
+          state: string;
+          savePath?: string;
+          receivedBytes: number;
+          totalBytes: number;
+        }>((resolve, reject) => {
+          let unsubscribe = () => {};
+          const timeout = window.setTimeout(() => {
             unsubscribe();
-            resolve(event.data);
-          }
+            reject(new Error('Timed out waiting for download completion'));
+          }, 15_000);
+          unsubscribe = Electron.downloads.on((event) => {
+            if (
+              event.type === 'completed' &&
+              (event.data.id === startedId || event.data.savePath === targetPath)
+            ) {
+              window.clearTimeout(timeout);
+              unsubscribe();
+              resolve(event.data);
+            }
+          });
         });
-      });
-      const started = await Electron.downloads.start({ url: `${origin}/download.bin`, savePath: targetPath });
-      startedId = started.id;
-      const done = await completed;
-      const active = await Electron.downloads.getActive();
-      return { started, done, activeCount: active.length };
-    }, { origin: server.origin, targetPath: savePath });
+        const started = await Electron.downloads.start({
+          url: `${origin}/download.bin`,
+          savePath: targetPath,
+        });
+        startedId = started.id;
+        const done = await completed;
+        const active = await Electron.downloads.getActive();
+        return { started, done, activeCount: active.length };
+      },
+      { origin: server.origin, targetPath: savePath },
+    );
 
     expect(result.started.id).toBeTruthy();
     expect(result.done).toMatchObject({ id: result.started.id, state: 'completed', savePath });

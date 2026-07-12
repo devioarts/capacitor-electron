@@ -6,4 +6,6 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-execFileSync(process.execPath, [join(__dirname, 'run.js'), ...process.argv.slice(2)], { stdio: 'inherit' });
+execFileSync(process.execPath, [join(__dirname, 'run.js'), ...process.argv.slice(2)], {
+  stdio: 'inherit',
+});

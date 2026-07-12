@@ -24,23 +24,33 @@ export function assertJsIdentifier(value: unknown, field: string, packageName: s
 
 export function assertSafeString(value: unknown, field: string, packageName: string): string {
   if (
-    typeof value !== 'string'
-    || value.length === 0
-    || value.length > MAX_PLUGIN_STRING_LENGTH
+    typeof value !== 'string' ||
+    value.length === 0 ||
+    value.length > MAX_PLUGIN_STRING_LENGTH ||
     // eslint-disable-next-line no-control-regex
-    || /[\x00-\x1f\x7f]/.test(value)
+    /[\x00-\x1f\x7f]/.test(value)
   ) {
-    throw new Error(`${packageName}: ${field} must be a non-empty string without control characters`);
+    throw new Error(
+      `${packageName}: ${field} must be a non-empty string without control characters`,
+    );
   }
   return value;
 }
 
-export function assertStringArray(value: unknown, field: string, packageName: string): readonly string[] {
+export function assertStringArray(
+  value: unknown,
+  field: string,
+  packageName: string,
+): readonly string[] {
   if (!Array.isArray(value)) throw new Error(`${packageName}: ${field} must be an array`);
   return value.map((item, index) => assertSafeString(item, `${field}[${index}]`, packageName));
 }
 
-export function assertIdentifierArray(value: unknown, field: string, packageName: string): readonly string[] {
+export function assertIdentifierArray(
+  value: unknown,
+  field: string,
+  packageName: string,
+): readonly string[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) throw new Error(`${packageName}: ${field} must be an array`);
   return value.map((item, index) => assertJsIdentifier(item, `${field}[${index}]`, packageName));
@@ -57,22 +67,30 @@ export function isRecord(value: unknown): value is MutableRecord {
 
 export function isInsideDir(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
-  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+  return (
+    relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative))
+  );
 }
 
-export function validatePluginSettings(packageName: string, raw: unknown): PluginSettings & RequiredPluginSettings {
+export function validatePluginSettings(
+  packageName: string,
+  raw: unknown,
+): PluginSettings & RequiredPluginSettings {
   if (!isRecord(raw)) throw new Error(`${packageName}: pluginSettings must be an object`);
 
   const pluginClass = assertJsIdentifier(raw['pluginClass'], 'pluginClass', packageName);
   const pluginMethods = assertIdentifierArray(raw['pluginMethods'], 'pluginMethods', packageName);
-  if (pluginMethods.length === 0) throw new Error(`${packageName}: pluginMethods must not be empty`);
+  if (pluginMethods.length === 0)
+    throw new Error(`${packageName}: pluginMethods must not be empty`);
 
-  const pluginEvents = raw['pluginEvents'] === undefined
-    ? undefined
-    : assertStringArray(raw['pluginEvents'], 'pluginEvents', packageName);
-  const configSections = raw['configSections'] === undefined
-    ? undefined
-    : assertIdentifierArray(raw['configSections'], 'configSections', packageName);
+  const pluginEvents =
+    raw['pluginEvents'] === undefined
+      ? undefined
+      : assertStringArray(raw['pluginEvents'], 'pluginEvents', packageName);
+  const configSections =
+    raw['configSections'] === undefined
+      ? undefined
+      : assertIdentifierArray(raw['configSections'], 'configSections', packageName);
   const autoRegister = raw['autoRegister'];
   if (autoRegister !== undefined && typeof autoRegister !== 'boolean') {
     throw new Error(`${packageName}: autoRegister must be a boolean`);
@@ -137,7 +155,9 @@ export function generateElectronMainAuto(plugins: PluginEntry[]): string {
   parts.push('', 'void (async () => {', '  await app.whenReady();');
 
   for (const { pluginClass, pluginMethods } of autoPlugins) {
-    parts.push(`  registerPlugin(${JSON.stringify(pluginClass)}, new ${pluginClass}() as unknown as AnyRecord, ${JSON.stringify(pluginMethods)});`);
+    parts.push(
+      `  registerPlugin(${JSON.stringify(pluginClass)}, new ${pluginClass}() as unknown as AnyRecord, ${JSON.stringify(pluginMethods)});`,
+    );
   }
 
   parts.push('})();');

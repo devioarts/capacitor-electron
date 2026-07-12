@@ -1,3 +1,26 @@
+<p align="center">
+<img src="https://img.shields.io/badge/status-early--stage-orange" alt="Project status" />
+  <a href="https://www.npmjs.com/package/@devioarts/capacitor-electron">
+    <img src="https://img.shields.io/npm/v/@devioarts/capacitor-electron.svg" alt="npm version" />
+  </a>
+  <a href="https://www.npmjs.com/package/@devioarts/capacitor-electron">
+    <img src="https://img.shields.io/npm/dw/@devioarts/capacitor-electron" alt="npm downloads" />
+  </a>
+  <a href="https://github.com/devioarts/capacitor-electron/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/devioarts/capacitor-electron/ci.yml?branch=main" alt="CI status" />
+  </a>
+  <a href="https://github.com/devioarts/capacitor-electron/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/devioarts/capacitor-electron" alt="License" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Capacitor-%E2%89%A58-blue" alt="Capacitor >= 8" />
+  <img src="https://img.shields.io/badge/Electron-%E2%89%A543-47848f" alt="Electron >= 43" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A524-339933" alt="Node.js >= 24" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platforms" />
+</p>
+
 # @devioarts/capacitor-electron
 
 Capacitor platform plugin that adds Electron support to any Capacitor app. Provides a CLI (`cap-electron`) for scaffolding, syncing plugins, copying assets, and launching the app in development.

@@ -11,8 +11,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 const includeAll = process.argv.includes('--all');
 
@@ -34,7 +35,9 @@ try {
   execFileSync(process.execPath, [path.join(__dirname, 'update.js')], { stdio: 'inherit' });
 } catch (e) {
   const elapsed = (performance.now() - start).toFixed(2);
-  console.error(`\x1b[1;31m✖ sync electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`);
+  console.error(
+    `\x1b[1;31m✖ sync electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`,
+  );
   process.exit(1);
 }
 
@@ -44,9 +47,11 @@ if (includeAll) {
     path.join(electronDir, 'package.json'),
     path.join(electronDir, 'package-lock.json'),
   );
-  console.log(changed
-    ? '[cap-electron] Synced Electron package metadata.'
-    : '[cap-electron] Electron package metadata already up to date.');
+  console.log(
+    changed
+      ? '[cap-electron] Synced Electron package metadata.'
+      : '[cap-electron] Electron package metadata already up to date.',
+  );
 }
 
 const elapsed = (performance.now() - start).toFixed(2);

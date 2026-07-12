@@ -15,8 +15,12 @@ vi.mock('electron', () => ({
   app: { getPath: mockGetPath, getName: () => 'TestApp', on: () => {} },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isDestroyed() { return false; }
+    static getAllWindows() {
+      return [];
+    }
+    isDestroyed() {
+      return false;
+    }
     webContents = { send: () => {} };
   },
 }));
@@ -37,8 +41,8 @@ beforeAll(async () => {
 
   // Capture ipcMain.handle registrations (called via registerPlugin inside the module).
   const { ipcMain } = await import('electron');
-  (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation(
-    (channel: string, fn: Handler) => handlers.set(channel, fn),
+  (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation((channel: string, fn: Handler) =>
+    handlers.set(channel, fn),
   );
 
   // Import the module — side effects run here (mkdirSync, readFileSync attempt).
@@ -69,27 +73,27 @@ beforeEach(async () => {
 
 describe('Preferences CRUD', () => {
   it('get returns null for a missing key', async () => {
-    const result = await call('get', { key: 'missing' }) as { value: string | null };
+    const result = (await call('get', { key: 'missing' })) as { value: string | null };
     expect(result.value).toBeNull();
   });
 
   it('set then get returns the stored value', async () => {
     await call('set', { key: 'name', value: 'Alice' });
-    const result = await call('get', { key: 'name' }) as { value: string | null };
+    const result = (await call('get', { key: 'name' })) as { value: string | null };
     expect(result.value).toBe('Alice');
   });
 
   it('set overwrites an existing key', async () => {
     await call('set', { key: 'x', value: 'first' });
     await call('set', { key: 'x', value: 'second' });
-    const result = await call('get', { key: 'x' }) as { value: string | null };
+    const result = (await call('get', { key: 'x' })) as { value: string | null };
     expect(result.value).toBe('second');
   });
 
   it('remove deletes a key', async () => {
     await call('set', { key: 'temp', value: '42' });
     await call('remove', { key: 'temp' });
-    const result = await call('get', { key: 'temp' }) as { value: string | null };
+    const result = (await call('get', { key: 'temp' })) as { value: string | null };
     expect(result.value).toBeNull();
   });
 
@@ -100,14 +104,14 @@ describe('Preferences CRUD', () => {
   it('keys returns all stored keys', async () => {
     await call('set', { key: 'a', value: '1' });
     await call('set', { key: 'b', value: '2' });
-    const result = await call('keys') as { keys: string[] };
+    const result = (await call('keys')) as { keys: string[] };
     expect(result.keys.sort()).toEqual(['a', 'b']);
   });
 
   it('clear empties the store', async () => {
     await call('set', { key: 'p', value: 'q' });
     await call('clear');
-    const result = await call('keys') as { keys: string[] };
+    const result = (await call('keys')) as { keys: string[] };
     expect(result.keys).toHaveLength(0);
   });
 });
@@ -160,7 +164,7 @@ describe('Preferences write queue', () => {
     await new Promise((r) => setTimeout(r, 100));
 
     // The in-memory store should reflect the last written value.
-    const result = await call('get', { key: 'race' }) as { value: string | null };
+    const result = (await call('get', { key: 'race' })) as { value: string | null };
     expect(result.value).toBe('v4');
 
     // The file must also be consistent (no partial write / corruption).
@@ -174,7 +178,7 @@ describe('Preferences write queue', () => {
 describe('Preferences.migrate', () => {
   it('imports keys from CapacitorStorage. prefix', async () => {
     const ls = { 'CapacitorStorage.theme': 'dark', 'CapacitorStorage.lang': 'cs' };
-    const result = await call('migrate', { __localStorage: ls }) as {
+    const result = (await call('migrate', { __localStorage: ls })) as {
       migrated: string[];
       existing: string[];
     };
@@ -184,8 +188,8 @@ describe('Preferences.migrate', () => {
   });
 
   it('imports keys from _cap_ prefix (legacy fallback)', async () => {
-    const ls = { '_cap_oldKey': 'hello' };
-    const result = await call('migrate', { __localStorage: ls }) as {
+    const ls = { _cap_oldKey: 'hello' };
+    const result = (await call('migrate', { __localStorage: ls })) as {
       migrated: string[];
       existing: string[];
     };
@@ -195,7 +199,7 @@ describe('Preferences.migrate', () => {
   it('marks keys as existing when already present in store', async () => {
     await call('set', { key: 'taken', value: 'original' });
     const ls = { 'CapacitorStorage.taken': 'overwrite?' };
-    const result = await call('migrate', { __localStorage: ls }) as {
+    const result = (await call('migrate', { __localStorage: ls })) as {
       migrated: string[];
       existing: string[];
     };

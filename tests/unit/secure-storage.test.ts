@@ -15,14 +15,19 @@ const { mockGetPath, mockGetName } = vi.hoisted(() => ({
 
 // Simple XOR-based fake encryption so we can verify round-trips without a real keychain.
 const fakeEncrypt = (s: string) => Buffer.from(s.split('').map((c) => c.charCodeAt(0) ^ 0x42));
-const fakeDecrypt = (b: Buffer) => b.map((byte) => byte ^ 0x42).reduce((acc, c) => acc + String.fromCharCode(c), '');
+const fakeDecrypt = (b: Buffer) =>
+  b.map((byte) => byte ^ 0x42).reduce((acc, c) => acc + String.fromCharCode(c), '');
 
 vi.mock('electron', () => ({
   app: { getPath: mockGetPath, getName: mockGetName, on: () => {} },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isDestroyed() { return false; }
+    static getAllWindows() {
+      return [];
+    }
+    isDestroyed() {
+      return false;
+    }
   },
   safeStorage: {
     isEncryptionAvailable: () => true,
@@ -42,8 +47,8 @@ beforeAll(async () => {
   mockGetPath.mockImplementation(() => tmpDir);
 
   const { ipcMain } = await import('electron');
-  (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation(
-    (channel: string, fn: Handler) => handlers.set(channel, fn),
+  (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation((channel: string, fn: Handler) =>
+    handlers.set(channel, fn),
   );
 
   await import('../../src/template-electron/src/system/static/electron-api/secure-storage-main.js');
@@ -81,17 +86,15 @@ describe('storageKey (key mode)', () => {
 
   it('storageKey export returns the raw key in plain mode', async () => {
     // Direct test of the exported function.
-    const { storageKey } = await import(
-      '../../src/template-electron/src/system/static/electron-api/secure-storage-main.js'
-    );
+    const { storageKey } =
+      await import('../../src/template-electron/src/system/static/electron-api/secure-storage-main.js');
     expect(storageKey('hello')).toBe('hello');
     expect(storageKey('user-auth-token')).toBe('user-auth-token');
   });
 
   it('keys() is explicitly unsupported when key names are stored hashed', async () => {
-    const { assertCanListSecureStorageKeys } = await import(
-      '../../src/template-electron/src/system/static/electron-api/secure-storage-main.js'
-    );
+    const { assertCanListSecureStorageKeys } =
+      await import('../../src/template-electron/src/system/static/electron-api/secure-storage-main.js');
 
     expect(() => assertCanListSecureStorageKeys('hashed')).toThrow(
       "secureStorage.keys is not supported when app.security.secureStorageKeys is 'hashed'",

@@ -1,6 +1,7 @@
 // @ts-check
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   // Base JS recommended rules
@@ -8,10 +9,11 @@ export default tseslint.config(
 
   // TypeScript rules (type-aware for src/cli and src/shared)
   {
-    files: ['src/**/*.ts', 'tests/**/*.ts'],
+    files: ['src/**/*.ts', 'scripts/**/*.ts', 'tests/**/*.ts'],
     extends: [
       ...tseslint.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
+      eslintConfigPrettier,
     ],
     languageOptions: {
       parserOptions: {

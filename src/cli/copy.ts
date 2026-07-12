@@ -14,8 +14,9 @@ const start = performance.now();
 
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
@@ -32,14 +33,18 @@ if (!fs.existsSync(webDir)) {
 }
 
 const appDir = path.join(electronDir, 'app');
-console.log(`[cap-electron] Copying web assets: ${path.relative(capacitorRoot, webDir)} → electron/app`);
+console.log(
+  `[cap-electron] Copying web assets: ${path.relative(capacitorRoot, webDir)} → electron/app`,
+);
 
 try {
   if (fs.existsSync(appDir)) await rm(appDir, { recursive: true, force: true });
   await cp(webDir, appDir, { recursive: true });
 } catch (e) {
   const elapsed = (performance.now() - start).toFixed(2);
-  console.error(`\x1b[1;31m✖ copy electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`);
+  console.error(
+    `\x1b[1;31m✖ copy electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`,
+  );
   process.exit(1);
 }
 
@@ -55,10 +60,12 @@ function getWebDir(): string {
 
   try {
     const cfg = JSON.parse(
-      fs.readFileSync(path.join(electronDir, 'capacitor.config.json'), 'utf-8')
+      fs.readFileSync(path.join(electronDir, 'capacitor.config.json'), 'utf-8'),
     ) as { webDir?: string };
     if (cfg.webDir) return path.join(capacitorRoot, cfg.webDir);
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
 
   return path.join(capacitorRoot, 'dist');
 }

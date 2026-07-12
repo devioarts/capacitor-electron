@@ -27,19 +27,29 @@ const ROOT_METADATA_KEYS = [
 export function readAppMeta(root: string): AppMeta {
   if (process.env['CAPACITOR_CONFIG']) {
     try {
-      const cfg = JSON.parse(process.env['CAPACITOR_CONFIG']) as { appName?: string; appId?: string };
+      const cfg = JSON.parse(process.env['CAPACITOR_CONFIG']) as {
+        appName?: string;
+        appId?: string;
+      };
       if (cfg.appId && cfg.appName) return { appName: cfg.appName, appId: cfg.appId };
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
   }
 
   const jsonCfg = path.join(root, 'capacitor.config.json');
   if (fs.existsSync(jsonCfg)) {
     try {
-      const cfg = JSON.parse(fs.readFileSync(jsonCfg, 'utf-8')) as { appName?: string; appId?: string };
+      const cfg = JSON.parse(fs.readFileSync(jsonCfg, 'utf-8')) as {
+        appName?: string;
+        appId?: string;
+      };
       if (cfg.appId || cfg.appName) {
         return { appName: cfg.appName ?? 'app', appId: cfg.appId ?? 'com.example.app' };
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
   }
 
   for (const ext of ['ts', 'js']) {
@@ -52,7 +62,9 @@ export function readAppMeta(root: string): AppMeta {
       if (appId || appName) {
         return { appName: appName ?? 'app', appId: appId ?? 'com.example.app' };
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
   }
 
   const rootPkg = readJson(path.join(root, 'package.json'));

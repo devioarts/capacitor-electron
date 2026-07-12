@@ -26,20 +26,34 @@ function mockSession() {
 
 vi.mock('electron', () => ({
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    static getFocusedWindow() { return null; }
+    static getAllWindows() {
+      return [];
+    }
+    static getFocusedWindow() {
+      return null;
+    }
     webContents = {
       loadURL: async () => {},
       once: vi.fn(),
       on: vi.fn(),
       executeJavaScript: async () => {},
     };
-    isDestroyed() { return false; }
+    isDestroyed() {
+      return false;
+    }
     close() {}
-    getContentSize(): [number, number] { return [1000, 720]; }
-    on() { return this; }
-    once() { return this; }
-    loadURL() { return Promise.resolve(); }
+    getContentSize(): [number, number] {
+      return [1000, 720];
+    }
+    on() {
+      return this;
+    }
+    once() {
+      return this;
+    }
+    loadURL() {
+      return Promise.resolve();
+    }
     contentView = { addChildView: () => {} };
   },
   WebContentsView: class {
@@ -161,7 +175,14 @@ describe('canOpenExternal', () => {
 
 describe('permission policy', () => {
   it('normalizes explicit permission allowlists', () => {
-    const permissions = normalizeAllowedPermissions(['media', ' geolocation ', '', 'bad permission', 42, 'notifications']);
+    const permissions = normalizeAllowedPermissions([
+      'media',
+      ' geolocation ',
+      '',
+      'bad permission',
+      42,
+      'notifications',
+    ]);
     expect([...permissions].sort()).toEqual(['geolocation', 'media', 'notifications']);
   });
 
@@ -173,10 +194,13 @@ describe('permission policy', () => {
 
   it('installs deny-by-default permission handlers on the selected session', async () => {
     createdSessions.length = 0;
-    await openElectronWebView({
-      url: 'https://example.com',
-      options: { electron: { session: { partition: 'persist:iab-test' } } },
-    }, { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' });
+    await openElectronWebView(
+      {
+        url: 'https://example.com',
+        options: { electron: { session: { partition: 'persist:iab-test' } } },
+      },
+      { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' },
+    );
 
     const ses = createdSessions[0];
     expect(ses.setPermissionRequestHandler).toHaveBeenCalledTimes(1);
@@ -194,10 +218,18 @@ describe('permission policy', () => {
 
   it('allows explicitly configured InAppBrowser permissions', async () => {
     createdSessions.length = 0;
-    await openElectronWebView({
-      url: 'https://example.com',
-      options: { electron: { session: { partition: 'persist:iab-media' }, permissions: { allowed: ['media'] } } },
-    }, { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' });
+    await openElectronWebView(
+      {
+        url: 'https://example.com',
+        options: {
+          electron: {
+            session: { partition: 'persist:iab-media' },
+            permissions: { allowed: ['media'] },
+          },
+        },
+      },
+      { plugin: 'InAppBrowser', closed: 'browserClosed', loaded: 'browserPageLoaded' },
+    );
 
     const ses = createdSessions[0];
     const requestHandler = ses.setPermissionRequestHandler.mock.calls[0][0] as (
@@ -293,7 +325,10 @@ describe('sanitizeWindowOptions', () => {
   });
 
   it('strips unknown / non-whitelisted keys', () => {
-    const opts = sanitizeWindowOptions({ evil: 'payload', injected: 'bad' }) as Record<string, unknown>;
+    const opts = sanitizeWindowOptions({ evil: 'payload', injected: 'bad' }) as Record<
+      string,
+      unknown
+    >;
     expect(opts['evil']).toBeUndefined();
     expect(opts['injected']).toBeUndefined();
   });

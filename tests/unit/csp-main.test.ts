@@ -23,7 +23,11 @@ vi.mock('electron', () => ({
   },
   app: { getPath: () => '/tmp', getName: () => 'TestApp', on: () => {} },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
-  BrowserWindow: class { static getAllWindows() { return []; } },
+  BrowserWindow: class {
+    static getAllWindows() {
+      return [];
+    }
+  },
 }));
 
 import {
@@ -40,8 +44,9 @@ describe('buildCsp', () => {
   });
 
   it('formats a directive with array value (joined with spaces)', () => {
-    expect(buildCsp({ 'script-src': ["'self'", "'unsafe-inline'"] }))
-      .toBe("script-src 'self' 'unsafe-inline'");
+    expect(buildCsp({ 'script-src': ["'self'", "'unsafe-inline'"] })).toBe(
+      "script-src 'self' 'unsafe-inline'",
+    );
   });
 
   it('joins multiple directives with "; "', () => {
@@ -70,14 +75,15 @@ function capturedHeaderValue(): string {
   if (calls.length === 0) throw new Error('onHeadersReceived was not called');
   const listener = calls[calls.length - 1][0] as HeadersReceivedCallback;
   let captured = '';
-  listener(
-    { responseHeaders: {} },
-    (r) => { captured = r.responseHeaders['Content-Security-Policy'][0]; },
-  );
+  listener({ responseHeaders: {} }, (r) => {
+    captured = r.responseHeaders['Content-Security-Policy'][0];
+  });
   return captured;
 }
 
-beforeEach(() => { mockOnHeadersReceived.mockReset(); });
+beforeEach(() => {
+  mockOnHeadersReceived.mockReset();
+});
 
 describe('setupCSP — disabled', () => {
   it('resolves to null when csp is false', () => {
@@ -92,7 +98,9 @@ describe('setupCSP — disabled', () => {
 
 describe('setupCSP — custom string', () => {
   it('resolves the string verbatim', () => {
-    expect(resolveCspHeader({ security: { csp: "default-src 'self'" } }, false)).toBe("default-src 'self'");
+    expect(resolveCspHeader({ security: { csp: "default-src 'self'" } }, false)).toBe(
+      "default-src 'self'",
+    );
   });
 
   it('uses the string verbatim as the CSP header value', () => {
@@ -103,12 +111,23 @@ describe('setupCSP — custom string', () => {
 
 describe('setupCSP — custom object', () => {
   it('resolves a directive object to a CSP string', () => {
-    expect(resolveCspHeader({ security: { csp: { 'default-src': "'self'", 'img-src': ["'self'", 'data:'] } } }, false))
-      .toBe("default-src 'self'; img-src 'self' data:");
+    expect(
+      resolveCspHeader(
+        { security: { csp: { 'default-src': "'self'", 'img-src': ["'self'", 'data:'] } } },
+        false,
+      ),
+    ).toBe("default-src 'self'; img-src 'self' data:");
   });
 
   it('builds CSP from directive object', () => {
-    setupCSP({ security: { csp: { 'default-src': "'self'", 'connect-src': "'self' https://api.example.com" } } }, false);
+    setupCSP(
+      {
+        security: {
+          csp: { 'default-src': "'self'", 'connect-src': "'self' https://api.example.com" },
+        },
+      },
+      false,
+    );
     const header = capturedHeaderValue();
     expect(header).toContain("default-src 'self'");
     expect(header).toContain("connect-src 'self' https://api.example.com");
@@ -163,10 +182,9 @@ describe('setupCSP — response headers passthrough', () => {
     setupCSP({}, false);
     const listener = mockOnHeadersReceived.mock.calls[0][0] as HeadersReceivedCallback;
     let result: Record<string, string[]> = {};
-    listener(
-      { responseHeaders: { 'X-Custom': ['value'] } },
-      (r) => { result = r.responseHeaders; },
-    );
+    listener({ responseHeaders: { 'X-Custom': ['value'] } }, (r) => {
+      result = r.responseHeaders;
+    });
     expect(result['X-Custom']).toEqual(['value']);
     expect(result['Content-Security-Policy']).toBeDefined();
   });

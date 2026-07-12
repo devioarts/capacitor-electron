@@ -15,8 +15,12 @@ vi.mock('electron', () => ({
   app: { getPath: mockGetPath, getName: () => 'TestApp', on: () => {} },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isDestroyed() { return false; }
+    static getAllWindows() {
+      return [];
+    }
+    isDestroyed() {
+      return false;
+    }
   },
 }));
 
@@ -25,16 +29,21 @@ vi.mock('electron', () => ({
 const tmpDir = realFs.mkdtempSync(path.join(os.tmpdir(), 'cap-fs-test-'));
 
 let resolvePath: (filePath: string, directory?: string) => string;
-let Filesystem: new () => InstanceType<typeof import('../../src/template-electron/src/system/static/capacitor-api/filesystem-main.js')['Filesystem']>;
+let Filesystem: new () => InstanceType<
+  (typeof import('../../src/template-electron/src/system/static/capacitor-api/filesystem-main.js'))['Filesystem']
+>;
 
 beforeAll(async () => {
   mockGetPath.mockImplementation(() => tmpDir);
-  const mod = await import('../../src/template-electron/src/system/static/capacitor-api/filesystem-main.js');
+  const mod =
+    await import('../../src/template-electron/src/system/static/capacitor-api/filesystem-main.js');
   resolvePath = mod.resolvePath;
-  Filesystem  = mod.Filesystem;
+  Filesystem = mod.Filesystem;
 });
 
-afterAll(() => { realFs.rmSync(tmpDir, { recursive: true, force: true }); });
+afterAll(() => {
+  realFs.rmSync(tmpDir, { recursive: true, force: true });
+});
 
 // ── resolvePath ───────────────────────────────────────────────────────────────
 
@@ -76,7 +85,7 @@ describe('resolvePath — path traversal guard (security)', () => {
     expect(() => resolvePath('../../../etc/passwd', 'DATA')).toThrow('Path traversal');
   });
 
-  it('throws for path that escapes via ..',  () => {
+  it('throws for path that escapes via ..', () => {
     expect(() => resolvePath('../outside.txt', 'DATA')).toThrow('Path traversal');
   });
 
@@ -93,7 +102,9 @@ describe('resolvePath — path traversal guard (security)', () => {
 
 describe('Filesystem.writeFile / readFile', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('writes and reads a UTF-8 text file', async () => {
     await fs.writeFile({ path: path.join(tmpDir, 'hello.txt'), data: 'hello', encoding: 'utf8' });
@@ -109,7 +120,11 @@ describe('Filesystem.writeFile / readFile', () => {
   });
 
   it('returns uri pointing to the written file', async () => {
-    const { uri } = await fs.writeFile({ path: path.join(tmpDir, 'uri-test.txt'), data: 'x', encoding: 'utf8' });
+    const { uri } = await fs.writeFile({
+      path: path.join(tmpDir, 'uri-test.txt'),
+      data: 'x',
+      encoding: 'utf8',
+    });
     expect(uri).toMatch(/^file:\/\//);
     expect(uri).toContain('uri-test.txt');
   });
@@ -121,14 +136,17 @@ describe('Filesystem.writeFile / readFile', () => {
   });
 
   it('readFile throws mapped error for missing file', async () => {
-    await expect(fs.readFile({ path: path.join(tmpDir, 'missing.txt'), encoding: 'utf8' }))
-      .rejects.toThrow('File does not exist');
+    await expect(
+      fs.readFile({ path: path.join(tmpDir, 'missing.txt'), encoding: 'utf8' }),
+    ).rejects.toThrow('File does not exist');
   });
 });
 
 describe('Filesystem.appendFile', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('appends text to an existing file', async () => {
     const p = path.join(tmpDir, 'append.txt');
@@ -141,7 +159,9 @@ describe('Filesystem.appendFile', () => {
 
 describe('Filesystem.deleteFile', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('deletes an existing file', async () => {
     const p = path.join(tmpDir, 'to-delete.txt');
@@ -151,14 +171,17 @@ describe('Filesystem.deleteFile', () => {
   });
 
   it('throws mapped error when deleting non-existent file', async () => {
-    await expect(fs.deleteFile({ path: path.join(tmpDir, 'ghost.txt') }))
-      .rejects.toThrow('File does not exist');
+    await expect(fs.deleteFile({ path: path.join(tmpDir, 'ghost.txt') })).rejects.toThrow(
+      'File does not exist',
+    );
   });
 });
 
 describe('Filesystem.mkdir / rmdir', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('creates a directory', async () => {
     const d = path.join(tmpDir, 'newdir');
@@ -190,7 +213,9 @@ describe('Filesystem.mkdir / rmdir', () => {
 
 describe('Filesystem.readdir', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('lists files and directories in a folder', async () => {
     const d = path.join(tmpDir, 'ls-test');
@@ -198,7 +223,9 @@ describe('Filesystem.readdir', () => {
     realFs.writeFileSync(path.join(d, 'a.txt'), 'x');
     realFs.mkdirSync(path.join(d, 'sub'));
 
-    const { files } = await fs.readdir({ path: d }) as { files: { name: string; type: string }[] };
+    const { files } = (await fs.readdir({ path: d })) as {
+      files: { name: string; type: string }[];
+    };
     const names = files.map((f) => f.name).sort();
     expect(names).toContain('a.txt');
     expect(names).toContain('sub');
@@ -211,12 +238,14 @@ describe('Filesystem.readdir', () => {
 
 describe('Filesystem.stat', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('returns file metadata for an existing file', async () => {
     const p = path.join(tmpDir, 'stat-test.txt');
     realFs.writeFileSync(p, 'hello stat');
-    const result = await fs.stat({ path: p }) as { type: string; size: number; uri: string };
+    const result = (await fs.stat({ path: p })) as { type: string; size: number; uri: string };
     expect(result.type).toBe('file');
     expect(result.size).toBe(10);
     expect(result.uri).toMatch(/^file:\/\//);
@@ -225,19 +254,22 @@ describe('Filesystem.stat', () => {
   it('returns directory metadata', async () => {
     const d = path.join(tmpDir, 'stat-dir');
     realFs.mkdirSync(d, { recursive: true });
-    const result = await fs.stat({ path: d }) as { type: string };
+    const result = (await fs.stat({ path: d })) as { type: string };
     expect(result.type).toBe('directory');
   });
 
   it('throws mapped error for missing path', async () => {
-    await expect(fs.stat({ path: path.join(tmpDir, 'no-such.txt') }))
-      .rejects.toThrow('File does not exist');
+    await expect(fs.stat({ path: path.join(tmpDir, 'no-such.txt') })).rejects.toThrow(
+      'File does not exist',
+    );
   });
 });
 
 describe('Filesystem.getUri', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('returns file:// URI for an absolute path', async () => {
     const p = path.join(tmpDir, 'uri.txt');
@@ -249,7 +281,9 @@ describe('Filesystem.getUri', () => {
 
 describe('Filesystem.rename / copy', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('renames a file', async () => {
     const src = path.join(tmpDir, 'rename-src.txt');
@@ -286,7 +320,9 @@ describe('Filesystem.rename / copy', () => {
 
 describe('Filesystem.checkPermissions / requestPermissions', () => {
   let fs: InstanceType<typeof Filesystem>;
-  beforeEach(() => { fs = new Filesystem(); });
+  beforeEach(() => {
+    fs = new Filesystem();
+  });
 
   it('checkPermissions always returns granted', async () => {
     expect(await fs.checkPermissions()).toEqual({ publicStorage: 'granted' });

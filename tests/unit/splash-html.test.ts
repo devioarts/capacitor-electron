@@ -17,9 +17,7 @@ describe('escapeHtmlAttr', () => {
   });
 
   it('escapes ampersands', () => {
-    expect(escapeHtmlAttr('file:///path?a=1&b=2')).toBe(
-      'file:///path?a=1&amp;b=2',
-    );
+    expect(escapeHtmlAttr('file:///path?a=1&b=2')).toBe('file:///path?a=1&amp;b=2');
   });
 
   it('escapes both & and " in the same string', () => {

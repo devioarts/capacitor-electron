@@ -20,16 +20,32 @@ export const app = {
 };
 
 export class BrowserWindow {
-  static getAllWindows(): BrowserWindow[] { return []; }
-  static fromWebContents(): BrowserWindow | null { return null; }
+  static getAllWindows(): BrowserWindow[] {
+    return [];
+  }
+  static fromWebContents(): BrowserWindow | null {
+    return null;
+  }
   id = 0;
   webContents = { send: () => {}, id: 0, getURL: () => '' };
-  isDestroyed() { return false; }
-  isMaximized() { return false; }
-  isFullScreen() { return false; }
-  isFocused() { return false; }
-  isMinimized() { return false; }
-  isVisible() { return true; }
+  isDestroyed() {
+    return false;
+  }
+  isMaximized() {
+    return false;
+  }
+  isFullScreen() {
+    return false;
+  }
+  isFocused() {
+    return false;
+  }
+  isMinimized() {
+    return false;
+  }
+  isVisible() {
+    return true;
+  }
   maximize() {}
   unmaximize() {}
   minimize() {}
@@ -39,14 +55,30 @@ export class BrowserWindow {
   hide() {}
   reload() {}
   setFullScreen() {}
-  getTitle() { return ''; }
-  loadURL() { return Promise.resolve(); }
-  loadFile() { return Promise.resolve(); }
-  on() { return this; }
-  once() { return this; }
-  getContentSize(): [number, number] { return [800, 600]; }
-  getBounds() { return { x: 0, y: 0, width: 800, height: 600 }; }
-  getNormalBounds() { return { x: 0, y: 0, width: 800, height: 600 }; }
+  getTitle() {
+    return '';
+  }
+  loadURL() {
+    return Promise.resolve();
+  }
+  loadFile() {
+    return Promise.resolve();
+  }
+  on() {
+    return this;
+  }
+  once() {
+    return this;
+  }
+  getContentSize(): [number, number] {
+    return [800, 600];
+  }
+  getBounds() {
+    return { x: 0, y: 0, width: 800, height: 600 };
+  }
+  getNormalBounds() {
+    return { x: 0, y: 0, width: 800, height: 600 };
+  }
   setBounds() {}
   contentView = { addChildView: () => {} };
 }
@@ -140,13 +172,17 @@ export const dialog = {
 };
 
 export class Menu {
-  static buildFromTemplate(_t: unknown) { return new Menu(); }
+  static buildFromTemplate(_t: unknown) {
+    return new Menu();
+  }
   static setApplicationMenu() {}
   popup() {}
 }
 export class MenuItem {}
 export class Tray {
-  on() { return this; }
+  on() {
+    return this;
+  }
   setContextMenu() {}
   setToolTip() {}
 }
@@ -183,7 +219,7 @@ function makeNativeImage(dataUrl = ''): MockNativeImage {
     dataUrl,
     isEmpty: () => dataUrl === '',
     toDataURL: () => dataUrl,
-    getSize: () => dataUrl === '' ? { width: 0, height: 0 } : { width: 1, height: 1 },
+    getSize: () => (dataUrl === '' ? { width: 0, height: 0 } : { width: 1, height: 1 }),
   };
 }
 
@@ -213,11 +249,10 @@ export const clipboard = {
 export const nativeImage = {
   createEmpty: () => makeNativeImage(),
   createFromPath: (_path: string) => makeNativeImage('mock:path'),
-  createFromDataURL: (dataUrl: string) => (
+  createFromDataURL: (dataUrl: string) =>
     typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')
       ? makeNativeImage(dataUrl)
-      : makeNativeImage()
-  ),
+      : makeNativeImage(),
 };
 
 type NotifOpts = { title: string; body?: string; silent?: boolean };

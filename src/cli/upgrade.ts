@@ -15,29 +15,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 
 const electronDir = path.join(capacitorRoot, 'electron');
 const includeAll = process.argv.includes('--all');
 
 // Individual files always updated.
-const SYSTEM_FILES = [
-  'main.ts',
-  'src/index.ts',
-];
+const SYSTEM_FILES = ['main.ts', 'src/index.ts'];
 
 // Directories always updated (all contents replaced).
-const SYSTEM_DIRS = [
-  'src/system/shared',
-  'src/system/static',
-];
+const SYSTEM_DIRS = ['src/system/shared', 'src/system/static'];
 
 // Overwritten only with --all.
-const OPTIONAL_FILES = [
-  'electron-builder.js',
-  'tsconfig.json',
-];
+const OPTIONAL_FILES = ['electron-builder.js', 'tsconfig.json'];
 
 async function main(): Promise<void> {
   if (!fs.existsSync(electronDir)) {
@@ -55,7 +47,9 @@ async function main(): Promise<void> {
   try {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cap-electron-upgrade-'));
   } catch (e) {
-    console.error(`[cap-electron] Failed to create temp directory: ${e instanceof Error ? e.message : String(e)}`);
+    console.error(
+      `[cap-electron] Failed to create temp directory: ${e instanceof Error ? e.message : String(e)}`,
+    );
     process.exit(1);
   }
 
@@ -125,11 +119,13 @@ async function main(): Promise<void> {
         console.log('  merged   package.json (scripts, devDependencies, dependencies)');
         updated++;
       }
-      if (syncElectronPackageMetadata(
-        capacitorRoot,
-        path.join(electronDir, 'package.json'),
-        path.join(electronDir, 'package-lock.json'),
-      )) {
+      if (
+        syncElectronPackageMetadata(
+          capacitorRoot,
+          path.join(electronDir, 'package.json'),
+          path.join(electronDir, 'package-lock.json'),
+        )
+      ) {
         console.log('  synced   package metadata');
         updated++;
       }
@@ -137,7 +133,9 @@ async function main(): Promise<void> {
 
     console.log(`\n[cap-electron] Done — ${updated} item(s) updated.`);
     if (!includeAll) {
-      console.log('  Tip: run with --all to also update electron-builder.js, tsconfig.json, and package.json');
+      console.log(
+        '  Tip: run with --all to also update electron-builder.js, tsconfig.json, and package.json',
+      );
     }
 
     console.log('\nRunning sync...');
@@ -160,10 +158,10 @@ function mergePackageJson(templatePkgPath: string, existingPkgPath: string): boo
   const merged: Pkg = {
     ...tpl,
     // Preserve user identity fields
-    name:    existing['name']    ?? tpl['name'],
+    name: existing['name'] ?? tpl['name'],
     version: existing['version'] ?? tpl['version'],
     // Merge deps: existing first so user additions are kept, template versions win for shared keys
-    dependencies:    { ...(existing['dependencies'] ?? {}), ...(tpl['dependencies'] ?? {}) },
+    dependencies: { ...(existing['dependencies'] ?? {}), ...(tpl['dependencies'] ?? {}) },
     devDependencies: { ...(existing['devDependencies'] ?? {}), ...(tpl['devDependencies'] ?? {}) },
     // Merge scripts: template wins for system scripts, user custom scripts preserved
     scripts: { ...(existing['scripts'] ?? {}), ...(tpl['scripts'] ?? {}) },

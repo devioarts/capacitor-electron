@@ -17,23 +17,47 @@ const { createdWindows, mockIpcHandle, mockOpenExternal } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    static fromWebContents() { return null; }
+    static getAllWindows() {
+      return [];
+    }
+    static fromWebContents() {
+      return null;
+    }
     id = createdWindows.length + 1;
     webContents = {
       setWindowOpenHandler: vi.fn(),
       on: vi.fn(),
     };
-    getTitle() { return ''; }
-    getBounds() { return { x: 0, y: 0, width: 900, height: 700 }; }
-    isVisible() { return true; }
-    isFocused() { return false; }
-    isMinimized() { return false; }
-    isMaximized() { return false; }
-    isFullScreen() { return false; }
-    isDestroyed() { return false; }
-    on() { return this; }
-    once() { return this; }
+    getTitle() {
+      return '';
+    }
+    getBounds() {
+      return { x: 0, y: 0, width: 900, height: 700 };
+    }
+    isVisible() {
+      return true;
+    }
+    isFocused() {
+      return false;
+    }
+    isMinimized() {
+      return false;
+    }
+    isMaximized() {
+      return false;
+    }
+    isFullScreen() {
+      return false;
+    }
+    isDestroyed() {
+      return false;
+    }
+    on() {
+      return this;
+    }
+    once() {
+      return this;
+    }
     loadURL = vi.fn(async () => {});
     loadFile = vi.fn(async () => {});
     contentView = { addChildView: () => {} };
@@ -46,9 +70,12 @@ vi.mock('electron', () => ({
 }));
 
 // functions.ts imports ipcMain too — mock it consistently
-vi.mock('../../src/template-electron/src/system/static/electron-api/electron-init-content.js', () => ({
-  CAP_ELECTRON_INIT_JS: '// mock',
-}));
+vi.mock(
+  '../../src/template-electron/src/system/static/electron-api/electron-init-content.js',
+  () => ({
+    CAP_ELECTRON_INIT_JS: '// mock',
+  }),
+);
 
 import {
   appPath,
@@ -192,7 +219,13 @@ describe('isWebUrl', () => {
 
 describe('external managed window URL allowlist', () => {
   it('normalizes configured non-web schemes', () => {
-    const schemes = normalizeExternalWindowSchemes(['mailto:', 'slack://', 'My-App', 'https', 'javascript']);
+    const schemes = normalizeExternalWindowSchemes([
+      'mailto:',
+      'slack://',
+      'My-App',
+      'https',
+      'javascript',
+    ]);
     expect([...schemes].sort()).toEqual(['mailto:', 'my-app:', 'slack:']);
   });
 
@@ -223,7 +256,10 @@ describe('windows:create — external URL hardening', () => {
     createdWindows.length = 0;
     const create = ipcHandler('windows:create');
 
-    create({ sender: {}, senderFrame: { url: 'file:///app/index.html' } }, { url: 'https://example.com' });
+    create(
+      { sender: {}, senderFrame: { url: 'file:///app/index.html' } },
+      { url: 'https://example.com' },
+    );
 
     const win = createdWindows[0];
     expect(win.loadURL).toHaveBeenCalledWith('https://example.com/');
@@ -235,9 +271,13 @@ describe('windows:create — external URL hardening', () => {
     createdWindows.length = 0;
     mockOpenExternal.mockClear();
     const create = ipcHandler('windows:create');
-    create({ sender: {}, senderFrame: { url: 'file:///app/index.html' } }, { url: 'https://example.com' });
+    create(
+      { sender: {}, senderFrame: { url: 'file:///app/index.html' } },
+      { url: 'https://example.com' },
+    );
 
-    const handler = createdWindows[0].webContents.setWindowOpenHandler.mock.calls[0][0] as (details: { url: string }) => { action: string };
+    const handler = createdWindows[0].webContents.setWindowOpenHandler.mock
+      .calls[0][0] as (details: { url: string }) => { action: string };
     expect(handler({ url: 'https://other.example' })).toEqual({ action: 'deny' });
     expect(mockOpenExternal).toHaveBeenCalledWith('https://other.example/');
 
@@ -249,12 +289,14 @@ describe('windows:create — external URL hardening', () => {
     createdWindows.length = 0;
     mockOpenExternal.mockClear();
     const create = ipcHandler('windows:create');
-    create({ sender: {}, senderFrame: { url: 'file:///app/index.html' } }, { url: 'https://example.com' });
+    create(
+      { sender: {}, senderFrame: { url: 'file:///app/index.html' } },
+      { url: 'https://example.com' },
+    );
 
-    const navigate = createdWindows[0].webContents.on.mock.calls.find(([event]) => event === 'will-navigate')?.[1] as (
-      event: { preventDefault: () => void },
-      url: string,
-    ) => void;
+    const navigate = createdWindows[0].webContents.on.mock.calls.find(
+      ([event]) => event === 'will-navigate',
+    )?.[1] as (event: { preventDefault: () => void }, url: string) => void;
     const event = { preventDefault: vi.fn() };
 
     navigate(event, 'https://example.com/next');

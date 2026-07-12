@@ -16,20 +16,29 @@ vi.mock('electron', () => ({
   app: { getPath: mockGetPath, getName: () => 'TestApp', on: () => {} },
   screen: { getAllDisplays: mockGetAllDisplays },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isDestroyed() { return false; }
+    static getAllWindows() {
+      return [];
+    }
+    isDestroyed() {
+      return false;
+    }
   },
 }));
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
-import { loadWindowState, trackWindowState } from '../../src/template-electron/src/system/static/electron-api/window-state.js';
+import {
+  loadWindowState,
+  trackWindowState,
+} from '../../src/template-electron/src/system/static/electron-api/window-state.js';
 import type { ElectronConfig } from '../../src/template-electron/src/system/shared/types.js';
 
 const tmpDir = realFs.mkdtempSync(path.join(os.tmpdir(), 'cap-wstate-'));
 mockGetPath.mockReturnValue(tmpDir);
 
-function stateFile(): string { return path.join(tmpDir, 'window-state.json'); }
+function stateFile(): string {
+  return path.join(tmpDir, 'window-state.json');
+}
 
 function writeState(state: object): void {
   realFs.writeFileSync(stateFile(), JSON.stringify(state), 'utf-8');
@@ -40,10 +49,16 @@ function readState(): Record<string, unknown> {
 }
 
 beforeEach(() => {
-  try { realFs.rmSync(stateFile()); } catch { /* no state file yet */ }
+  try {
+    realFs.rmSync(stateFile());
+  } catch {
+    /* no state file yet */
+  }
 });
 
-afterAll(() => { realFs.rmSync(tmpDir, { recursive: true, force: true }); });
+afterAll(() => {
+  realFs.rmSync(tmpDir, { recursive: true, force: true });
+});
 
 // ── MockWindow for trackWindowState ──────────────────────────────────────────
 
@@ -63,10 +78,18 @@ class MockWindow {
     for (const fn of this._listeners.get(event) ?? []) fn(...args);
   }
 
-  isDestroyed() { return this._destroyed; }
-  isMaximized() { return this._maximized; }
-  getBounds() { return { ...this._bounds }; }
-  getNormalBounds() { return { ...this._bounds }; }
+  isDestroyed() {
+    return this._destroyed;
+  }
+  isMaximized() {
+    return this._maximized;
+  }
+  getBounds() {
+    return { ...this._bounds };
+  }
+  getNormalBounds() {
+    return { ...this._bounds };
+  }
 }
 
 // ── loadWindowState ───────────────────────────────────────────────────────────
@@ -103,7 +126,10 @@ describe('loadWindowState — persistWindowState disabled', () => {
 });
 
 describe('loadWindowState — persistWindowState enabled', () => {
-  const cfg: ElectronConfig = { app: { persistWindowState: true }, browserWindow: { width: 1400, height: 900 } };
+  const cfg: ElectronConfig = {
+    app: { persistWindowState: true },
+    browserWindow: { width: 1400, height: 900 },
+  };
 
   it('returns config defaults when no state file exists', () => {
     const state = loadWindowState(cfg);
@@ -260,8 +286,8 @@ describe('trackWindowState', () => {
     vi.useFakeTimers();
     const win = new MockWindow();
     trackWindowState(win as never);
-    win.emit('resize');  // starts 500ms timer
-    win.emit('close');   // should cancel timer and save now
+    win.emit('resize'); // starts 500ms timer
+    win.emit('close'); // should cancel timer and save now
     expect(realFs.existsSync(stateFile())).toBe(true);
     vi.useRealTimers();
   });

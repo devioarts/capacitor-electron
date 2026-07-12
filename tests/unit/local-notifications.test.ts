@@ -9,11 +9,14 @@ import * as ElectronMock from '../../tests/__mocks__/electron.js';
 
 // ── Module import (dynamic because top-level registerPlugin + app.on) ──────────
 
-let LocalNotifications: new () => InstanceType<typeof import('../../src/template-electron/src/system/static/capacitor-api/local-notifications-main.js')['LocalNotifications']>;
+let LocalNotifications: new () => InstanceType<
+  (typeof import('../../src/template-electron/src/system/static/capacitor-api/local-notifications-main.js'))['LocalNotifications']
+>;
 let resetNotificationsForTesting: () => void;
 
 beforeAll(async () => {
-  const mod = await import('../../src/template-electron/src/system/static/capacitor-api/local-notifications-main.js');
+  const mod =
+    await import('../../src/template-electron/src/system/static/capacitor-api/local-notifications-main.js');
   LocalNotifications = mod.LocalNotifications;
   resetNotificationsForTesting = mod.resetNotificationsForTesting;
 });
@@ -141,7 +144,9 @@ describe('schedule — scheduled via "at"', () => {
     const delay = MAX_TIMER_DELAY_MS + 5_000;
     const future = new Date(Date.now() + delay);
 
-    await ln.schedule({ notifications: [{ id: 14, title: 'Far Future', schedule: { at: future } }] });
+    await ln.schedule({
+      notifications: [{ id: 14, title: 'Far Future', schedule: { at: future } }],
+    });
 
     vi.advanceTimersByTime(MAX_TIMER_DELAY_MS);
     expect(showSpy).not.toHaveBeenCalled();
@@ -204,7 +209,9 @@ describe('cancel', () => {
     vi.useFakeTimers();
     const ln = new LocalNotifications();
     const future = new Date(Date.now() + 10_000);
-    await ln.schedule({ notifications: [{ id: 30, title: 'Cancelled', schedule: { at: future } }] });
+    await ln.schedule({
+      notifications: [{ id: 30, title: 'Cancelled', schedule: { at: future } }],
+    });
     await ln.cancel({ notifications: [{ id: 30 }] });
     vi.advanceTimersByTime(15_000);
     expect(showSpy).not.toHaveBeenCalled();
@@ -231,14 +238,24 @@ describe('cancel', () => {
 describe('getDeliveredNotifications + removeDeliveredNotifications', () => {
   it('delivered list grows after immediate schedule', async () => {
     const ln = new LocalNotifications();
-    await ln.schedule({ notifications: [{ id: 40, title: 'A' }, { id: 41, title: 'B' }] });
+    await ln.schedule({
+      notifications: [
+        { id: 40, title: 'A' },
+        { id: 41, title: 'B' },
+      ],
+    });
     const { notifications } = await ln.getDeliveredNotifications();
     expect(notifications.length).toBeGreaterThanOrEqual(2);
   });
 
   it('removeDeliveredNotifications removes only the specified ids', async () => {
     const ln = new LocalNotifications();
-    await ln.schedule({ notifications: [{ id: 50, title: 'Keep' }, { id: 51, title: 'Remove' }] });
+    await ln.schedule({
+      notifications: [
+        { id: 50, title: 'Keep' },
+        { id: 51, title: 'Remove' },
+      ],
+    });
     await ln.removeDeliveredNotifications({ notifications: [{ id: 51 }] });
     const { notifications } = await ln.getDeliveredNotifications();
     expect(notifications.some((n) => n.id === 50)).toBe(true);
@@ -247,7 +264,12 @@ describe('getDeliveredNotifications + removeDeliveredNotifications', () => {
 
   it('removeAllDeliveredNotifications clears the list', async () => {
     const ln = new LocalNotifications();
-    await ln.schedule({ notifications: [{ id: 60, title: 'One' }, { id: 61, title: 'Two' }] });
+    await ln.schedule({
+      notifications: [
+        { id: 60, title: 'One' },
+        { id: 61, title: 'Two' },
+      ],
+    });
     await ln.removeAllDeliveredNotifications();
     const { notifications } = await ln.getDeliveredNotifications();
     expect(notifications).toHaveLength(0);

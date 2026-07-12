@@ -12,7 +12,9 @@ const tempDirs: string[] = [];
 
 beforeAll(() => {
   if (!existsSync(cliEntry)) {
-    throw new Error('CLI integration tests require a built dist/. Run `npm run build` before `npm run test:integration`.');
+    throw new Error(
+      'CLI integration tests require a built dist/. Run `npm run build` before `npm run test:integration`.',
+    );
   }
 });
 
@@ -52,13 +54,22 @@ function tempProject(): string {
     },
   });
   writeJson(join(root, 'electron', 'capacitor.config.json'), { webDir: 'www' });
-  writeFileSync(join(root, 'index.html'), '<html><body class="root"><div id="root"></div></body></html>\n');
+  writeFileSync(
+    join(root, 'index.html'),
+    '<html><body class="root"><div id="root"></div></body></html>\n',
+  );
   writeFileSync(join(root, 'src', 'vite-env.d.ts'), '/// <reference types="vite/client" />\n');
-  writeFileSync(join(root, 'www', 'index.html'), '<html><body class="app"><main>web app</main></body></html>\n');
+  writeFileSync(
+    join(root, 'www', 'index.html'),
+    '<html><body class="app"><main>web app</main></body></html>\n',
+  );
   writeFileSync(join(root, 'www', 'assets', 'app.txt'), 'asset copied by cap-electron copy\n');
   writeFileSync(join(root, 'assets', 'icon.png'), 'icon');
   writeFileSync(join(root, 'assets', 'tray.png'), 'tray');
-  writeFileSync(join(root, 'assets', 'splash.svg'), '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+  writeFileSync(
+    join(root, 'assets', 'splash.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+  );
 
   return root;
 }
@@ -111,22 +122,20 @@ function capacitorConfig(): Record<string, unknown> {
 }
 
 function runCli(root: string, args: string[], extraEnv: Record<string, string> = {}): string {
-  const result = spawnSync(
-    process.execPath,
-    [cliEntry, ...args],
-    {
-      cwd: root,
-      encoding: 'utf-8',
-      env: {
-        ...process.env,
-        CAPACITOR_ROOT_DIR: root,
-        ...extraEnv,
-      },
+  const result = spawnSync(process.execPath, [cliEntry, ...args], {
+    cwd: root,
+    encoding: 'utf-8',
+    env: {
+      ...process.env,
+      CAPACITOR_ROOT_DIR: root,
+      ...extraEnv,
     },
-  );
+  });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   if (result.status !== 0) {
-    throw new Error(`cap-electron ${args.join(' ')} failed with exit code ${result.status}\n${output}`);
+    throw new Error(
+      `cap-electron ${args.join(' ')} failed with exit code ${result.status}\n${output}`,
+    );
   }
   return output;
 }
@@ -196,8 +205,14 @@ describe('cap-electron CLI lifecycle', () => {
       CAPACITOR_CONFIG: JSON.stringify(capacitorConfig()),
     });
 
-    const preloadAuto = readFileSync(join(root, 'electron', 'src', 'system', 'generated', 'plugins-preload-auto.ts'), 'utf-8');
-    const mainAuto = readFileSync(join(root, 'electron', 'src', 'system', 'generated', 'plugins-main-auto.ts'), 'utf-8');
+    const preloadAuto = readFileSync(
+      join(root, 'electron', 'src', 'system', 'generated', 'plugins-preload-auto.ts'),
+      'utf-8',
+    );
+    const mainAuto = readFileSync(
+      join(root, 'electron', 'src', 'system', 'generated', 'plugins-main-auto.ts'),
+      'utf-8',
+    );
     const rootIndex = readFileSync(join(root, 'index.html'), 'utf-8');
     const viteEnv = readFileSync(join(root, 'src', 'vite-env.d.ts'), 'utf-8');
     const electronConfig = readJson(join(root, 'electron', 'capacitor.config.json'));
@@ -205,10 +220,14 @@ describe('cap-electron CLI lifecycle', () => {
     expect(preloadAuto).toContain('"ExampleDesktopPlugin"');
     expect(preloadAuto).toContain('"echo"');
     expect(preloadAuto).toContain('"stateChanged"');
-    expect(mainAuto).toContain('import { ExampleDesktopPlugin } from "@example/desktop-plugin/electron";');
+    expect(mainAuto).toContain(
+      'import { ExampleDesktopPlugin } from "@example/desktop-plugin/electron";',
+    );
     expect(mainAuto).toContain('registerPlugin("ExampleDesktopPlugin"');
     expect(countOccurrences(rootIndex, '<script src="/electron-init.js"></script>')).toBe(1);
-    expect(viteEnv.startsWith('/// <reference types="@devioarts/capacitor-electron/globals" />\n')).toBe(true);
+    expect(
+      viteEnv.startsWith('/// <reference types="@devioarts/capacitor-electron/globals" />\n'),
+    ).toBe(true);
     expect(existsSync(join(root, 'public', 'electron-init.js'))).toBe(true);
     expect(existsSync(join(root, 'electron', 'assets', 'icon.png'))).toBe(true);
     expect(existsSync(join(root, 'electron', 'assets', 'tray.png'))).toBe(true);
@@ -233,8 +252,18 @@ describe('cap-electron CLI lifecycle', () => {
       CAPACITOR_CONFIG: JSON.stringify(capacitorConfig()),
     });
 
-    expect(countOccurrences(readFileSync(join(root, 'index.html'), 'utf-8'), '<script src="/electron-init.js"></script>')).toBe(1);
-    expect(countOccurrences(readFileSync(join(root, 'src', 'vite-env.d.ts'), 'utf-8'), '@devioarts/capacitor-electron/globals')).toBe(1);
+    expect(
+      countOccurrences(
+        readFileSync(join(root, 'index.html'), 'utf-8'),
+        '<script src="/electron-init.js"></script>',
+      ),
+    ).toBe(1);
+    expect(
+      countOccurrences(
+        readFileSync(join(root, 'src', 'vite-env.d.ts'), 'utf-8'),
+        '@devioarts/capacitor-electron/globals',
+      ),
+    ).toBe(1);
   });
 
   it('sync --all composes copy, update, and package metadata synchronization', () => {

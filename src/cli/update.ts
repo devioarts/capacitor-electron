@@ -26,8 +26,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Capacitor CLI sets CAPACITOR_ROOT_DIR when calling this as a hook.
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 process.stdout.write('\n');
@@ -46,8 +47,8 @@ function findPlugins(): PluginEntry[] {
   const pkgPath = path.join(capacitorRoot, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
   const deps = {
-    ...(pkg.dependencies as Record<string, string> ?? {}),
-    ...(pkg.devDependencies as Record<string, string> ?? {}),
+    ...((pkg.dependencies as Record<string, string>) ?? {}),
+    ...((pkg.devDependencies as Record<string, string>) ?? {}),
   };
 
   const found: PluginEntry[] = [];
@@ -59,8 +60,8 @@ function findPlugins(): PluginEntry[] {
     if (!fs.existsSync(depPkgPath)) continue;
 
     const depPkg = JSON.parse(fs.readFileSync(depPkgPath, 'utf-8')) as Record<string, unknown>;
-    const electronSrc = (depPkg.capacitor as Record<string, unknown> | undefined)
-      ?.electron as Record<string, unknown> | undefined;
+    const electronSrc = (depPkg.capacitor as Record<string, unknown> | undefined)?.electron as
+      Record<string, unknown> | undefined;
 
     if (!electronSrc?.src) continue;
 
@@ -145,23 +146,31 @@ function normalizeElectronAssetPaths(electronPlugin: unknown): unknown {
 
   const browserWindow = normalized['browserWindow'];
   if (isRecord(browserWindow) && typeof browserWindow['icon'] === 'string') {
-    browserWindow['icon'] = copyProjectAssetToElectronAssets(browserWindow['icon'], 'plugins.Electron.browserWindow.icon');
+    browserWindow['icon'] = copyProjectAssetToElectronAssets(
+      browserWindow['icon'],
+      'plugins.Electron.browserWindow.icon',
+    );
   }
 
   const ui = normalized['ui'];
   const tray = isRecord(ui) ? ui['trayMenu'] : undefined;
   if (isRecord(tray) && typeof tray['icon'] === 'string') {
-    tray['icon'] = copyProjectAssetToElectronAssets(tray['icon'], 'plugins.Electron.ui.trayMenu.icon');
+    tray['icon'] = copyProjectAssetToElectronAssets(
+      tray['icon'],
+      'plugins.Electron.ui.trayMenu.icon',
+    );
   }
 
   const splashScreen = isRecord(ui) ? ui['splashScreen'] : undefined;
   if (isRecord(splashScreen) && typeof splashScreen['image'] === 'string') {
-    splashScreen['image'] = copyProjectAssetToElectronAssets(splashScreen['image'], 'plugins.Electron.ui.splashScreen.image');
+    splashScreen['image'] = copyProjectAssetToElectronAssets(
+      splashScreen['image'],
+      'plugins.Electron.ui.splashScreen.image',
+    );
   }
 
   return normalized;
 }
-
 
 const GLOBALS_REFERENCE = '/// <reference types="@devioarts/capacitor-electron/globals" />';
 
@@ -179,7 +188,9 @@ function injectGlobalsReference(projectRoot: string): void {
     if (!fs.existsSync(candidate)) continue;
     const content = fs.readFileSync(candidate, 'utf-8');
     if (content.includes(GLOBALS_REFERENCE)) {
-      console.log(`\nGlobals reference already present in ${path.relative(projectRoot, candidate)}`);
+      console.log(
+        `\nGlobals reference already present in ${path.relative(projectRoot, candidate)}`,
+      );
       return;
     }
     fs.writeFileSync(candidate, GLOBALS_REFERENCE + '\n' + content);
@@ -215,10 +226,16 @@ async function main(): Promise<void> {
     }
   }
 
-  fs.writeFileSync(path.join(generatedDir, 'plugins-preload-auto.ts'), generateElectronPluginsAuto(plugins));
+  fs.writeFileSync(
+    path.join(generatedDir, 'plugins-preload-auto.ts'),
+    generateElectronPluginsAuto(plugins),
+  );
   console.log(`\nWritten: src/system/generated/plugins-preload-auto.ts`);
 
-  fs.writeFileSync(path.join(generatedDir, 'plugins-main-auto.ts'), generateElectronMainAuto(plugins));
+  fs.writeFileSync(
+    path.join(generatedDir, 'plugins-main-auto.ts'),
+    generateElectronMainAuto(plugins),
+  );
   console.log(`Written: src/system/generated/plugins-main-auto.ts`);
 
   // ── 2. Inject /// <reference types="@devioarts/capacitor-electron/globals" /> ──
@@ -231,10 +248,10 @@ async function main(): Promise<void> {
   const cfg = await readCapacitorConfig();
   if (cfg) {
     const filtered: Record<string, unknown> = {};
-    if (cfg['appId'])            filtered['appId']            = cfg['appId'];
-    if (cfg['appName'])          filtered['appName']          = cfg['appName'];
-    if (cfg['webDir'])           filtered['webDir']           = cfg['webDir'];
-    if (cfg['backgroundColor'])  filtered['backgroundColor']  = cfg['backgroundColor'];
+    if (cfg['appId']) filtered['appId'] = cfg['appId'];
+    if (cfg['appName']) filtered['appName'] = cfg['appName'];
+    if (cfg['webDir']) filtered['webDir'] = cfg['webDir'];
+    if (cfg['backgroundColor']) filtered['backgroundColor'] = cfg['backgroundColor'];
 
     const allPluginsCfg = cfg['plugins'] as Record<string, unknown> | undefined;
     const electronPlugin = allPluginsCfg?.['Electron'];
@@ -259,8 +276,12 @@ async function main(): Promise<void> {
     if (extraSections.size > 0) {
       const present = [...extraSections].filter((s) => allPluginsCfg?.[s] !== undefined);
       const missing = [...extraSections].filter((s) => allPluginsCfg?.[s] === undefined);
-      if (present.length > 0) console.log(`  Plugin config sections included: ${present.join(', ')}`);
-      if (missing.length > 0) console.warn(`  ⚠  Config sections declared but not found in capacitor.config: ${missing.join(', ')}`);
+      if (present.length > 0)
+        console.log(`  Plugin config sections included: ${present.join(', ')}`);
+      if (missing.length > 0)
+        console.warn(
+          `  ⚠  Config sections declared but not found in capacitor.config: ${missing.join(', ')}`,
+        );
     }
   } else {
     console.warn('[cap-electron] Could not read capacitor config — skipping.');
@@ -274,7 +295,9 @@ main()
   })
   .catch((e) => {
     const elapsed = (performance.now() - start).toFixed(2);
-    console.error(`\x1b[1;31m✖ update electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`);
+    console.error(
+      `\x1b[1;31m✖ update electron failed in ${elapsed}ms: ${e instanceof Error ? e.message : String(e)}\x1b[0m`,
+    );
     process.exit(1);
   });
 
@@ -282,7 +305,11 @@ main()
 
 async function readCapacitorConfig(): Promise<Record<string, unknown> | null> {
   if (process.env['CAPACITOR_CONFIG']) {
-    try { return JSON.parse(process.env['CAPACITOR_CONFIG']) as Record<string, unknown>; } catch { /* fall through */ }
+    try {
+      return JSON.parse(process.env['CAPACITOR_CONFIG']) as Record<string, unknown>;
+    } catch {
+      /* fall through */
+    }
   }
 
   try {
@@ -298,7 +325,9 @@ async function readCapacitorConfig(): Promise<Record<string, unknown> | null> {
       process.chdir(originalCwd);
     }
   } catch (err) {
-    console.warn(`[cap-electron] Failed to load capacitor config with @capacitor/cli: ${err instanceof Error ? err.message : String(err)}`);
+    console.warn(
+      `[cap-electron] Failed to load capacitor config with @capacitor/cli: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return null;
   }
 }

@@ -14,15 +14,34 @@ await mkdir(join(root, 'dist'), { recursive: true });
 // Sync template types into shared/types.ts before tsc, restore after build.
 // bridge-types.ts is inlined first (it re-exports from types.ts would create a relative
 // import that src/shared/ can't resolve), then types.ts with the re-export line removed.
-const sharedTypesPath    = join(root, 'src', 'shared', 'types.ts');
-const templateTypesPath  = join(root, 'src', 'template-electron', 'src', 'system', 'shared', 'types.ts');
-const bridgeTypesPath    = join(root, 'src', 'template-electron', 'src', 'system', 'shared', 'bridge-types.ts');
-const originalShared     = await readFile(sharedTypesPath, 'utf8');
-const bridgeContent      = await readFile(bridgeTypesPath, 'utf8');
-const templateContent    = await readFile(templateTypesPath, 'utf8');
+const sharedTypesPath = join(root, 'src', 'shared', 'types.ts');
+const templateTypesPath = join(
+  root,
+  'src',
+  'template-electron',
+  'src',
+  'system',
+  'shared',
+  'types.ts',
+);
+const bridgeTypesPath = join(
+  root,
+  'src',
+  'template-electron',
+  'src',
+  'system',
+  'shared',
+  'bridge-types.ts',
+);
+const originalShared = await readFile(sharedTypesPath, 'utf8');
+const bridgeContent = await readFile(bridgeTypesPath, 'utf8');
+const templateContent = await readFile(templateTypesPath, 'utf8');
 const templateNoReexport = templateContent.replace(/^export \* from '\.\/bridge-types';\n?/m, '');
 
-await writeFile(sharedTypesPath, bridgeContent + '\n' + templateNoReexport + "\nexport * from './plugin-settings';\n");
+await writeFile(
+  sharedTypesPath,
+  bridgeContent + '\n' + templateNoReexport + "\nexport * from './plugin-settings';\n",
+);
 
 try {
   console.log('→ types (tsc)');
@@ -39,7 +58,7 @@ try {
     (await readFile(bridgeTypesPath, 'utf8'))
       .replace(/^export /gm, '')
       .split('\n')
-      .map((line) => line ? `  ${line}` : line)
+      .map((line) => (line ? `  ${line}` : line))
       .join('\n') +
     '\n\n  interface Window {\n    Electron: ElectronBridge;\n  }\n}\n';
   await writeFile(join(root, 'dist', 'shared', 'globals.d.ts'), globalsContent);
@@ -77,9 +96,20 @@ try {
   });
 
   console.log('→ CLI scripts (esbuild ESM)');
-  const cliEntries = ['index', 'add', 'copy', 'prepare', 'update', 'sync', 'run', 'open', 'build', 'scripts', 'kill', 'upgrade'].map(
-    (n) => join(root, 'src', 'cli', `${n}.ts`),
-  );
+  const cliEntries = [
+    'index',
+    'add',
+    'copy',
+    'prepare',
+    'update',
+    'sync',
+    'run',
+    'open',
+    'build',
+    'scripts',
+    'kill',
+    'upgrade',
+  ].map((n) => join(root, 'src', 'cli', `${n}.ts`));
   await build({
     entryPoints: cliEntries,
     outdir: join(root, 'dist', 'cli'),

@@ -13,15 +13,15 @@ const scriptPath = (name: string): string => join(__dirname, `${name}${scriptExt
 
 const scripts: Record<string, string> = {
   scripts: scriptPath('scripts'),
-  add:     scriptPath('add'),
-  copy:    scriptPath('copy'),
+  add: scriptPath('add'),
+  copy: scriptPath('copy'),
   prepare: scriptPath('prepare'),
-  update:  scriptPath('update'),
-  sync:    scriptPath('sync'),
-  run:     scriptPath('run'),
-  open:    scriptPath('run'),   // alias
-  build:   scriptPath('build'),
-  kill:    scriptPath('kill'),
+  update: scriptPath('update'),
+  sync: scriptPath('sync'),
+  run: scriptPath('run'),
+  open: scriptPath('run'), // alias
+  build: scriptPath('build'),
+  kill: scriptPath('kill'),
   upgrade: scriptPath('upgrade'),
   restore: scriptPath('upgrade'),
 };
@@ -29,7 +29,9 @@ const scripts: Record<string, string> = {
 const script = scripts[command ?? ''];
 if (!script) {
   console.error(`npx cap-electron: unknown command "${command ?? ''}"`);
-  console.log('Usage: npx cap-electron <scripts|add|copy|prepare|update|sync [--all]|run|build|kill|upgrade [--all]|restore>');
+  console.log(
+    'Usage: npx cap-electron <scripts|add|copy|prepare|update|sync [--all]|run|build|kill|upgrade [--all]|restore>',
+  );
   process.exit(1);
 }
 

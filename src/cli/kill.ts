@@ -10,8 +10,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
@@ -66,13 +67,15 @@ function killWindows(): void {
     // wmic is absent on many current Windows installs. PowerShell + CIM is the
     // supported replacement and lets us inspect CommandLine without shell
     // interpolation of the project path.
-    raw = execFileSync('powershell.exe', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      `
+    raw = execFileSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        `
 param([string]$Root, [int]$SelfPid)
 $CurrentPid = $PID
 Get-CimInstance Win32_Process |
@@ -84,10 +87,14 @@ Get-CimInstance Win32_Process |
   } |
   ForEach-Object { $_.ProcessId }
 `.trim(),
-      capacitorRoot,
-      String(selfPid),
-    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
-  } catch { /* ignore */ }
+        capacitorRoot,
+        String(selfPid),
+      ],
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+  } catch {
+    /* ignore */
+  }
 
   const pids = raw
     .split('\n')
@@ -105,7 +112,9 @@ Get-CimInstance Win32_Process |
       execFileSync('taskkill.exe', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' });
       console.log(`  ✓  killed pid ${pid}`);
       killed++;
-    } catch { /* already gone */ }
+    } catch {
+      /* already gone */
+    }
   }
 
   console.log(`[cap-electron] Terminated ${killed} process(es).`);

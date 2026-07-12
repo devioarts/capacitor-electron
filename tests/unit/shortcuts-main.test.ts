@@ -18,7 +18,9 @@ vi.mock('electron', () => ({
     getPath: () => '/tmp',
     getName: () => 'TestApp',
     quit: vi.fn(),
-    on: (_event: string, handler: () => void) => { appQuitHandler = handler; },
+    on: (_event: string, handler: () => void) => {
+      appQuitHandler = handler;
+    },
   },
   globalShortcut: {
     register: mockRegister,
@@ -27,11 +29,21 @@ vi.mock('electron', () => ({
   },
   ipcMain: { handle: mockIpcHandle, on: vi.fn() },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isVisible() { return true; }
-    isMinimized() { return false; }
-    isMaximized() { return false; }
-    isFullScreen() { return false; }
+    static getAllWindows() {
+      return [];
+    }
+    isVisible() {
+      return true;
+    }
+    isMinimized() {
+      return false;
+    }
+    isMaximized() {
+      return false;
+    }
+    isFullScreen() {
+      return false;
+    }
     show() {}
     hide() {}
     focus() {}
@@ -169,9 +181,10 @@ describe('setupShortcuts — app will-quit cleanup', () => {
 describe('shortcuts:register IPC handler', () => {
   it('registers a new shortcut from renderer and returns true', () => {
     setupShortcuts([], () => null);
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'shortcuts:register',
-    )?.[1] as (_e: unknown, def: { accelerator: string; event: string }) => boolean;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'shortcuts:register')?.[1] as (
+      _e: unknown,
+      def: { accelerator: string; event: string },
+    ) => boolean;
     const result = handler({}, { accelerator: 'CmdOrCtrl+L', event: 'open-log' });
     expect(result).toBe(true);
     expect(mockRegister).toHaveBeenCalledWith('CmdOrCtrl+L', expect.any(Function));
@@ -179,9 +192,10 @@ describe('shortcuts:register IPC handler', () => {
 
   it('returns false for a def with empty event string', () => {
     setupShortcuts([], () => null);
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'shortcuts:register',
-    )?.[1] as (_e: unknown, def: { accelerator: string; event: string }) => boolean;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'shortcuts:register')?.[1] as (
+      _e: unknown,
+      def: { accelerator: string; event: string },
+    ) => boolean;
     const result = handler({}, { accelerator: 'CmdOrCtrl+L', event: '' });
     expect(result).toBe(false);
     expect(mockRegister).not.toHaveBeenCalled();
@@ -193,18 +207,20 @@ describe('shortcuts:register IPC handler', () => {
 describe('shortcuts:unregister IPC handler', () => {
   it('calls globalShortcut.unregister with the normalized accelerator', () => {
     setupShortcuts([], () => null);
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'shortcuts:unregister',
-    )?.[1] as (_e: unknown, accelerator: string) => void;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'shortcuts:unregister')?.[1] as (
+      _e: unknown,
+      accelerator: string,
+    ) => void;
     handler({}, 'CmdOrCtrl+K');
     expect(mockUnregister).toHaveBeenCalledWith('CmdOrCtrl+K');
   });
 
   it('does NOT call unregister for invalid accelerator', () => {
     setupShortcuts([], () => null);
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'shortcuts:unregister',
-    )?.[1] as (_e: unknown, accelerator: string) => void;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'shortcuts:unregister')?.[1] as (
+      _e: unknown,
+      accelerator: string,
+    ) => void;
     handler({}, '');
     expect(mockUnregister).not.toHaveBeenCalled();
   });

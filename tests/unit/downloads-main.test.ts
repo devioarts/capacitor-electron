@@ -11,9 +11,12 @@ vi.mock('electron', () => ({
 import { downloadDoneEventType } from '../../src/template-electron/src/system/static/electron-api/downloads-main.js';
 
 describe('downloadDoneEventType', () => {
-  it.each(['completed', 'cancelled', 'interrupted'] as const)('keeps Electron final state "%s" as the renderer event type', (state) => {
-    expect(downloadDoneEventType(state)).toBe(state);
-  });
+  it.each(['completed', 'cancelled', 'interrupted'] as const)(
+    'keeps Electron final state "%s" as the renderer event type',
+    (state) => {
+      expect(downloadDoneEventType(state)).toBe(state);
+    },
+  );
 
   it('falls back to done for an unexpected Electron state', () => {
     expect(downloadDoneEventType('mystery-state')).toBe('done');

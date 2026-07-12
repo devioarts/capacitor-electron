@@ -17,15 +17,23 @@ const { mockIsPackaged, mockIpcHandle } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({
   app: {
-    get isPackaged() { return mockIsPackaged.value; },
+    get isPackaged() {
+      return mockIsPackaged.value;
+    },
     getPath: () => '/tmp/updater-test',
     getName: () => 'TestApp',
     on: () => {},
   },
   BrowserWindow: class {
-    static getAllWindows() { return []; }
-    isDestroyed() { return false; }
-    get webContents() { return { send: () => {} }; }
+    static getAllWindows() {
+      return [];
+    }
+    isDestroyed() {
+      return false;
+    }
+    get webContents() {
+      return { send: () => {} };
+    }
   },
   ipcMain: { handle: mockIpcHandle, on: vi.fn() },
 }));
@@ -82,13 +90,17 @@ describe('setupUpdater — inactive (dev guard, M-6 fix)', () => {
 
   it('no-op checkForUpdate handler resolves without throwing', async () => {
     setupUpdater({});
-    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'updater:checkForUpdate')?.[1] as () => unknown;
+    const handler = mockIpcHandle.mock.calls.find(
+      (c) => c[0] === 'updater:checkForUpdate',
+    )?.[1] as () => unknown;
     await expect(Promise.resolve(handler())).resolves.not.toThrow();
   });
 
   it('no-op downloadUpdate handler resolves without throwing', async () => {
     setupUpdater({});
-    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'updater:downloadUpdate')?.[1] as () => unknown;
+    const handler = mockIpcHandle.mock.calls.find(
+      (c) => c[0] === 'updater:downloadUpdate',
+    )?.[1] as () => unknown;
     await expect(Promise.resolve(handler())).resolves.not.toThrow();
   });
 });
@@ -109,7 +121,9 @@ describe('setupUpdater — active (app.isPackaged=true, enabled=true)', () => {
     },
   };
 
-  beforeEach(() => { mockIsPackaged.value = true; });
+  beforeEach(() => {
+    mockIsPackaged.value = true;
+  });
 
   it('applies channel from config', () => {
     setupUpdater(activeCfg);

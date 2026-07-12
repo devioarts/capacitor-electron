@@ -45,7 +45,10 @@ describe('isIpcSenderTrusted', () => {
 
   it('passes the sender frame URL (not the window URL) to the check function', () => {
     const seen: string[] = [];
-    setIpcSenderCheck((url) => { seen.push(url); return true; });
+    setIpcSenderCheck((url) => {
+      seen.push(url);
+      return true;
+    });
     isIpcSenderTrusted(makeEvent('http://frame.example.com'));
     expect(seen).toEqual(['http://frame.example.com']);
   });
@@ -68,7 +71,9 @@ describe('isIpcSenderTrusted', () => {
 describe('assertTrustedIpcSender', () => {
   it('does not throw for a trusted sender', () => {
     setIpcSenderCheck(() => true);
-    expect(() => assertTrustedIpcSender(makeEvent('file:///app/index.html'), 'test:channel')).not.toThrow();
+    expect(() =>
+      assertTrustedIpcSender(makeEvent('file:///app/index.html'), 'test:channel'),
+    ).not.toThrow();
   });
 
   it('throws for an untrusted sender', () => {

@@ -26,7 +26,9 @@ describe('isTrustedFileUrl', () => {
 
   it('rejects file URLs outside the packaged app root', () => {
     expect(isTrustedFileUrl(fileUrl('/tmp/preview.html'), appRoot)).toBe(false);
-    expect(isTrustedFileUrl(fileUrl('/Applications/MyApp.app/Contents/Resources/other.html'), appRoot)).toBe(false);
+    expect(
+      isTrustedFileUrl(fileUrl('/Applications/MyApp.app/Contents/Resources/other.html'), appRoot),
+    ).toBe(false);
   });
 
   it('rejects sibling paths that only share the same string prefix', () => {

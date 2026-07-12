@@ -50,25 +50,34 @@ async function createDist(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'cap-electron-protocol-'));
   tempDirs.push(dir);
   await mkdir(join(dir, 'assets'));
-  await writeFile(join(dir, 'index.html'), '<html><head><title>x</title></head><body></body></html>');
+  await writeFile(
+    join(dir, 'index.html'),
+    '<html><head><title>x</title></head><body></body></html>',
+  );
   await writeFile(join(dir, 'assets', 'index.css'), 'body{}');
   return dir;
 }
 
-type BufferProtocolResponse = { statusCode?: number; data?: Buffer | string; headers?: Record<string, string | string[]> };
+type BufferProtocolResponse = {
+  statusCode?: number;
+  data?: Buffer | string;
+  headers?: Record<string, string | string[]>;
+};
 type BufferProtocolHandler = (
   request: { method: string; url: string },
   callback: (response: Buffer | BufferProtocolResponse) => void,
 ) => void;
 
 function registeredHandleHandler(): (request: Request) => Promise<Response> {
-  const handler = mockHandle.mock.calls[0]?.[1] as ((request: Request) => Promise<Response>) | undefined;
+  const handler = mockHandle.mock.calls[0]?.[1] as
+    ((request: Request) => Promise<Response>) | undefined;
   if (!handler) throw new Error('protocol handler was not registered');
   return handler;
 }
 
 function registeredBufferHandler(): BufferProtocolHandler {
-  const handler = mockRegisterBufferProtocol.mock.calls[0]?.[1] as BufferProtocolHandler | undefined;
+  const handler = mockRegisterBufferProtocol.mock.calls[0]?.[1] as
+    BufferProtocolHandler | undefined;
   if (!handler) throw new Error('buffer protocol handler was not registered');
   return handler;
 }
@@ -104,11 +113,15 @@ describe('resolveAppProtocolConfig', () => {
   });
 
   it('rejects invalid schemes', () => {
-    expect(() => resolveAppProtocolConfig({ scheme: '1-app' })).toThrow('Invalid app protocol scheme');
+    expect(() => resolveAppProtocolConfig({ scheme: '1-app' })).toThrow(
+      'Invalid app protocol scheme',
+    );
   });
 
   it('rejects invalid hostnames', () => {
-    expect(() => resolveAppProtocolConfig({ hostname: 'local/host' })).toThrow('Invalid app protocol hostname');
+    expect(() => resolveAppProtocolConfig({ hostname: 'local/host' })).toThrow(
+      'Invalid app protocol hostname',
+    );
   });
 
   it('accepts handle mode', () => {
@@ -116,24 +129,29 @@ describe('resolveAppProtocolConfig', () => {
   });
 
   it('normalizes custom Capacitor file route extension access', () => {
-    expect(resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['PDF', '.Svg'] } }))
-      .toMatchObject({ capacitorFileAccess: { extensions: ['.pdf', '.svg'] } });
+    expect(
+      resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['PDF', '.Svg'] } }),
+    ).toMatchObject({ capacitorFileAccess: { extensions: ['.pdf', '.svg'] } });
   });
 
   it('rejects invalid Capacitor file route extension access', () => {
-    expect(() => resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['../html'] } }))
-      .toThrow('Invalid app protocol file extension');
+    expect(() =>
+      resolveAppProtocolConfig({ capacitorFileAccess: { extensions: ['../html'] } }),
+    ).toThrow('Invalid app protocol file extension');
   });
 });
 
 describe('appProtocolUrl', () => {
   it('builds a root index URL by default', () => {
-    expect(appProtocolUrl(resolveAppProtocolConfig())).toBe('capacitor-electron://localhost/index.html');
+    expect(appProtocolUrl(resolveAppProtocolConfig())).toBe(
+      'capacitor-electron://localhost/index.html',
+    );
   });
 
   it('adds a leading slash when needed', () => {
-    expect(appProtocolUrl(resolveAppProtocolConfig(), 'assets/logo.png'))
-      .toBe('capacitor-electron://localhost/assets/logo.png');
+    expect(appProtocolUrl(resolveAppProtocolConfig(), 'assets/logo.png')).toBe(
+      'capacitor-electron://localhost/assets/logo.png',
+    );
   });
 
   it('builds the protocol root URL', () => {
@@ -145,8 +163,9 @@ describe('injectAppProtocolBase', () => {
   const config = resolveAppProtocolConfig();
 
   it('injects base href into html without an existing base tag', () => {
-    expect(injectAppProtocolBase('<html><head><title>x</title></head><body></body></html>', config))
-      .toContain('<head><base href="capacitor-electron://localhost/">');
+    expect(
+      injectAppProtocolBase('<html><head><title>x</title></head><body></body></html>', config),
+    ).toContain('<head><base href="capacitor-electron://localhost/">');
   });
 
   it('preserves an existing base tag', () => {
@@ -181,28 +200,45 @@ describe('resolveAppProtocolFilePath', () => {
   const distDir = '/app/dist';
 
   it('maps / to index.html', () => {
-    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/', config))
-      .toBe(resolve('/app/dist/index.html'));
+    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/', config)).toBe(
+      resolve('/app/dist/index.html'),
+    );
   });
 
   it('maps absolute asset paths inside distDir', () => {
-    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/assets/logo.png', config))
-      .toBe(resolve('/app/dist/assets/logo.png'));
+    expect(
+      resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/assets/logo.png', config),
+    ).toBe(resolve('/app/dist/assets/logo.png'));
   });
 
   it('decodes URL-escaped file paths', () => {
-    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/assets/my%20logo.png', config))
-      .toBe(resolve('/app/dist/assets/my logo.png'));
+    expect(
+      resolveAppProtocolFilePath(
+        distDir,
+        'capacitor-electron://localhost/assets/my%20logo.png',
+        config,
+      ),
+    ).toBe(resolve('/app/dist/assets/my logo.png'));
   });
 
   it('blocks encoded slash path traversal', () => {
-    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/%2e%2e%2fsecret.txt', config))
-      .toBeNull();
+    expect(
+      resolveAppProtocolFilePath(
+        distDir,
+        'capacitor-electron://localhost/%2e%2e%2fsecret.txt',
+        config,
+      ),
+    ).toBeNull();
   });
 
   it('blocks encoded backslash path traversal', () => {
-    expect(resolveAppProtocolFilePath(distDir, 'capacitor-electron://localhost/%5C..%5Csecret.txt', config))
-      .toBeNull();
+    expect(
+      resolveAppProtocolFilePath(
+        distDir,
+        'capacitor-electron://localhost/%5C..%5Csecret.txt',
+        config,
+      ),
+    ).toBeNull();
   });
 });
 
@@ -211,21 +247,33 @@ describe('Capacitor file protocol paths', () => {
   const roots = [{ name: 'data', fileSystemPath: '/app/user-data' }];
 
   it('maps /_capacitor_file_/data paths inside the configured root', () => {
-    expect(resolveCapacitorFileProtocolPath(roots, 'capacitor-electron://localhost/_capacitor_file_/data/images/a.png', config))
-      .toBe(resolve('/app/user-data/images/a.png'));
+    expect(
+      resolveCapacitorFileProtocolPath(
+        roots,
+        'capacitor-electron://localhost/_capacitor_file_/data/images/a.png',
+        config,
+      ),
+    ).toBe(resolve('/app/user-data/images/a.png'));
   });
 
   it('blocks traversal outside the configured root', () => {
-    expect(resolveCapacitorFileProtocolPath(roots, 'capacitor-electron://localhost/_capacitor_file_/data/%2e%2e%2fsecret.png', config))
-      .toBeNull();
+    expect(
+      resolveCapacitorFileProtocolPath(
+        roots,
+        'capacitor-electron://localhost/_capacitor_file_/data/%2e%2e%2fsecret.png',
+        config,
+      ),
+    ).toBeNull();
   });
 
   it('builds convertFileSrc mappings for renderer use', () => {
-    expect(createCapacitorFileSrcMappings(config, roots)).toEqual([{
-      name: 'data',
-      fileUrlPrefix: pathToFileURL('/app/user-data/').href,
-      urlPrefix: 'capacitor-electron://localhost/_capacitor_file_/data/',
-    }]);
+    expect(createCapacitorFileSrcMappings(config, roots)).toEqual([
+      {
+        name: 'data',
+        fileUrlPrefix: pathToFileURL('/app/user-data/').href,
+        urlPrefix: 'capacitor-electron://localhost/_capacitor_file_/data/',
+      },
+    ]);
   });
 
   it('only treats passive media and font extensions as servable file route assets', () => {
@@ -251,7 +299,10 @@ describe('setupAppProtocol', () => {
     const distDir = await createDist();
     setupAppProtocol(distDir, config);
 
-    expect(mockRegisterBufferProtocol).toHaveBeenCalledWith('capacitor-electron', expect.any(Function));
+    expect(mockRegisterBufferProtocol).toHaveBeenCalledWith(
+      'capacitor-electron',
+      expect.any(Function),
+    );
     expect(mockHandle).not.toHaveBeenCalled();
   });
 
@@ -319,7 +370,9 @@ describe('setupAppProtocol', () => {
     await writeFile(join(dataDir, 'images', 'avatar.png'), 'png-data');
     setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
 
-    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/images/avatar.png');
+    const response = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/images/avatar.png',
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.headers?.['Content-Type']).toBe('image/png');
@@ -332,11 +385,18 @@ describe('setupAppProtocol', () => {
     const dataDir = await mkdtemp(join(tmpdir(), 'cap-electron-data-'));
     tempDirs.push(dataDir);
     await writeFile(join(dataDir, 'evil.html'), '<script>window.Electron.quit()</script>');
-    await writeFile(join(dataDir, 'evil.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+    await writeFile(
+      join(dataDir, 'evil.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    );
     setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
 
-    const htmlResponse = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/evil.html');
-    const svgResponse = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/evil.svg');
+    const htmlResponse = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/evil.html',
+    );
+    const svgResponse = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/evil.svg',
+    );
 
     expect(htmlResponse.statusCode).toBe(404);
     expect(svgResponse.statusCode).toBe(404);
@@ -350,7 +410,9 @@ describe('setupAppProtocol', () => {
     await writeFile(join(dataDir, 'report.pdf'), 'pdf-data');
     setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
 
-    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/report.pdf');
+    const response = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/report.pdf',
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.headers?.['Content-Type']).toBe('application/pdf');
@@ -365,7 +427,9 @@ describe('setupAppProtocol', () => {
     await writeFile(join(dataDir, 'doc.html'), '<h1>doc</h1>');
     setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
 
-    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/doc.html');
+    const response = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/doc.html',
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.headers?.['Content-Type']).toBe('text/html; charset=utf-8');
@@ -379,7 +443,9 @@ describe('setupAppProtocol', () => {
     tempDirs.push(dataDir);
     setupAppProtocol(distDir, config, [{ name: 'data', fileSystemPath: dataDir }]);
 
-    const response = await invokeBuffer('capacitor-electron://localhost/_capacitor_file_/data/images/missing.png');
+    const response = await invokeBuffer(
+      'capacitor-electron://localhost/_capacitor_file_/data/images/missing.png',
+    );
 
     expect(response.statusCode).toBe(404);
   });
@@ -389,8 +455,13 @@ describe('setupAppProtocol', () => {
     const distDir = await createDist();
     setupAppProtocol(distDir, config);
 
-    const response = await invokeBuffer('capacitor-electron://localhost/__cap_electron_protocol_debug');
-    const body = JSON.parse(response.data?.toString() ?? '{}') as { mode: string; indexExists: boolean };
+    const response = await invokeBuffer(
+      'capacitor-electron://localhost/__cap_electron_protocol_debug',
+    );
+    const body = JSON.parse(response.data?.toString() ?? '{}') as {
+      mode: string;
+      indexExists: boolean;
+    };
 
     expect(response.statusCode).toBe(200);
     expect(body.mode).toBe('buffer');

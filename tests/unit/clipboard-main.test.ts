@@ -16,7 +16,7 @@ type MockElectron = {
 let electron: MockElectron;
 
 async function loadClipboardHandlers(): Promise<{ write: PluginHandler; read: PluginHandler }> {
-  electron = await import('electron') as unknown as MockElectron;
+  electron = (await import('electron')) as unknown as MockElectron;
   await import('../../src/template-electron/src/system/static/capacitor-api/clipboard-main.js');
   const handlers = electron.ipcMain.__handlers;
   const write = handlers.get('Clipboard-write');

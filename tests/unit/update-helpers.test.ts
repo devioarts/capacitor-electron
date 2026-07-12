@@ -45,31 +45,45 @@ describe('assertJsIdentifier — valid identifiers', () => {
 
 describe('assertJsIdentifier — invalid identifiers (must throw)', () => {
   it('throws for non-string (null)', () => {
-    expect(() => assertJsIdentifier(null, 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier(null, 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for non-string (number)', () => {
-    expect(() => assertJsIdentifier(42, 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier(42, 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for name starting with a digit', () => {
-    expect(() => assertJsIdentifier('1Plugin', 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier('1Plugin', 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for name with hyphen', () => {
-    expect(() => assertJsIdentifier('My-Plugin', 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier('My-Plugin', 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for empty string', () => {
-    expect(() => assertJsIdentifier('', 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier('', 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for name with space', () => {
-    expect(() => assertJsIdentifier('My Plugin', 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier('My Plugin', 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws for name with backtick (template literal injection)', () => {
-    expect(() => assertJsIdentifier('Plugin`injection`', 'pluginClass', PKG)).toThrow('must be a JavaScript identifier');
+    expect(() => assertJsIdentifier('Plugin`injection`', 'pluginClass', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 });
 
@@ -112,8 +126,10 @@ describe('assertSafeString — invalid strings (must throw)', () => {
 
 describe('assertStringArray', () => {
   it('accepts a valid array of strings', () => {
-    expect(assertStringArray(['onChange', 'onError'], 'pluginEvents', PKG))
-      .toEqual(['onChange', 'onError']);
+    expect(assertStringArray(['onChange', 'onError'], 'pluginEvents', PKG)).toEqual([
+      'onChange',
+      'onError',
+    ]);
   });
 
   it('throws when value is not an array', () => {
@@ -133,17 +149,22 @@ describe('assertIdentifierArray', () => {
   });
 
   it('accepts valid identifier array', () => {
-    expect(assertIdentifierArray(['getInfo', 'doSomething'], 'pluginMethods', PKG))
-      .toEqual(['getInfo', 'doSomething']);
+    expect(assertIdentifierArray(['getInfo', 'doSomething'], 'pluginMethods', PKG)).toEqual([
+      'getInfo',
+      'doSomething',
+    ]);
   });
 
   it('throws for non-array value', () => {
-    expect(() => assertIdentifierArray('getInfo', 'pluginMethods', PKG)).toThrow('must be an array');
+    expect(() => assertIdentifierArray('getInfo', 'pluginMethods', PKG)).toThrow(
+      'must be an array',
+    );
   });
 
   it('throws when array contains invalid identifier', () => {
-    expect(() => assertIdentifierArray(['valid', '1bad'], 'pluginMethods', PKG))
-      .toThrow('must be a JavaScript identifier');
+    expect(() => assertIdentifierArray(['valid', '1bad'], 'pluginMethods', PKG)).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 });
 
@@ -223,36 +244,50 @@ describe('validatePluginSettings — invalid settings (must throw)', () => {
   });
 
   it('throws when pluginClass is missing', () => {
-    expect(() => validatePluginSettings(PKG, { pluginMethods: ['run'] }))
-      .toThrow('must be a JavaScript identifier');
+    expect(() => validatePluginSettings(PKG, { pluginMethods: ['run'] })).toThrow(
+      'must be a JavaScript identifier',
+    );
   });
 
   it('throws when pluginClass is not a valid identifier', () => {
-    expect(() => validatePluginSettings(PKG, { pluginClass: '1BadClass', pluginMethods: ['run'] }))
-      .toThrow('must be a JavaScript identifier');
+    expect(() =>
+      validatePluginSettings(PKG, { pluginClass: '1BadClass', pluginMethods: ['run'] }),
+    ).toThrow('must be a JavaScript identifier');
   });
 
   it('throws when pluginMethods is empty array', () => {
-    expect(() => validatePluginSettings(PKG, { pluginClass: 'MyPlugin', pluginMethods: [] }))
-      .toThrow('pluginMethods must not be empty');
+    expect(() =>
+      validatePluginSettings(PKG, { pluginClass: 'MyPlugin', pluginMethods: [] }),
+    ).toThrow('pluginMethods must not be empty');
   });
 
   it('throws when pluginMethods contains an invalid identifier', () => {
-    expect(() => validatePluginSettings(PKG, { pluginClass: 'MyPlugin', pluginMethods: ['valid', 'bad-method'] }))
-      .toThrow('must be a JavaScript identifier');
+    expect(() =>
+      validatePluginSettings(PKG, {
+        pluginClass: 'MyPlugin',
+        pluginMethods: ['valid', 'bad-method'],
+      }),
+    ).toThrow('must be a JavaScript identifier');
   });
 
   it('throws when autoRegister is not a boolean', () => {
-    expect(() => validatePluginSettings(PKG, { pluginClass: 'MyPlugin', pluginMethods: ['run'], autoRegister: 'yes' }))
-      .toThrow('autoRegister must be a boolean');
+    expect(() =>
+      validatePluginSettings(PKG, {
+        pluginClass: 'MyPlugin',
+        pluginMethods: ['run'],
+        autoRegister: 'yes',
+      }),
+    ).toThrow('autoRegister must be a boolean');
   });
 
   it('throws when pluginEvents contains a string with control chars', () => {
-    expect(() => validatePluginSettings(PKG, {
-      pluginClass: 'MyPlugin',
-      pluginMethods: ['run'],
-      pluginEvents: ['event\x00inject'],
-    })).toThrow('non-empty string');
+    expect(() =>
+      validatePluginSettings(PKG, {
+        pluginClass: 'MyPlugin',
+        pluginMethods: ['run'],
+        pluginEvents: ['event\x00inject'],
+      }),
+    ).toThrow('non-empty string');
   });
 });
 
@@ -295,7 +330,12 @@ describe('generateElectronPluginsAuto', () => {
 
   it('includes events when pluginEvents is present', () => {
     const output = generateElectronPluginsAuto([
-      { packageName: 'my-plugin', pluginClass: 'MyPlugin', pluginMethods: ['run'], pluginEvents: ['onChange'] },
+      {
+        packageName: 'my-plugin',
+        pluginClass: 'MyPlugin',
+        pluginMethods: ['run'],
+        pluginEvents: ['onChange'],
+      },
     ]);
     expect(output).toContain('"onChange"');
     expect(output).toContain('events:');
@@ -326,7 +366,7 @@ describe('generateElectronMainAuto', () => {
     const output = generateElectronMainAuto([
       { packageName: 'my-plugin', pluginClass: 'MyPlugin', pluginMethods: ['run'] },
     ]);
-    expect(output).toContain("import { MyPlugin } from \"my-plugin/electron\"");
+    expect(output).toContain('import { MyPlugin } from "my-plugin/electron"');
   });
 
   it('produces registerPlugin call for each plugin', () => {
@@ -340,8 +380,13 @@ describe('generateElectronMainAuto', () => {
 
   it('skips plugin with autoRegister=false', () => {
     const output = generateElectronMainAuto([
-      { packageName: 'manual-plugin', pluginClass: 'ManualPlugin', pluginMethods: ['run'], autoRegister: false },
-      { packageName: 'auto-plugin',   pluginClass: 'AutoPlugin',   pluginMethods: ['run'] },
+      {
+        packageName: 'manual-plugin',
+        pluginClass: 'ManualPlugin',
+        pluginMethods: ['run'],
+        autoRegister: false,
+      },
+      { packageName: 'auto-plugin', pluginClass: 'AutoPlugin', pluginMethods: ['run'] },
     ]);
     expect(output).not.toContain('ManualPlugin');
     expect(output).toContain('AutoPlugin');

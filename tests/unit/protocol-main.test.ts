@@ -24,21 +24,28 @@ vi.mock('electron', () => ({
   },
   shell: { openExternal: vi.fn(async () => {}) },
   ipcMain: { handle: mockIpcHandle, on: vi.fn() },
-  BrowserWindow: class { static getAllWindows() { return []; } },
+  BrowserWindow: class {
+    static getAllWindows() {
+      return [];
+    }
+  },
 }));
 
 // Mock loadConfig so configuredSchemes() can return controlled values.
 const { mockLoadConfig } = vi.hoisted(() => ({
-  mockLoadConfig: vi.fn(() => ({ cfg: { app: { deepLinkingScheme: 'myapp', appLauncherSchemes: ['helper'] } }, appCfg: {} })),
+  mockLoadConfig: vi.fn(() => ({
+    cfg: { app: { deepLinkingScheme: 'myapp', appLauncherSchemes: ['helper'] } },
+    appCfg: {},
+  })),
 }));
 
-vi.mock(
-  '../../src/template-electron/src/system/shared/functions.js',
-  async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../src/template-electron/src/system/shared/functions.js')>();
-    return { ...original, loadConfig: mockLoadConfig };
-  },
-);
+vi.mock('../../src/template-electron/src/system/shared/functions.js', async (importOriginal) => {
+  const original =
+    await importOriginal<
+      typeof import('../../src/template-electron/src/system/shared/functions.js')
+    >();
+  return { ...original, loadConfig: mockLoadConfig };
+});
 
 import { cleanScheme } from '../../src/template-electron/src/system/static/electron-api/protocol-main.js';
 
@@ -120,8 +127,9 @@ describe('protocol:setAsDefaultProtocolClient IPC handler', () => {
     const handler = mockIpcHandle.mock.calls.find(
       (c) => c[0] === 'protocol:setAsDefaultProtocolClient',
     )?.[1] as (_e: unknown, scheme: string) => unknown;
-    await expect(Promise.resolve().then(() => handler({}, 'evil')))
-      .rejects.toThrow('Refusing to register unconfigured protocol scheme');
+    await expect(Promise.resolve().then(() => handler({}, 'evil'))).rejects.toThrow(
+      'Refusing to register unconfigured protocol scheme',
+    );
   });
 
   it('succeeds for a configured scheme', async () => {
@@ -141,30 +149,34 @@ describe('protocol:openExternal IPC handler', () => {
   });
 
   it('allows http:// URLs', async () => {
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'protocol:openExternal',
-    )?.[1] as (_e: unknown, url: string) => unknown;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'protocol:openExternal')?.[1] as (
+      _e: unknown,
+      url: string,
+    ) => unknown;
     await expect(handler({}, 'http://example.com')).resolves.not.toThrow();
   });
 
   it('allows mailto: URLs', async () => {
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'protocol:openExternal',
-    )?.[1] as (_e: unknown, url: string) => unknown;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'protocol:openExternal')?.[1] as (
+      _e: unknown,
+      url: string,
+    ) => unknown;
     await expect(handler({}, 'mailto:user@example.com')).resolves.not.toThrow();
   });
 
   it('blocks file:// URLs', async () => {
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'protocol:openExternal',
-    )?.[1] as (_e: unknown, url: string) => unknown;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'protocol:openExternal')?.[1] as (
+      _e: unknown,
+      url: string,
+    ) => unknown;
     await expect(handler({}, 'file:///etc/passwd')).rejects.toThrow('not allowed');
   });
 
   it('blocks javascript: URLs', async () => {
-    const handler = mockIpcHandle.mock.calls.find(
-      (c) => c[0] === 'protocol:openExternal',
-    )?.[1] as (_e: unknown, url: string) => unknown;
+    const handler = mockIpcHandle.mock.calls.find((c) => c[0] === 'protocol:openExternal')?.[1] as (
+      _e: unknown,
+      url: string,
+    ) => unknown;
     await expect(handler({}, 'javascript:alert(1)')).rejects.toThrow('not allowed');
   });
 });

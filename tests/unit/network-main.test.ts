@@ -12,14 +12,22 @@ vi.mock('electron', () => ({
   net: { isOnline: mockIsOnline },
   app: { getPath: () => '/tmp', getName: () => 'TestApp', on: () => {} },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
-  BrowserWindow: class { static getAllWindows() { return []; } },
+  BrowserWindow: class {
+    static getAllWindows() {
+      return [];
+    }
+  },
 }));
 
 let getNetworkStatus: () => { connected: boolean; connectionType: string };
-let sameStatus: (a: { connected: boolean; connectionType: string } | null, b: { connected: boolean; connectionType: string }) => boolean;
+let sameStatus: (
+  a: { connected: boolean; connectionType: string } | null,
+  b: { connected: boolean; connectionType: string },
+) => boolean;
 
 beforeAll(async () => {
-  const mod = await import('../../src/template-electron/src/system/static/capacitor-api/network-main.js');
+  const mod =
+    await import('../../src/template-electron/src/system/static/capacitor-api/network-main.js');
   getNetworkStatus = mod.getNetworkStatus;
   sameStatus = mod.sameStatus;
 });
@@ -62,23 +70,29 @@ describe('sameStatus', () => {
   });
 
   it('returns false when connected differs', () => {
-    expect(sameStatus(
-      { connected: true,  connectionType: 'unknown' },
-      { connected: false, connectionType: 'none' },
-    )).toBe(false);
+    expect(
+      sameStatus(
+        { connected: true, connectionType: 'unknown' },
+        { connected: false, connectionType: 'none' },
+      ),
+    ).toBe(false);
   });
 
   it('returns false when connectionType differs', () => {
-    expect(sameStatus(
-      { connected: true, connectionType: 'unknown' },
-      { connected: true, connectionType: 'wifi' },
-    )).toBe(false);
+    expect(
+      sameStatus(
+        { connected: true, connectionType: 'unknown' },
+        { connected: true, connectionType: 'wifi' },
+      ),
+    ).toBe(false);
   });
 
   it('returns false when only connectionType differs (connected same)', () => {
-    expect(sameStatus(
-      { connected: false, connectionType: 'none' },
-      { connected: false, connectionType: 'unknown' },
-    )).toBe(false);
+    expect(
+      sameStatus(
+        { connected: false, connectionType: 'none' },
+        { connected: false, connectionType: 'unknown' },
+      ),
+    ).toBe(false);
   });
 });

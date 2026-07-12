@@ -14,10 +14,12 @@ export default function globalSetup(): void {
 
   const missing = required.filter((file) => !existsSync(file));
   if (missing.length > 0) {
-    throw new Error([
-      'Playwright e2e artifacts are missing. Run `npm run test:e2e` so pretest:e2e can prepare the playground.',
-      'Missing:',
-      ...missing.map((file) => `  - ${file}`),
-    ].join('\n'));
+    throw new Error(
+      [
+        'Playwright e2e artifacts are missing. Run `npm run test:e2e` so pretest:e2e can prepare the playground.',
+        'Missing:',
+        ...missing.map((file) => `  - ${file}`),
+      ].join('\n'),
+    );
   }
 }

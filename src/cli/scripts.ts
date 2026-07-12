@@ -9,8 +9,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const marker = `${path.sep}node_modules${path.sep}`;
 const markerIdx = __dirname.indexOf(marker);
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR']
-  ?? (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (markerIdx >= 0 ? __dirname.slice(0, markerIdx) : process.cwd());
 const electronDir = path.join(capacitorRoot, 'electron');
 
 if (!fs.existsSync(electronDir)) {
@@ -35,7 +36,9 @@ let pkg: { scripts?: Record<string, string> };
 try {
   pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { scripts?: Record<string, string> };
 } catch (e) {
-  console.error(`[cap-electron] Failed to read package.json: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(
+    `[cap-electron] Failed to read package.json: ${e instanceof Error ? e.message : String(e)}`,
+  );
   process.exit(1);
 }
 
@@ -56,7 +59,9 @@ for (const [name, command] of Object.entries(SCRIPTS)) {
 try {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 } catch (e) {
-  console.error(`[cap-electron] Failed to write package.json: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(
+    `[cap-electron] Failed to write package.json: ${e instanceof Error ? e.message : String(e)}`,
+  );
   process.exit(1);
 }
 

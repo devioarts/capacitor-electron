@@ -16,11 +16,13 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Prefer env var set by Capacitor CLI, fall back to __dirname-based detection
-const capacitorRoot = process.env['CAPACITOR_ROOT_DIR'] ?? (() => {
-  const marker = `${path.sep}node_modules${path.sep}`;
-  const idx = __dirname.indexOf(marker);
-  return idx >= 0 ? __dirname.slice(0, idx) : process.cwd();
-})();
+const capacitorRoot =
+  process.env['CAPACITOR_ROOT_DIR'] ??
+  (() => {
+    const marker = `${path.sep}node_modules${path.sep}`;
+    const idx = __dirname.indexOf(marker);
+    return idx >= 0 ? __dirname.slice(0, idx) : process.cwd();
+  })();
 
 const electronDir = path.join(capacitorRoot, 'electron');
 
@@ -41,7 +43,9 @@ try {
   fs.mkdirSync(electronDir, { recursive: true });
   await extract({ file: templatePath, cwd: electronDir, strip: 1 });
 } catch (e) {
-  console.error(`[cap-electron] Failed to extract template: ${e instanceof Error ? e.message : String(e)}`);
+  console.error(
+    `[cap-electron] Failed to extract template: ${e instanceof Error ? e.message : String(e)}`,
+  );
   fs.rmSync(electronDir, { recursive: true, force: true });
   process.exit(1);
 }
@@ -54,13 +58,17 @@ for (const pkgFile of [
 ]) {
   if (!fs.existsSync(pkgFile)) continue;
   try {
-    fs.writeFileSync(pkgFile,
-      fs.readFileSync(pkgFile, 'utf-8')
+    fs.writeFileSync(
+      pkgFile,
+      fs
+        .readFileSync(pkgFile, 'utf-8')
         .replace(/__APP_NAME__/g, metadata.packageName)
         .replace(/__APP_ID__/g, metadata.appMeta.appId),
     );
   } catch (e) {
-    console.error(`[cap-electron] Failed to patch ${path.relative(electronDir, pkgFile)}: ${e instanceof Error ? e.message : String(e)}`);
+    console.error(
+      `[cap-electron] Failed to patch ${path.relative(electronDir, pkgFile)}: ${e instanceof Error ? e.message : String(e)}`,
+    );
     process.exit(1);
   }
 }
@@ -87,7 +95,9 @@ console.log('\n[cap-electron] Running copy...');
 try {
   execFileSync(process.execPath, [path.join(__dirname, 'copy.js')], { stdio: 'inherit' });
 } catch {
-  console.warn('[cap-electron] Copy skipped — run: npx cap-electron copy (after building the web app).');
+  console.warn(
+    '[cap-electron] Copy skipped — run: npx cap-electron copy (after building the web app).',
+  );
 }
 
 console.log('\n[cap-electron] Done — electron/ added.');
